@@ -7,10 +7,10 @@ import type { EventRecord, Meeting } from "@/types/event";
 import type { VolunteerBasic } from "@/types/volunteer";
 import { MOCK_VOLUNTEERS } from "./volunteers";
 
-const toBasic = (v: typeof MOCK_VOLUNTEERS[number]): VolunteerBasic => ({
-  rollNumber: v.rollNumber,
-  name: v.name,
-  project: v.project,
+const toBasic = (v?: typeof MOCK_VOLUNTEERS[number] | null): VolunteerBasic => ({
+  rollNumber: v?.rollNumber ?? "2105101",
+  name: v?.name ?? "Rohan Das",
+  project: v?.project ?? "Dhara",
 });
 
 export const MOCK_EVENTS: EventRecord[] = [
@@ -440,7 +440,7 @@ export const MOCK_EVENTS: EventRecord[] = [
     endTime: "2026-10-28T14:00:00Z",
     allocatedHours: 5,
     attendedVolunteers: [],
-    fcfsVolunteers: [toBasic(MOCK_VOLUNTEERS[8]), toBasic(MOCK_VOLUNTEERS[17])],
+    fcfsVolunteers: [toBasic(MOCK_VOLUNTEERS[8]), toBasic(MOCK_VOLUNTEERS[10])],
     expectedAttendees: 30,
   },
   {
@@ -503,7 +503,7 @@ export const MOCK_EVENTS: EventRecord[] = [
     endTime: "2026-11-05T19:00:00Z",
     allocatedHours: 5,
     attendedVolunteers: [],
-    fcfsVolunteers: [toBasic(MOCK_VOLUNTEERS[3]), toBasic(MOCK_VOLUNTEERS[11]), toBasic(MOCK_VOLUNTEERS[21])],
+    fcfsVolunteers: [toBasic(MOCK_VOLUNTEERS[3]), toBasic(MOCK_VOLUNTEERS[11]), toBasic(MOCK_VOLUNTEERS[15])],
     expectedAttendees: 45,
   },
   {
