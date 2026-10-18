@@ -43,27 +43,28 @@ Part 1: Frontend foundation
   - `docs/PERMISSIONS.md`: Role & permissions specification matching Sections 4, 5, 6 (ActorContext, tiers, 2-man rule, emergency packs, soft rules S-01 to S-09, field-level masking).
 - [x] Generic shared UI components:
   - `StatusBadge`, `StatCard`, `EmptyState`, `LoadingState`, `ErrorState`, `ConfirmDialog`, `DataTable` (TanStack Table v9).
-- [x] Operational Dashboard completed (`src/app/(office)/dashboard/page.tsx`):
-  - Internal office command center conforming to SRS Sections 7, 8.6, 10.8, and 18.5.
-  - Core KPI statistics via `StatCard`: Total Active Volunteers (384), Service Hours Approved (5,610), Average Turnout Rate (90.4%), and Events Completed (138).
-  - Prominent synthetic demonstration sandbox banner and data quality operational alerts (`DataQualityAlert`).
-  - Isolated Client Components for visual analytics:
-    - `GenderDonutChart`: Recharts donut chart with hydration-safe `useSyncExternalStore` pattern displaying 54.7% Male / 45.3% Female distribution.
-    - `MonthlyTrendsChart`: Dual-metric AreaChart visualizing 6-month service hours logged and turnout rate trajectories.
-  - Server-rendered operational cards:
-    - `UpcomingEventsCard`: Scheduled events and meetings with IST time formatting (`formatDateIST`, `formatTimeIST`), expected turnout, and status badges.
-    - `RecentAttendanceCard`: Verified attendance summaries, turnout ratio progress bars, and lock status indicators.
-    - `ProjectDistributionCard`: All 9 designated SDG project wings with active volunteer registers, hours logged, turnout, and PR leads.
-    - `QuickActionsCard`: Direct responsive navigation shortcuts to core administrative workflows (volunteers, projects, events, attendance, hours, requests, audit).
-    - `RecentAuditCard`: Feed of immutable security and sensitive administrative actions with actor roles and timestamps.
-  - Dedicated `DashboardLoading` skeleton (`loading.tsx`) and `DashboardError` boundary (`error.tsx`).
-  - Responsive layout verified across mobile (390x844) and desktop (1280x800) with zero horizontal overflow.
-- [x] Production build passes (all 24 routes prerendered).
+- [x] Operational Dashboard completed (`src/app/(office)/dashboard/page.tsx`).
+- [x] Volunteer Directory & Detail modules completed:
+  - `src/features/volunteers/volunteer-stats-bar.tsx`: Active volunteer totals, 2nd/3rd/4th year distribution, domain specialists, average turnout.
+  - `src/features/volunteers/volunteer-table.tsx`: Search across name, roll number, email; filter by project, domain, year, status; shareable URL query parameters (`?search=...&project=...&page=...`); desktop sortable table and mobile card alternative.
+  - `src/app/(office)/volunteers/page.tsx`: Server Component with `PageHeader`, KPI stats bar, and `<React.Suspense>` streaming for client table.
+  - `src/features/volunteers/volunteer-profile-header.tsx`: Profile banner with initials avatar, roll number, project pill, office bearer role, masked contact credentials, blood group, city/state, and hostel.
+  - `src/features/volunteers/volunteer-detail-cards.tsx`: Approved hours, event turnout, meeting attendance, FCFS reliability with penalty warning (SRS Section 8.3), and confidential coordinator note with remaining edit budget (SRS S-06).
+  - `src/features/volunteers/volunteer-history-tabs.tsx`: 4 switchable tabs (Event Participation History, Meeting Attendance, Service Hours Ledger, and Security/Audit Trail).
+  - `src/app/(office)/volunteers/[id]/page.tsx`: Server Component with `generateStaticParams()` for all 15 synthetic roll numbers, lookup, and not-found empty state.
+- [x] Project Directory & Detail modules completed:
+  - `src/features/projects/project-stats-header.tsx`: 9 designated wings, deployed volunteer headcounts, total service hours, community drives count.
+  - `src/features/projects/project-grid.tsx`: All 9 projects mapped to SDGs with description, PR leads, hours, turnout rates, and search filtering.
+  - `src/features/projects/domain-roster-section.tsx`: 4 specialized creative domains (Photography, Video Editing, Graphic Designing, Content Writing) with leads and roster links.
+  - `src/app/(office)/projects/page.tsx`: Assembled projects directory with statistics, grid, and domain wings.
+  - `src/features/projects/project-detail-hero.tsx`: Wing header with SDG badges, PR leadership cards, hours, drives, and turnout rates.
+  - `src/features/projects/project-detail-tabs.tsx`: 4 switchable tabs (Assigned Volunteers table, Outreach Drives list, Wing Meetings, and Creative Domain & Cohort Analytics).
+  - `src/app/(office)/projects/[slug]/page.tsx`: Server Component with `generateStaticParams()` for all 9 project slugs, lookup, and not-found empty state.
+- [x] Production build passes (48 static and partially prerendered routes generated in 2.9s).
 
 ## Current task
 
-NSS Central Management System internal office dashboard implemented and fully validated.
-All visual components, server/client boundaries, mock data access queries, and responsive layouts verified.
+Volunteer Directory, Volunteer Detail, Project Directory, and Project Detail modules implemented, statically prerendered, and verified across desktop and mobile.
 
 ## Blockers
 
@@ -73,14 +74,15 @@ All visual components, server/client boundaries, mock data access queries, and r
 
 - TypeScript check (`npx tsc --noEmit`): PASSED (Exit code 0, 0 errors)
 - ESLint (`npm run lint`): PASSED (Exit code 0, 0 errors, 0 warnings)
-- Production Build (`npm run build`): PASSED (Exit code 0 - all 24 routes prerendered)
-- Visual Browser Validation: PASSED (Desktop 1280x800 & Mobile 390x844 verified without layout shifts or horizontal overflow)
+- Production Build (`npm run build`): PASSED (Exit code 0 - all 48 static / PPR routes compiled)
+- Visual Browser Validation: PASSED (Desktop 1280x800 & Mobile 390x844 verified across /volunteers, /volunteers/2105101, /projects, and /projects/dhara)
 
-## Decisions pending
+## Decisions pending / Assumptions recorded
 
-- Final staff roster source (`seed/staff.template.csv` vs `seed/local/staff.csv`)
-- Production Supabase Google Workspace OAuth setup
+- Staff-only field masking: Phone number and blood group are only accessible to coordinators and internal office staff; student views are completely masked per Section 6.
+- FCFS Reliability lockout: 3 missed FCFS events triggers an automated 30-day lockout; UI surfaces warning at >= 2 missed slots.
+- Coordinator Notes edit budget: Limited to 3 edits per semester per volunteer (soft rule S-06) with remaining edits tracked in the UI.
 
 ## Next task
 
-Proceed to Volunteer Directory module (`src/app/(office)/volunteers/page.tsx` and details `[id]/page.tsx`) with search, multi-factor filtering, field masking, and attendance/hours ledgers.
+Proceed to Events & Attendance Management modules (`/events`, `/events/[id]`, `/events/central/new`, `/events/project/new`, `/attendance`, `/meetings`) with FCFS rosters and attendance correction workflows.

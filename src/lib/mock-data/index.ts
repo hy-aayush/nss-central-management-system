@@ -349,3 +349,45 @@ export function getDashboardSummary(): DashboardSummary {
 export function getMetricCards(): MetricCardData[] {
   return MOCK_METRIC_CARDS;
 }
+
+// ============================================================================
+// Specialized Volunteer Detail & Project View Helpers
+// ============================================================================
+
+export function getVolunteersByProject(projectName: ProjectName): VolunteerDetail[] {
+  return MOCK_VOLUNTEERS.filter((v) => v.project === projectName);
+}
+
+export function getVolunteerEvents(rollNumber: string): {
+  attended: EventRecord[];
+  upcomingOrRegistered: EventRecord[];
+} {
+  const attended = MOCK_EVENTS.filter(
+    (e) =>
+      e.status === "COMPLETED" &&
+      (e.attendedVolunteers?.some((v) => v.rollNumber === rollNumber) ||
+        e.fcfsVolunteers?.some((v) => v.rollNumber === rollNumber))
+  );
+
+  const upcomingOrRegistered = MOCK_EVENTS.filter(
+    (e) =>
+      ["SCHEDULED", "PUBLISHED", "RESCHEDULED", "ONGOING"].includes(e.status) &&
+      (e.fcfsVolunteers?.some((v) => v.rollNumber === rollNumber) ||
+        e.projects.some((p) => {
+          const vol = getVolunteerByRoll(rollNumber);
+          return vol && p.projectName === vol.project;
+        }))
+  );
+
+  return { attended, upcomingOrRegistered };
+}
+
+export function getVolunteerAuditLogs(rollNumber: string): AuditLogEntry[] {
+  return MOCK_AUDIT_LOGS.filter(
+    (l) => l.targetRoll === rollNumber || l.actorRoll === rollNumber
+  );
+}
+
+export function getDomainByCode(code: string): DomainSummary | undefined {
+  return MOCK_DOMAINS.find((d) => d.domain.toLowerCase() === code.toLowerCase());
+}
