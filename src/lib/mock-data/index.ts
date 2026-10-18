@@ -4,7 +4,13 @@
  */
 
 import { MOCK_AUDIT_LOGS } from "./audit-logs";
-import { MOCK_ATTENDANCE_RECORDS, MOCK_ATTENDANCE_SUMMARIES } from "./attendance";
+import {
+  MOCK_ATTENDANCE_CORRECTIONS,
+  MOCK_ATTENDANCE_RECORDS,
+  MOCK_ATTENDANCE_SUMMARIES,
+  getAttendanceCorrections,
+  getEventParticipants,
+} from "./attendance";
 import { MOCK_DASHBOARD_SUMMARY, MOCK_METRIC_CARDS } from "./analytics";
 import { MOCK_EVENTS, MOCK_MEETINGS } from "./events";
 import { MOCK_DOMAINS, MOCK_PROJECTS } from "./projects";
@@ -26,6 +32,7 @@ export {
   MOCK_EVENTS,
   MOCK_MEETINGS,
   MOCK_ATTENDANCE_RECORDS,
+  MOCK_ATTENDANCE_CORRECTIONS,
   MOCK_ATTENDANCE_SUMMARIES,
   MOCK_STAFF_USERS,
   MOCK_STAFF_MEMBERS,
@@ -33,6 +40,8 @@ export {
   MOCK_AUDIT_LOGS,
   MOCK_DASHBOARD_SUMMARY,
   MOCK_METRIC_CARDS,
+  getAttendanceCorrections,
+  getEventParticipants,
 };
 
 // ============================================================================

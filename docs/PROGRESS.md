@@ -60,11 +60,28 @@ Part 1: Frontend foundation
   - `src/features/projects/project-detail-hero.tsx`: Wing header with SDG badges, PR leadership cards, hours, drives, and turnout rates.
   - `src/features/projects/project-detail-tabs.tsx`: 4 switchable tabs (Assigned Volunteers table, Outreach Drives list, Wing Meetings, and Creative Domain & Cohort Analytics).
   - `src/app/(office)/projects/[slug]/page.tsx`: Server Component with `generateStaticParams()` for all 9 project slugs, lookup, and not-found empty state.
-- [x] Production build passes (48 static and partially prerendered routes generated in 2.9s).
+- [x] Event Management & Attendance modules completed:
+  - `src/features/events/event-schemas.ts`: Zod validation schemas for Central and Project events, enforcing IST date bounds, start-before-end, FCFS opening before locking, lock-before-start (SRS §11.3), and wing slot quota consistency.
+  - `src/features/events/events-stats-header.tsx`: KPI cards for Total Events, Central Drives, Project Drives, Upcoming/Live sessions, and Average Turnout Rate.
+  - `src/features/events/events-table.tsx`: Searchable, filterable (Type, Status, Wing), sortable (Date, Title) event roster with responsive mobile cards and TanStack pagination.
+  - `src/features/events/event-form.tsx`: Separate typed `CentralEventForm` and `ProjectEventForm` with multi-wing collaboration rules (max 2 collaborating wings per S-09), year-wise caps, and two-step Review → Confirm dialogs with explicit simulation disclaimers.
+  - `src/app/(office)/events/central/new/page.tsx` & `src/app/(office)/events/project/new/page.tsx`: Dedicated creation routes.
+  - `src/app/(office)/events/page.tsx`: Server Component with metric cards, table view, and `<React.Suspense>` streaming.
+  - `src/features/events/event-detail-hero.tsx`: Header banner with date, venue, hours credit, lock status, and confirmation dialogs for early lock and cancellation.
+  - `src/features/events/event-detail-tabs.tsx`: 4 switchable tabs (Enrolled Participants Roster, Project Wing Slots allocation, Turnout Summary with visual meters, and Governance & Audit Trail).
+  - `src/app/(office)/events/[id]/page.tsx`: Prerendered via `generateStaticParams()` across all mock events.
+  - `src/features/attendance/attendance-schemas.ts`: Audited correction schema requiring minimum 10-character reason justification (SRS §11.7) and bulk status marking.
+  - `src/features/attendance/attendance-stats-bar.tsx`: Real-time session KPI bar (Total Roster, Present, Absent, Excused, Turnout %, Lock status badge).
+  - `src/features/attendance/attendance-event-selector.tsx`: Session switcher dropdown synchronized with URL query params (`?eventId=...`).
+  - `src/features/attendance/attendance-roster-table.tsx`: Interactive roll-call table with P (Present), A (Absent), E (Excused) toggles, print sheet contingency, quick filters, and intercepting locked sessions into the audited correction modal.
+  - `src/features/attendance/attendance-correction-dialog.tsx`: Audited correction modal with character count counter, reason validation, and old/new state badges.
+  - `src/features/attendance/attendance-history-panel.tsx`: Immutable ledger of past corrections with timestamps, old/new statuses, and officer IDs.
+  - `src/app/(office)/attendance/page.tsx`: Attendance register route with streaming Suspense boundary.
+- [x] Production build passes (57 static and partially prerendered routes generated in 3.5s).
 
 ## Current task
 
-Volunteer Directory, Volunteer Detail, Project Directory, and Project Detail modules implemented, statically prerendered, and verified across desktop and mobile.
+Events Directory, Event Detail, Central & Project Event Creation Forms, and Attendance Register with Audited Correction Flow implemented, statically prerendered, and visually verified.
 
 ## Blockers
 
@@ -73,16 +90,19 @@ Volunteer Directory, Volunteer Detail, Project Directory, and Project Detail mod
 ## Latest validation
 
 - TypeScript check (`npx tsc --noEmit`): PASSED (Exit code 0, 0 errors)
-- ESLint (`npm run lint`): PASSED (Exit code 0, 0 errors, 0 warnings)
-- Production Build (`npm run build`): PASSED (Exit code 0 - all 48 static / PPR routes compiled)
-- Visual Browser Validation: PASSED (Desktop 1280x800 & Mobile 390x844 verified across /volunteers, /volunteers/2105101, /projects, and /projects/dhara)
+- ESLint (`npm run lint`): PASSED (Exit code 0, 0 errors)
+- Production Build (`npm run build`): PASSED (Exit code 0 - all 57 static / PPR routes compiled)
+- Visual Browser Validation: PASSED (Desktop & mobile verified across `/events`, `/events/1`, `/events/central/new`, `/events/project/new`, and `/attendance` including correction modal flow)
 
 ## Decisions pending / Assumptions recorded
 
 - Staff-only field masking: Phone number and blood group are only accessible to coordinators and internal office staff; student views are completely masked per Section 6.
 - FCFS Reliability lockout: 3 missed FCFS events triggers an automated 30-day lockout; UI surfaces warning at >= 2 missed slots.
 - Coordinator Notes edit budget: Limited to 3 edits per semester per volunteer (soft rule S-06) with remaining edits tracked in the UI.
+- Attendance Locked State: When an event attendance session is locked, manual roll-call toggling is prevented and routed to the Audited Correction Flow requiring >= 10-char justification (SRS §11.7).
+- Multi-Wing Collaboration Cap: Project events strictly limit collaborating wings to at most 2 (max 3 total including host) per soft rule S-09.
 
 ## Next task
 
-Proceed to Events & Attendance Management modules (`/events`, `/events/[id]`, `/events/central/new`, `/events/project/new`, `/attendance`, `/meetings`) with FCFS rosters and attendance correction workflows.
+Proceed to Meetings management (`/meetings`), Service Hours approvals & adjustments (`/hours`), and Approval Requests / Emergency Packs (`/requests`).
+

@@ -1,9 +1,17 @@
+import React from "react";
+import Link from "next/link";
+import { Calendar } from "lucide-react";
+
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { UserCheck, Clock } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { LoadingState } from "@/components/shared/loading-state";
+import { getEvents } from "@/lib/mock-data";
+import { AttendanceManager } from "@/features/attendance/attendance-manager";
 
 export default function AttendancePage() {
+  const { items: events } = getEvents();
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -15,25 +23,22 @@ export default function AttendancePage() {
             <span className="text-muted-foreground font-normal">Present / Absent / Excused</span>
           </div>
         }
-        title="Attendance &amp; Hours"
-        description="Event attendance marking, correction audit trails, and allocated service hours verification."
+        title="Attendance &amp; Roll Call"
+        description="Verify event participation, take live roll calls, enforce lock deadlines, and apply audited attendance corrections."
         actions={
-          <Button size="sm">
-            <Clock className="size-3.5 mr-1.5" />
-            Mark Session
-          </Button>
+          <Link
+            href="/events"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8.5 text-label-xs")}
+          >
+            <Calendar className="size-3.5 mr-1.5" />
+            View Scheduled Events
+          </Link>
         }
       />
 
-      <Card className="border-dashed p-8 text-center bg-card">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3">
-          <UserCheck className="size-6" />
-        </div>
-        <h3 className="text-headline-md font-semibold text-foreground">Attendance Register</h3>
-        <p className="text-body-sm text-muted-foreground max-w-md mx-auto mt-1">
-          Attendance marking sessions, correction history reasons, and hours approval will be implemented in the Attendance phase.
-        </p>
-      </Card>
+      <React.Suspense fallback={<LoadingState message="Loading attendance register and participants..." />}>
+        <AttendanceManager events={events} />
+      </React.Suspense>
     </div>
   );
 }
