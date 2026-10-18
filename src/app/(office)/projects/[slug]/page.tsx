@@ -1,14 +1,4 @@
-import React from "react";
-
-interface pageProps {
+export default function Page() {
+  return null;
 }
 
-const page: React.FC<pageProps> = () => {
-    return (
-        <div>
-
-        </div>
-    );
-};
-
-export default page;
