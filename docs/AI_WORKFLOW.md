@@ -6,7 +6,10 @@ Build the NSS Central Management System as a responsive, internal office-managem
 
 ## Current phase
 
-Part 1: Frontend and UI foundation using synthetic mock data only.
+Part 1b: server-only database infrastructure. The UI still uses synthetic mock
+data; authentication, the application schema and business features are separate,
+approved tasks. `docs/SRS.md` Section 22 controls the build order where this file
+and the SRS disagree.
 
 ## Mandatory rules
 
@@ -15,7 +18,7 @@ Part 1: Frontend and UI foundation using synthetic mock data only.
 3. Prefer React Server Components. Add `"use client"` only where browser interaction, state, effects or browser APIs require it.
 4. Keep page files thin. Put feature-specific UI in `src/features/`, generic UI in `src/components/`, and shared logic in `src/lib/`.
 5. Reuse components, types, schemas and formatters. Avoid duplicate implementations.
-6. Use synthetic mock data only. Do not connect a real database or implement production authentication during Part 1.
+6. Use synthetic mock data in the UI. Database infrastructure is allowed only in the server-only `src/db/` layer; do not connect screens to real data or implement production authentication/business features without explicit approval.
 7. Never treat a hidden button, client-side role or mock permission check as real authorization.
 8. Do not hardcode business data inside page components. Use typed mock-data modules.
 9. Make layouts responsive, keyboard accessible and suitable for low-end Android devices.

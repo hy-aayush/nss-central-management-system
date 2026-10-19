@@ -149,3 +149,39 @@ The audit (see `docs/PROGRESS.md`) uncovered critical gaps (missing docs, stale 
 
 * Subsequent PRs will follow the ordered feature roadmap defined in `docs/PROGRESS.md` (volunteers → requests → events → meetings → hours → analytics → audit → settings → emergency → cron/backup → CI).
 
+---
+
+## D-019: Database infrastructure baseline (19 Oct 2026)
+
+**Decision:** Use Drizzle ORM `0.45.4` with the `postgres` (postgres-js)
+`3.4.9` driver, managed by `drizzle-kit` `0.31.11`, as the only database
+foundation.
+
+- The application connects through the Supabase Supavisor **transaction**
+  pooler on port 6543 with `prepare: false`, `max: 1`, a 20-second idle timeout
+  and a 10-second connect timeout.
+- `src/db/index.ts` is marked `server-only`; it reads `DATABASE_URL` lazily and
+  caches one handle per serverless instance on `globalThis`.
+- `src/db/client.ts` is a pure factory that accepts an explicit URL so scripts
+  and tests can target staging or local Postgres without loading app secrets.
+- Drizzle Kit reads only `ADMIN_DATABASE_URL`. Migrations never use the runtime
+  `app_user` credential, and there is intentionally no `db:push` script.
+- `db:schema` (`drizzle-kit export`) previews schema SQL without a database;
+  `db:generate` produces reviewed migration files.
+- Drizzle Studio is bound to `127.0.0.1` so the admin connection is not exposed
+  on the local network.
+- `src/db/schema/index.ts` is the single schema barrel and currently exports no
+  tables. The SRS Section 8 schema is a separate task.
+- No database credentials are exposed with `NEXT_PUBLIC_`; `.env.example`
+  contains placeholders only and is explicitly un-ignored for review.
+
+**Reason:** The SRS requires the transaction pooler configuration, server-only
+credentials, committed migrations and exact environment names. A lazy,
+server-only handle keeps builds usable without secrets and prevents accidental
+client imports, while a single admin-only migration URL prevents DDL from
+running as the least-privilege application role.
+
+**Status:** Infrastructure validated with typecheck, lint, schema loading and
+migration-journal checks. A live database connection and the application schema
+remain unverified and unimplemented.
+

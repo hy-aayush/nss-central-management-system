@@ -1,4 +1,98 @@
-# Database Foundation Readiness Audit
+# Database Foundation Progress
+
+## Task 1 — Database infrastructure (19 Oct 2026)
+
+**Scope:** Drizzle ORM + `postgres` (postgres-js) configuration for Supabase,
+the server-only typed connection module, the schema entry point, Drizzle Kit
+configuration, environment template and database package scripts.
+
+**Status:** Complete, awaiting review. Authentication, the SRS Section 8 schema,
+manual security SQL, seeds and all business/UI features were deliberately not
+implemented.
+
+### Files added or changed
+
+| File | Change |
+|---|---|
+| `src/db/client.ts` | Added the typed Drizzle/postgres-js connection factory with the Supavisor transaction-pooler settings (`prepare: false`, `max: 1`, short timeouts). |
+| `src/db/index.ts` | Added the `server-only` application database module with lazy `DATABASE_URL` validation, a `globalThis`-cached handle and `closeDatabase()`. |
+| `src/db/schema/index.ts` | Added the single schema barrel. It intentionally exports no tables yet. |
+| `drizzle.config.ts` | Added Drizzle Kit config using the schema barrel, `drizzle/` output and `ADMIN_DATABASE_URL` only. |
+| `drizzle/meta/_journal.json` | Generated baseline journal (zero migrations). |
+| `.env.example` | Added the SRS Appendix D environment contract with placeholders only; notes that Drizzle Kit reads `.env`, not `.env.local`. |
+| `.gitignore` | Added `!.env.example` so the placeholder template is reviewable while real `.env*` files stay ignored. |
+| `package.json` / `package-lock.json` | Added `drizzle-orm`, `postgres`, `drizzle-kit` and five `db:*` scripts. |
+| `docs/DATABASE.md` | Replaced the stale schema specification with verified infrastructure configuration only. |
+| `docs/AI_WORKFLOW.md`, `docs/DECISIONS.md` | Reconciled the current phase and recorded D-019. |
+
+### Commands and actual results
+
+| Command | Result |
+|---|---|
+| `npm install drizzle-orm postgres` | Installed `drizzle-orm@0.45.4` and `postgres@3.4.9`; npm reported 9 high-severity advisories in the existing dependency tree. |
+| `npm install --save-dev drizzle-kit` | Installed `drizzle-kit@0.31.11`; npm reported 13 vulnerabilities (4 moderate, 9 high) across the existing tree. |
+| `npm ls drizzle-orm drizzle-kit postgres --depth=0` | Resolved the three packages at the versions above. |
+| `npx drizzle-kit --help`, `generate --help`, `migrate --help`, `studio --help` | Confirmed `generate`, `migrate`, `check`, `studio`, `push`, `up`, `introspect` and `export` are supported by 0.31.11. The scripts use only reviewed commands (`export`, `generate`, `check`, `migrate`, `studio`). |
+| `npx tsc --noEmit` | Passed with no output. |
+| `npm run db:schema` | Passed; printed no SQL because the schema is intentionally empty. |
+| `npm run db:generate` | Passed. Loaded `drizzle.config.ts` and the schema barrel, printed `0 tables` and `No schema changes, nothing to migrate`, and created `drizzle/meta/_journal.json`. |
+| `npm run db:check` | Passed (`Everything's fine`). |
+| `npx tsx -e` with `createDatabase("postgresql://placeholder...")` | Returned a Drizzle handle (`db.select` is a function) and a postgres-js client without opening a connection; `client.end()` completed cleanly. |
+| `env -u ADMIN_DATABASE_URL -u DATABASE_URL npm run db:migrate` | Exit code 1 with `Please provide required params for Postgres driver: [x] url: ''`. No connection was attempted, so no database was touched. |
+| `npm run lint` | Passed with no output. |
+| `rm -f .next/lock && npm run build` | Passed: Next.js 16.4.0 compiled successfully, TypeScript finished, and all 57 static/partial-prerender pages generated. The stale lock from the prior audit was removed first; no Next process was running. |
+| Package-lock comparison against `HEAD` | 87 new entries (Drizzle Kit's esbuild/tsx toolchain), 0 removed entries and 0 changed versions. Existing lockfile entries were preserved. |
+| `git check-ignore -v .env.example` | `.gitignore:36:!.env.example` — the template is not ignored and appears as an untracked file. |
+| Secret-prefix/credential scan of `.env.example`, `src/db/` and `drizzle.config.ts` | Only the public `NEXT_PUBLIC_SUPABASE_*` names and placeholder values were found; no concrete password or service-role key. |
+| `npm ls --depth=0` | Resolved all top-level dependencies; the three pre-existing extraneous packages (`@img/sharp-wasm32`, `@napi-rs/wasm-runtime`, `@tybys/wasm-util`) remain unchanged. |
+| `git status --short` | Modified `.gitignore`, `package.json`, `package-lock.json`; added `.env.example`, `drizzle.config.ts`, `drizzle/` and `src/db/`. No unrelated file was edited. |
+
+### Verified
+
+- TypeScript strict typecheck, ESLint and a clean production build pass.
+- Drizzle Kit loads the schema entry point and validates the (empty) migration
+  journal without any secret.
+- Migration application refuses to run when `ADMIN_DATABASE_URL` is absent; it
+  does not fall back to `DATABASE_URL`.
+- The app connection module is marked `server-only` and reads `DATABASE_URL`
+  lazily; no database credential is exposed through a `NEXT_PUBLIC_` variable.
+- Drizzle Studio is bound to `127.0.0.1` so the admin connection is not exposed
+  on the local network.
+- Staging and production remain separate through environment configuration;
+  no SQL was executed against either database.
+
+### Not verified / limitations
+
+- No live Supabase connection, role grant, RLS policy, migration application or
+  query was tested. No credentials were supplied for this task.
+- No tables exist, so the zero-entry journal is expected. The SRS Section 8 schema
+  and `drizzle/manual/security.sql` are the next, separately reviewed task.
+- `db:studio` uses the admin URL. It must be run locally against staging only and
+  must never be exposed as a service.
+- The prior audit's stale `.next/lock` was removed after confirming no Next
+  process was running, and the production build now passes. The build does not
+  exercise a database connection because no page imports the DB module yet.
+- npm audit reports advisories in the existing dependency tree. No forced audit
+  fix was applied because that would change unrelated dependencies.
+
+### Next steps (not started)
+
+1. Implement the exact SRS Section 8 schema in `src/db/schema/*.ts` and
+   re-export it from the barrel.
+2. Generate and review the first real migration, then apply it to a scratch or
+   staging database with `ADMIN_DATABASE_URL`.
+3. Add `drizzle/manual/security.sql` (roles, RLS, functions, `pg_cron`) and the
+   `SYSTEM` row, then verify on a scratch database.
+4. Add seeds, auth/`ActorContext`, and business features only after separate
+   approval.
+
+---
+
+# Historical: Database Foundation Readiness Audit
+
+> Superseded by Task 1 above for the database-infrastructure scope. Retained for
+> context; the remaining incomplete items are still accurate for schema, auth,
+> features and operations.
 
 **Audit date:** 19 Oct 2026
 **Scope:** Read-only audit before the SRS Section 8 database-foundation phase. No application code, dependencies, lockfile, database, migrations, or configuration were changed. The current `docs/SRS.md` is the authority.
