@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -156,7 +157,7 @@ export function AppSidebar() {
                 <div className="relative shrink-0">
                   <Avatar className="size-8 rounded-lg border border-border">
                     <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                      AS
+                      DC
                     </AvatarFallback>
                   </Avatar>
                   <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-success ring-2 ring-surface-container-lowest" />
@@ -166,14 +167,14 @@ export function AppSidebar() {
                   <div className="grid flex-1 text-left leading-tight truncate">
                     <div className="flex items-center gap-1.5">
                       <span className="truncate font-semibold text-xs text-foreground">
-                        Aditya Sharma
+                        Demo Coordinator
                       </span>
                       <Badge variant="accent" className="text-[9px] h-3.5 px-1 py-0 uppercase">
                         Coord
                       </Badge>
                     </div>
                     <span className="truncate text-[10px] text-muted-foreground">
-                      2305070733@kiit.ac.in
+                      synthetic-demo@kiit.ac.in
                     </span>
                   </div>
                 )}
@@ -187,21 +188,23 @@ export function AppSidebar() {
                 align="end"
                 sideOffset={8}
               >
-                <DropdownMenuLabel className="p-2 font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold leading-none text-foreground">
-                        Aditya Sharma
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="p-2 font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold leading-none text-foreground">
+                          Demo Coordinator
+                        </p>
+                        <Badge variant="accent" className="text-[9px]">
+                          Coordinator
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] leading-none text-muted-foreground">
+                        synthetic-demo@kiit.ac.in
                       </p>
-                      <Badge variant="accent" className="text-[9px]">
-                        Coordinator
-                      </Badge>
                     </div>
-                    <p className="text-[11px] leading-none text-muted-foreground">
-                      2305070733@kiit.ac.in
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="flex items-center gap-2 cursor-pointer"

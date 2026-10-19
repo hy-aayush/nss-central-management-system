@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, ShieldAlert } from "lucide-react";
 
@@ -52,6 +52,7 @@ export function AttendanceCorrectionDialog({
       reason: "",
     },
   });
+  const newStatus = useWatch({ control: form.control, name: "newStatus" });
 
   if (!participant) return null;
 
@@ -99,7 +100,7 @@ export function AttendanceCorrectionDialog({
               Corrected Status <span className="text-destructive">*</span>
             </Label>
             <Select
-              value={form.watch("newStatus")}
+              value={newStatus}
               onValueChange={(val) => form.setValue("newStatus", val as AttendanceStatus)}
             >
               <SelectTrigger id="newStatus" className="bg-background border-border">

@@ -99,22 +99,39 @@ Part 1: Frontend foundation
   - `src/features/settings/settings-guardrails-form.tsx`: Soft-rules configuration form for S-01 to S-09 guardrails (FCFS window duration, max collaborators, MOM window, edit budgets, absence thresholds, domain tenure hours).
   - `src/features/settings/settings-emergency-card.tsx`: Global FCFS circuit breaker toggle with confirmation dialog, emergency pack overview, and prominent simulation notice.
   - `src/features/settings/settings-view.tsx`: Tabbed coordinator for System Status, Soft Rules, and Emergency Circuit Breakers.
-- [x] Production build passes (57 static and partially prerendered routes generated in 2.8s).
+- [ ] Production build verification pending: attempts during this review did not complete; see review results below.
 
 ## Current task
 
-Internal-office screens for Analytics (`/analytics`), Audit Logs (`/audit-logs`, `/audit`), Staff/Team Management (`/team`), and Settings (`/settings`) implemented, statically prerendered, and visually verified.
+Independent frontend review against `docs/SRS.md`, `docs/UI_SPECS.md`, `docs/PERMISSIONS.md`, and `docs/AI_WORKFLOW.md` (2026-10-19). The repository's UI spec file is named `UI_SPECS.md` (plural); `UI_SPEC.md` does not exist.
 
-## Blockers
+## Review findings and changes
 
-- None. All validation suites pass cleanly.
+- **Critical — none identified** in this frontend-only review.
+- **High — production authorization is not implemented.** Role labels, navigation and confirmations are prototype UI only; as required by the workflow and permissions spec, they provide no security boundary. Keep this mock-data phase off production until server authentication, per-request authorization, and RLS are implemented and tested.
+- **Medium — fixed:** event form participation choices were not proper keyboard-operable controls, live review state could be stale, and React Hook Form `watch()` produced React Compiler lint warnings. Choices now use controlled radio inputs and watched values; attendance and role dialogs use focused subscriptions.
+- **Medium — fixed:** the command dialog lacked its cmdk context and sidebar menu label lacked its required group, breaking those interactions; added the missing wrappers. Dashboard breadcrumb keys are now unique.
+- **Low — fixed:** replaced identifiable-looking coordinator mock identity with explicitly synthetic data, removed duplicate date/time formatter implementations, and replaced nonfunctional CTAs on unfinished Meetings / Hours / Requests screens with honest prototype status text.
+- **Low — caching:** enabled the 30-second Next.js client router stale time specified in the SRS. This is browser-side route segment reuse, not shared caching of private data. Current feature pages read local synthetic fixtures and make no Supabase calls, so no database request reduction is measurable yet. Future private-data routes must remain uncached in shared server caches and be refreshed after mutations.
 
-## Latest validation
+## Latest validation (2026-10-19)
 
-- TypeScript check (`npx tsc --noEmit`): PASSED (Exit code 0, 0 errors)
-- ESLint (`npm run lint`): PASSED (Exit code 0, 0 errors, 4 expected React Compiler hook warnings on React Hook Form `watch()`)
-- Production Build (`npm run build`): PASSED (Exit code 0 - all 57 static / PPR routes compiled cleanly)
-- Visual Browser Validation: PASSED (Desktop & mobile verified across `/analytics`, `/audit-logs`, `/team`, and `/settings` including dialog and tab interactions)
+- `npx tsc --noEmit`: **PASSED** after frontend fixes (exit 0).
+- `npm run lint`: **PASSED** after frontend fixes (exit 0, no warnings).
+- `npm run build`: **NOT VERIFIED**. Three attempts did not finish; the latest remained at “Creating an optimized production build” with no diagnostics for 90 seconds and was stopped. No successful production build is claimed.
+- Browser routes: **manual in-app browser smoke check** visited `/dashboard`, `/volunteers`, `/events`, `/attendance`, `/meetings`, `/hours`, `/requests`, `/analytics`, `/audit-logs`, `/team`, `/settings` at a narrow viewport; route headings rendered and no document horizontal overflow was observed. This is not a Playwright test suite.
+- Command palette and account menu interactions: manually opened successfully after the context fixes.
+- Mobile navigation drawer/focus behavior: **outstanding**; the dev server became unavailable during the follow-up check, so no successful post-fix drawer assertion is claimed. An earlier direct mobile route load reported a hydration mismatch; verify on a clean dev session.
+- Automated browser tests: **not run**. Playwright 1.64 is installed, but its Chromium executable is missing; the repository has no test script/config/specs. No browser download was attempted.
+- Browser console: an earlier session reported a mobile sidebar hydration mismatch (outstanding, see above). The dashboard duplicate-key warning was fixed. Recheck console and errors in a clean browser session.
+- Bundle size, contrast, keyboard/focus, reduced-motion, and screen-reader audits: **not measured**; no bundle analyzer or accessibility test suite is configured.
+
+## Outstanding / dependencies
+
+- Re-run production build in an isolated output directory or when the pre-existing dev server is stopped.
+- Install/enable a managed Playwright browser and add repeatable route, interaction, and accessibility tests.
+- Verify mobile drawer hydration and behavior, focus restoration, reduced-motion behavior, and color contrast.
+- Keep backend authorization, RLS, private-data no-store behavior, and shared aggregate caching in the backend phase; this review did not implement backend work.
 
 ## Decisions pending / Assumptions recorded
 

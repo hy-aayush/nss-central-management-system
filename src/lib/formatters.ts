@@ -3,65 +3,6 @@
  * Matches docs/SRS.md timezone requirements (Asia/Kolkata).
  */
 
-const IST_TIMEZONE = "Asia/Kolkata";
-
-/**
- * Format an ISO timestamp to human-readable IST date (e.g. "15 Oct 2026").
- */
-export function formatDateIST(isoString: string): string {
-  try {
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return "—";
-    return new Intl.DateTimeFormat("en-IN", {
-      timeZone: IST_TIMEZONE,
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }).format(date);
-  } catch {
-    return "—";
-  }
-}
-
-/**
- * Format an ISO timestamp to IST date with time (e.g. "15 Oct 2026, 04:30 PM").
- */
-export function formatDateTimeIST(isoString: string): string {
-  try {
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return "—";
-    return new Intl.DateTimeFormat("en-IN", {
-      timeZone: IST_TIMEZONE,
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    }).format(date);
-  } catch {
-    return "—";
-  }
-}
-
-/**
- * Format an ISO timestamp to IST time only (e.g. "04:30 PM").
- */
-export function formatTimeIST(isoString: string): string {
-  try {
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return "—";
-    return new Intl.DateTimeFormat("en-IN", {
-      timeZone: IST_TIMEZONE,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    }).format(date);
-  } catch {
-    return "—";
-  }
-}
-
 /**
  * Format hours with suffix (e.g. 4 -> "4 hrs", 1 -> "1 hr").
  */

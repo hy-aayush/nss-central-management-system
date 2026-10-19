@@ -39,7 +39,7 @@ export function Topbar() {
           <Breadcrumb>
             <BreadcrumbList>
               {breadcrumbs.map((crumb, idx) => (
-                <React.Fragment key={crumb.href}>
+                <React.Fragment key={`${crumb.label}-${crumb.href}`}>
                   {idx > 0 && <BreadcrumbSeparator />}
                   <BreadcrumbItem>
                     {crumb.isCurrent ? (

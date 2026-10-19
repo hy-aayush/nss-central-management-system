@@ -1,7 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Clock, RefreshCw } from "lucide-react";
+import { Clock } from "lucide-react";
 
 export default function HoursPage() {
   return (
@@ -17,12 +16,6 @@ export default function HoursPage() {
         }
         title="Service Hours &amp; Adjustments"
         description="Event hours approval, category defaults, tagged manual adjustments, legacy imports, and yearly calibration."
-        actions={
-          <Button variant="outline" size="sm">
-            <RefreshCw className="size-3.5 mr-1.5" />
-            Recompute Hours
-          </Button>
-        }
       />
 
       <Card className="border-dashed p-8 text-center bg-card">
@@ -32,6 +25,9 @@ export default function HoursPage() {
         <h3 className="text-headline-md font-semibold text-foreground">Hours Calibration &amp; Approval</h3>
         <p className="text-body-sm text-muted-foreground max-w-md mx-auto mt-1">
           Event category defaults, group mega-event hours, coordinator sign-offs, and volunteer yearly hour rollups.
+        </p>
+        <p className="text-label-sm text-muted-foreground max-w-md mx-auto mt-3">
+          Approval and recomputation controls are not implemented in this frontend-only prototype.
         </p>
       </Card>
     </div>

@@ -1,7 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CalendarCheck, Plus } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 
 export default function MeetingsPage() {
   return (
@@ -17,12 +16,6 @@ export default function MeetingsPage() {
         }
         title="Meetings &amp; Minutes"
         description="Project, central, and builders meetings with roll-call attendance and verified minutes of meeting (MOM)."
-        actions={
-          <Button size="sm">
-            <Plus className="size-3.5 mr-1.5" />
-            Schedule Meeting
-          </Button>
-        }
       />
 
       <Card className="border-dashed p-8 text-center bg-card">
@@ -32,6 +25,9 @@ export default function MeetingsPage() {
         <h3 className="text-headline-md font-semibold text-foreground">Tri-Partite Meetings Lifecycle</h3>
         <p className="text-body-sm text-muted-foreground max-w-md mx-auto mt-1">
           Project meetings, Central meetings, and Builders meetings with MOM recording and present-only attendance tracking.
+        </p>
+        <p className="text-label-sm text-muted-foreground max-w-md mx-auto mt-3">
+          Scheduling and attendance controls are not implemented in this frontend-only prototype.
         </p>
       </Card>
     </div>

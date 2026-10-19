@@ -79,4 +79,14 @@ Decision:
 Reason:
 Faithfully reflects actual institutional practices at KIIT, guarantees rigorous data privacy boundaries, enforces accountability in high-demand event attendance, prevents schema duplication, and establishes clean compliance with UN SDG frameworks.
 
+## D-015: Frontend Review Corrections and Client Route Reuse
+
+Decision:
+1. Keep this phase explicitly synthetic; replace identity-like coordinator fixtures with a conspicuously synthetic demo identity.
+2. Use the Next.js client router cache for dynamic page segments for 30 seconds, as specified by the SRS. Do not introduce shared server caching for private records; future server reads must follow the SRS authorization and cache boundaries.
+3. Present unimplemented meeting, hours, and request actions as unavailable prototype workflows rather than misleading no-op controls.
+
+Reason:
+Improves prototype privacy and honesty, reduces repeat client navigation work, and avoids caching sensitive records across users. The current UI reads local fixture modules and makes no Supabase calls, so this setting does not yet reduce database usage.
+
 

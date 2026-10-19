@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
@@ -91,7 +91,7 @@ function CentralEventForm() {
   });
 
   const { errors } = form.formState;
-  const values = form.getValues();
+  const values = useWatch({ control: form.control });
 
   const handleReview = () => {
     form.handleSubmit(
@@ -282,8 +282,7 @@ function CentralEventForm() {
               control={form.control}
               render={({ field }) => (
                 <div className="grid grid-cols-2 gap-3">
-                  <div
-                    onClick={() => field.onChange("FCFS")}
+                  <label
                     className={`cursor-pointer p-3.5 rounded-xl border transition-all ${
                       field.value === "FCFS"
                         ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary"
@@ -291,16 +290,21 @@ function CentralEventForm() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <input type="radio" checked={field.value === "FCFS"} onChange={() => {}} className="text-primary" />
+                      <input
+                        type="radio"
+                        name={field.name}
+                        checked={field.value === "FCFS"}
+                        onChange={() => field.onChange("FCFS")}
+                        className="text-primary"
+                      />
                       <span className="font-semibold text-body-sm">FCFS Slot-Capped</span>
                     </div>
                     <p className="text-label-xs text-muted-foreground mt-1">
                       Project PRs register quotas from external FCFS windows.
                     </p>
-                  </div>
+                  </label>
 
-                  <div
-                    onClick={() => field.onChange("OPEN_TO_ALL")}
+                  <label
                     className={`cursor-pointer p-3.5 rounded-xl border transition-all ${
                       field.value === "OPEN_TO_ALL"
                         ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary"
@@ -308,19 +312,25 @@ function CentralEventForm() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <input type="radio" checked={field.value === "OPEN_TO_ALL"} onChange={() => {}} className="text-primary" />
+                      <input
+                        type="radio"
+                        name={field.name}
+                        checked={field.value === "OPEN_TO_ALL"}
+                        onChange={() => field.onChange("OPEN_TO_ALL")}
+                        className="text-primary"
+                      />
                       <span className="font-semibold text-body-sm">Open to All Volunteers</span>
                     </div>
                     <p className="text-label-xs text-muted-foreground mt-1">
                       Any active volunteer can attend. Roll call done via general lookup.
                     </p>
-                  </div>
+                  </label>
                 </div>
               )}
             />
           </div>
 
-          {form.watch("participation") === "FCFS" && (
+          {values.participation === "FCFS" && (
             <div className="space-y-4 pt-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -472,7 +482,7 @@ function ProjectEventForm() {
   });
 
   const { errors } = form.formState;
-  const values = form.getValues();
+  const values = useWatch({ control: form.control });
 
   const handleReview = () => {
     form.handleSubmit(
@@ -743,14 +753,14 @@ function ProjectEventForm() {
               </Label>
             </div>
 
-            {form.watch("hasCollaboration") && (
+            {values.hasCollaboration && (
               <div className="p-3 bg-muted/40 rounded-xl space-y-2">
                 <p className="text-label-xs text-muted-foreground">
                   Select collaborating wings (host PR approval required):
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {PROJECT_NAMES.filter((p) => p !== form.watch("hostProject")).map((proj) => {
-                    const current = form.watch("collabProjects") || [];
+                  {PROJECT_NAMES.filter((p) => p !== values.hostProject).map((proj) => {
+                    const current = values.collabProjects || [];
                     const isSelected = current.includes(proj);
                     return (
                       <button

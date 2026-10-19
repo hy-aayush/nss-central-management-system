@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ShieldCheck, ShieldAlert, AlertTriangle } from "lucide-react";
@@ -70,7 +70,8 @@ export function RoleAssignmentDialog({
     },
   });
 
-  const selectedRole = form.watch("role");
+  const formValues = useWatch({ control: form.control });
+  const selectedRole = formValues.role;
 
   const handleFormSubmit = (data: RoleAssignmentFormValues) => {
     // If sensitive change (assigning Coordinator or Tech Mentor), require two-man confirmation alert
@@ -140,7 +141,7 @@ export function RoleAssignmentDialog({
             </DialogTitle>
           </div>
           <DialogDescription className="text-body-sm text-muted-foreground">
-            Role-gated authorization for NSS office staff per docs/PERMISSIONS.md.
+            Prototype role-assignment flow. Access is not granted until the server enforces the roster and permission checks in docs/PERMISSIONS.md.
           </DialogDescription>
         </DialogHeader>
 
@@ -170,7 +171,7 @@ export function RoleAssignmentDialog({
               Operational Post Tier (Role)
             </Label>
             <Select
-              value={form.watch("role")}
+              value={selectedRole}
               onValueChange={(val) => form.setValue("role", val as UserRole)}
             >
               <SelectTrigger id="role" className="h-9 bg-background border-border text-label-sm">
@@ -192,7 +193,7 @@ export function RoleAssignmentDialog({
                 Tech Team Rank
               </Label>
               <Select
-                value={form.watch("techKind") || "MEMBER"}
+                value={formValues.techKind || "MEMBER"}
                 onValueChange={(val) => form.setValue("techKind", val as TechKind)}
               >
                 <SelectTrigger id="techKind" className="h-8.5 bg-background border-border text-label-xs">
@@ -212,7 +213,7 @@ export function RoleAssignmentDialog({
                 Designated Project Wing (Exactly 2 PRs per Wing)
               </Label>
               <Select
-                value={form.watch("projectScope") || "Dhara"}
+                value={formValues.projectScope || "Dhara"}
                 onValueChange={(val) => {
                   if (val) form.setValue("projectScope", val);
                 }}
@@ -237,7 +238,7 @@ export function RoleAssignmentDialog({
                 Builder Responsibility
               </Label>
               <Select
-                value={form.watch("builderKind") || "POC"}
+                value={formValues.builderKind || "POC"}
                 onValueChange={(val) => form.setValue("builderKind", val as BuilderKind)}
               >
                 <SelectTrigger id="builderKind" className="h-8.5 bg-background border-border text-label-xs">

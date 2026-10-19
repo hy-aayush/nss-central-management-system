@@ -1,7 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Inbox, Plus } from "lucide-react";
+import { Inbox } from "lucide-react";
 
 export default function RequestsPage() {
   return (
@@ -17,12 +16,6 @@ export default function RequestsPage() {
         }
         title="Requests &amp; Approvals"
         description="Two-man rule workflows for volunteer suspension, archival, and permanent deletion with coordinator sign-off."
-        actions={
-          <Button size="sm">
-            <Plus className="size-3.5 mr-1.5" />
-            Raise Request
-          </Button>
-        }
       />
 
       <Card className="border-dashed p-8 text-center bg-card">
@@ -32,6 +25,9 @@ export default function RequestsPage() {
         <h3 className="text-headline-md font-semibold text-foreground">Two-Man Rule Request Inbox</h3>
         <p className="text-body-sm text-muted-foreground max-w-md mx-auto mt-1">
           Tech team initiates requests with written justification; Coordinators approve or reject with permanent audit trails.
+        </p>
+        <p className="text-label-sm text-muted-foreground max-w-md mx-auto mt-3">
+          Request creation and approval controls are not implemented in this frontend-only prototype.
         </p>
       </Card>
     </div>
