@@ -89,4 +89,63 @@ Decision:
 Reason:
 Improves prototype privacy and honesty, reduces repeat client navigation work, and avoids caching sensitive records across users. The current UI reads local fixture modules and makes no Supabase calls, so this setting does not yet reduce database usage.
 
+## D-016: Authoritative SRS and database-foundation audit baseline (19 Oct 2026)
+
+Decision: `docs/SRS.md` is authoritative for all future implementation. Existing frontend-era planning documents and prototype decisions remain historical context only where they agree with the SRS; they must not supply database, authorisation, or operational requirements when they conflict with it.
+
+Reason: The pre-database audit found material contradictions in `docs/DATABASE.md`, `docs/PERMISSIONS.md`, `docs/AI_WORKFLOW.md`, and prior progress reporting. In particular, no current Drizzle/Supabase schema, migration, auth, RLS, audit, or environment implementation exists. The next approved work must reconcile the documentation before generating migrations, following SRS Section 22's dependency order.
+
+
+
+## D-017: Documentation Reconciliation & Backend Foundation Approval
+
+**Decision (19 Oct 2026):**  
+
+The repository is **not** ready for the SRS Section 8 database‑foundation phase until the following items are resolved and committed:
+
+1. **Create the missing mandatory documents**  
+   - `docs/AUDIT_POLICY.md` – full audit‑log retention, access, and sanitisation policy.  
+   - `docs/RUNBOOK.md` – emergency‑access break‑glass procedures, restore‑access SQL, and backup‑restore workflow.  
+   - `docs/UI_SPEC.md` (or rename the existing `UI_SPECS.md`) – a single source of truth for route names, page titles, and component layout that matches the SRS.
+
+2. **Resolve the UI‑spec filename conflict** – choose either `UI_SPEC.md` (preferred) or keep `UI_SPECS.md`. The chosen filename must be referenced consistently in all documentation, routing comments, and future PR templates.
+
+3. **Clear the stale Next.js lock** – run `rm -f .next/lock` (or the Windows equivalent) after ensuring no dev server is running, then re‑run `npm run build` to verify a clean production build. Record the successful build output in this decision log.
+
+4. **Approve the exact SRS‑required package set** – add the following dependencies (and their typings) to `package.json`:
+   - `drizzle-orm`, `drizzle-kit`  
+   - `postgres` (or `postgres-js`)  
+   - `@supabase/ssr`, `@supabase/auth-helpers-nextjs`  
+   - `vitest`, `@testing-library/react`, `@testing-library/jest-dom`  
+   - `@playwright/test`  
+   - (Optional but recommended) `dotenv-cli` for environment validation.
+   After adding, run `npm install` and verify that `npm ls --depth=0` shows **no** extraneous packages.
+
+5. **Add an `.env.example`** that lists all required variables (`DATABASE_URL`, `ADMIN_DATABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_ORIGIN`, `CRON_SECRET`, `AGE_PUBLIC_KEY`) with placeholder values and a short description.
+
+6. **Record the approved next‑step order** in this decision file (see D‑017‑1 through D‑017‑6). Future work must follow this exact order; any deviation requires a new decision entry.
+
+7. **Rationale:**  
+The audit (see `docs/PROGRESS.md`) uncovered critical gaps (missing docs, stale build lock, absent database tooling, and inconsistent route naming). Proceeding without addressing these would break the SRS‑defined build order, introduce security/privacy regressions, and hinder reproducible CI/CD pipelines.
+
+**Impact:**  
+- Guarantees that the first database migration is generated from the authoritative SRS schema.  
+- Provides a documented emergency‑access workflow required for production.  
+- Aligns UI routing with the SRS, simplifying later refactors.  
+- Clears the path for CI/CD integration and reliable production builds.
+
+**Status:** Pending approval by the Coordinator and Tech Mentor leads. Once approved, the items above will be implemented as a single change set (PR # XXX) before any backend code is added.
+
+---
+
+## D-018: Future Backend‑Foundation Milestones (post‑approval)
+
+* After D‑017 is approved and merged, the next PR will:
+  - Add the Drizzle schema (`src/db/schema/*.ts`) matching SRS Section 8.  
+  - Generate the first migration with `drizzle-kit`.  
+  - Add the Supabase auth guard (`src/lib/auth/*`) and `ActorContext` builder.  
+  - Introduce `runAudited()` and `checkSoftRule()` utilities.  
+  - Wire the first feature (Volunteer roster) to the DB.  
+
+* Subsequent PRs will follow the ordered feature roadmap defined in `docs/PROGRESS.md` (volunteers → requests → events → meetings → hours → analytics → audit → settings → emergency → cron/backup → CI).
 

@@ -1,153 +1,121 @@
-# Project Progress
+# Database Foundation Readiness Audit
 
-## Current phase
+**Audit date:** 19 Oct 2026
+**Scope:** Read-only audit before the SRS Section 8 database-foundation phase. No application code, dependencies, lockfile, database, migrations, or configuration were changed. The current `docs/SRS.md` is the authority.
 
-Part 1: Frontend foundation
+## Verdict
 
-## Completed
+**Not ready to begin database implementation until the documentation is reconciled, missing required files are added, and a clean production build succeeds.**
 
-- [x] Next.js project initialized (Next.js 16.4.0 Turbopack)
-- [x] Git repository initialized
-- [x] Dependencies inspected
-- [x] shadcn/ui configured
-- [x] Design tokens and theme established
-- [x] Application shell completed
-- [x] Configuration foundations created in `src/config/`:
-  - `identity.ts`: Institutional domain `kiit.ac.in`, `ROLL_NUMBER_PATTERN` (`/^[0-9]{6,10}$/`), `emailFromRoll`, `rollFromEmail`, `batchYearHintFromRoll`.
-  - `app.ts`: Timezone `Asia/Kolkata`, `LOCALE = "en-IN"`, academic year start month (July), limits, gender constants, project names.
-  - `limits.ts`: Default `LIMITS` and `STRICT_OVERRIDES` per SRS Appendix C.
-- [x] Time & date library created in `src/lib/time.ts` for IST formatting, academic year calculation, start-of-next-day IST lock calculation, and attendance window evaluation.
-- [x] Strongly typed domain models conforming strictly to updated `docs/SRS.md` Section 10:
-  - `src/types/auth.ts`: `UserRole`, `TechKind`, `BuilderKind`, `AccessStatus`, `PostKind`, `POST_TIER`, `OfficeAssignment`, `RosterEntry`, `EmergencyPack`, `EmergencyScope`, `ActorContext`, `StaffMember`.
-  - `src/types/project.ts`: `ProjectId` (1..9), `ProjectName`, `PROJECT_ID_BY_NAME`, `PROJECT_NAME_BY_ID`, `CREATIVE_DOMAINS` (4 specialisations), `Domain`, `ProjectRepresentative`, `Project`, `DomainSummary`.
-  - `src/types/volunteer.ts`: `VolunteerBasic` (masked to roll, name, project), `VolunteerSummary`, `VolunteerDetail`, `VolunteerStats`, `VolunteerFilterState`, `RedFlag`.
-  - `src/types/event.ts`: `EventType`, `ParticipationMode`, `StoredEventStatus`, `EventStatus` (with derived `ONGOING`), `AttendanceStatus`, `ParticipantSource`, `CollabApproval`, `EventProjectSlot`, `EventRecord` (integer `id`), `MeetingType` (`"PROJECT" | "CENTRAL" | "BUILDERS"`), `Meeting` (integer `id`, date string `YYYY-MM-DD`, time `HH:mm`), `AttendanceCorrection`, `AttendanceSummary`.
-  - `src/types/hours.ts`: `EventCategory`, `EventGroup`, `HoursAdjustment`, `VolunteerYearHours`.
-  - `src/types/requests.ts`: `RequestKind`, `RequestStatus`, `ApprovalRequest`, `ImportPreview`.
-  - `src/types/audit.ts`: `AuditAction`, `AuditEntityType`, `AuditOutcome`, `AuditLogEntry`, `AuditFilterState`.
-  - `src/types/analytics.ts`: `DashboardSummary`, `VolunteerMetrics`, `HoursMetrics`, `EventMetrics`, `MeetingMetrics`, `ProjectAnalyticsSummary`, `DomainAnalyticsSummary`, `MonthlyTrendPoint`, `DataQualityIssue`.
-- [x] Synthetic mock data (`src/lib/mock-data/`):
-  - `volunteers.ts`: 15 complete synthetic volunteer records conforming to `VolunteerDetail`.
-  - `projects.ts`: 9 fixed projects (IDs 1..9) mapped to SDGs, 4 creative domains with leads.
-  - `events.ts`: 9 events with integer IDs, collaboration slots, and 3 tri-partite meetings with MOM.
-  - `staff.ts`: Staff roster with `techKind` and `builderKind`, conforming to `StaffMember` and `RosterEntry`.
-  - `attendance.ts`: Event and meeting attendance records and turnout summaries with integer entity IDs.
-  - `audit-logs.ts`: Immutable audit entries conforming to `AuditLogEntry` with `at`, `actorRoll`, and `summary`.
-  - `analytics.ts`: Complete dashboard metrics with gender breakdown, meeting metrics, and data quality issues.
-  - `index.ts`: Typed data access layer with numeric ID and string roll number query helpers.
-- [x] Route & navigation inventory:
-  - Added routes: `/meetings`, `/hours`, `/requests`, and `/audit` matching SRS Section 18.5.
-  - Updated `MAIN_NAV_ITEMS` in `src/lib/navigation.ts` to include `Meetings`, `Hours`, `Requests`, and `Audit Logs`.
-- [x] Documentation alignment:
-  - `docs/DATABASE.md`: Exact PostgreSQL DDL matching Section 8 (all 15 tables, enums, unlogged tables, RLS).
-  - `docs/PERMISSIONS.md`: Role & permissions specification matching Sections 4, 5, 6 (ActorContext, tiers, 2-man rule, emergency packs, soft rules S-01 to S-09, field-level masking).
-- [x] Generic shared UI components:
-  - `StatusBadge`, `StatCard`, `EmptyState`, `LoadingState`, `ErrorState`, `ConfirmDialog`, `DataTable` (TanStack Table v9).
-- [x] Operational Dashboard completed (`src/app/(office)/dashboard/page.tsx`).
-- [x] Volunteer Directory & Detail modules completed:
-  - `src/features/volunteers/volunteer-stats-bar.tsx`: Active volunteer totals, 2nd/3rd/4th year distribution, domain specialists, average turnout.
-  - `src/features/volunteers/volunteer-table.tsx`: Search across name, roll number, email; filter by project, domain, year, status; shareable URL query parameters (`?search=...&project=...&page=...`); desktop sortable table and mobile card alternative.
-  - `src/app/(office)/volunteers/page.tsx`: Server Component with `PageHeader`, KPI stats bar, and `<React.Suspense>` streaming for client table.
-  - `src/features/volunteers/volunteer-profile-header.tsx`: Profile banner with initials avatar, roll number, project pill, office bearer role, masked contact credentials, blood group, city/state, and hostel.
-  - `src/features/volunteers/volunteer-detail-cards.tsx`: Approved hours, event turnout, meeting attendance, FCFS reliability with penalty warning (SRS Section 8.3), and confidential coordinator note with remaining edit budget (SRS S-06).
-  - `src/features/volunteers/volunteer-history-tabs.tsx`: 4 switchable tabs (Event Participation History, Meeting Attendance, Service Hours Ledger, and Security/Audit Trail).
-  - `src/app/(office)/volunteers/[id]/page.tsx`: Server Component with `generateStaticParams()` for all 15 synthetic roll numbers, lookup, and not-found empty state.
-- [x] Project Directory & Detail modules completed:
-  - `src/features/projects/project-stats-header.tsx`: 9 designated wings, deployed volunteer headcounts, total service hours, community drives count.
-  - `src/features/projects/project-grid.tsx`: All 9 projects mapped to SDGs with description, PR leads, hours, turnout rates, and search filtering.
-  - `src/features/projects/domain-roster-section.tsx`: 4 specialized creative domains (Photography, Video Editing, Graphic Designing, Content Writing) with leads and roster links.
-  - `src/app/(office)/projects/page.tsx`: Assembled projects directory with statistics, grid, and domain wings.
-  - `src/features/projects/project-detail-hero.tsx`: Wing header with SDG badges, PR leadership cards, hours, drives, and turnout rates.
-  - `src/features/projects/project-detail-tabs.tsx`: 4 switchable tabs (Assigned Volunteers table, Outreach Drives list, Wing Meetings, and Creative Domain & Cohort Analytics).
-  - `src/app/(office)/projects/[slug]/page.tsx`: Server Component with `generateStaticParams()` for all 9 project slugs, lookup, and not-found empty state.
-- [x] Event Management & Attendance modules completed:
-  - `src/features/events/event-schemas.ts`: Zod validation schemas for Central and Project events, enforcing IST date bounds, start-before-end, FCFS opening before locking, lock-before-start (SRS §11.3), and wing slot quota consistency.
-  - `src/features/events/events-stats-header.tsx`: KPI cards for Total Events, Central Drives, Project Drives, Upcoming/Live sessions, and Average Turnout Rate.
-  - `src/features/events/events-table.tsx`: Searchable, filterable (Type, Status, Wing), sortable (Date, Title) event roster with responsive mobile cards and TanStack pagination.
-  - `src/features/events/event-form.tsx`: Separate typed `CentralEventForm` and `ProjectEventForm` with multi-wing collaboration rules (max 2 collaborating wings per S-09), year-wise caps, and two-step Review → Confirm dialogs with explicit simulation disclaimers.
-  - `src/app/(office)/events/central/new/page.tsx` & `src/app/(office)/events/project/new/page.tsx`: Dedicated creation routes.
-  - `src/app/(office)/events/page.tsx`: Server Component with metric cards, table view, and `<React.Suspense>` streaming.
-  - `src/features/events/event-detail-hero.tsx`: Header banner with date, venue, hours credit, lock status, and confirmation dialogs for early lock and cancellation.
-  - `src/features/events/event-detail-tabs.tsx`: 4 switchable tabs (Enrolled Participants Roster, Project Wing Slots allocation, Turnout Summary with visual meters, and Governance & Audit Trail).
-  - `src/app/(office)/events/[id]/page.tsx`: Prerendered via `generateStaticParams()` across all mock events.
-  - `src/features/attendance/attendance-schemas.ts`: Audited correction schema requiring minimum 10-character reason justification (SRS §11.7) and bulk status marking.
-  - `src/features/attendance/attendance-stats-bar.tsx`: Real-time session KPI bar (Total Roster, Present, Absent, Excused, Turnout %, Lock status badge).
-  - `src/features/attendance/attendance-event-selector.tsx`: Session switcher dropdown synchronized with URL query params (`?eventId=...`).
-  - `src/features/attendance/attendance-roster-table.tsx`: Interactive roll-call table with P (Present), A (Absent), E (Excused) toggles, print sheet contingency, quick filters, and intercepting locked sessions into the audited correction modal.
-  - `src/features/attendance/attendance-correction-dialog.tsx`: Audited correction modal with character count counter, reason validation, and old/new state badges.
-  - `src/features/attendance/attendance-history-panel.tsx`: Immutable ledger of past corrections with timestamps, old/new statuses, and officer IDs.
-  - `src/app/(office)/attendance/page.tsx`: Attendance register route with streaming Suspense boundary.
-- [x] Institutional Analytics & Reporting module completed (`src/app/(office)/analytics/page.tsx`):
-  - `src/features/analytics/analytics-definitions.tsx`: Expandable definitions reference explaining Turnout %, Approved Service Hours, Active Standing, FCFS Reliability Index, Domain Engagement, and IST timestamp convention.
-  - `src/features/analytics/analytics-kpi-header.tsx`: Summary metric cards for Active Volunteers (year-wise breakdown), Approved Service Hours, Average Turnout Rate (90.4%), Completed Drives (138), and gender distribution.
-  - `src/features/analytics/analytics-project-comparison.tsx`: Performance and turnout matrix across all 9 designated project wings with search, sortable metrics, turnout progress meters, and PR leadership.
-  - `src/features/analytics/analytics-monthly-trends.tsx`: Month-by-month historical trend breakdown (May - Oct 2026) with community drive counts, attendance rates, and service hours delivered.
-  - `src/features/analytics/analytics-domain-summary.tsx`: Dedicated analysis of the 4 creative domains (Photography, Video Editing, Graphic Designing, Content Writing) with cross-domain overlap matrix and gender ratios.
-  - `src/features/analytics/analytics-view.tsx`: Client coordinator with reporting time horizon selector (Academic Year 2026-27, Q1, Q2, Last 30 Days), tab switcher, and bounded CSV data export trigger.
-- [x] Security & Audit Ledger module completed (`src/app/(office)/audit-logs/page.tsx` & `/audit`):
-  - `src/features/audit/audit-stats-header.tsx`: Immutable ledger metric cards for Total Ledger Records (13), Emergency Actions (2), Security Blocks / Denied Access Attempts (1), and Operating Officers (6).
-  - `src/features/audit/audit-table.tsx`: Searchable and filterable ledger (by Actor/Search, Action, Entity Type, Project Wing, Outcome, and Emergency filter toggle) with responsive desktop table and mobile layout.
-  - `src/features/audit/audit-detail-dialog.tsx`: Detail modal with JSON before/after state diff, correlation ID, actor role tier, origin IP, and mandatory policy justification reason.
-  - Distinguished visual styling for emergency actions (`EMERGENCY_ACCESS_GRANT`, `EMERGENCY_ACCESS_REVOKE`) with amber badges and clock indicators.
-- [x] Staff Directory & Team Management module completed (`src/app/(office)/team/page.tsx`):
-  - `src/features/team/team-stats-header.tsx`: Metric cards reflecting post tiers: Tier 5 Coordinators, Tiers 4/3 Tech Team, Tier 2 Project Representatives, and Tiers 1-2 Builders & POCs.
-  - `src/features/team/team-roster-table.tsx`: Filterable staff directory with search by name/roll/email, role tier filters, active/suspended status filter, role edit trigger, and sensitive suspension/reinstatement confirmation dialogs.
-  - `src/features/team/role-assignment-dialog.tsx`: React Hook Form + Zod schema modal allowing role assignments, project scope assignment, tech/builder sub-ranks, reason justification, and two-step confirmation alert for Tier 5/4 escalations.
-  - `src/features/team/team-manager.tsx`: Client state manager coordinating synthetic roster updates and dialog interactions.
-- [x] Operational Settings & System Overview module completed (`src/app/(office)/settings/page.tsx`):
-  - `src/features/settings/settings-system-overview.tsx`: Supabase Free-Tier Operational Guards (500MB DB quota status, Auth user quotas, and unlogged tables for fast FCFS queues).
-  - `src/features/settings/settings-guardrails-form.tsx`: Soft-rules configuration form for S-01 to S-09 guardrails (FCFS window duration, max collaborators, MOM window, edit budgets, absence thresholds, domain tenure hours).
-  - `src/features/settings/settings-emergency-card.tsx`: Global FCFS circuit breaker toggle with confirmation dialog, emergency pack overview, and prominent simulation notice.
-  - `src/features/settings/settings-view.tsx`: Tabbed coordinator for System Status, Soft Rules, and Emergency Circuit Breakers.
-- [ ] Production build verification pending: attempts during this review did not complete; see review results below.
+The repository is a useful, synthetic-data frontend scaffold, but it has no Drizzle/Supabase/database implementation, migration system, environment contract, CI, or automated test setup. Several older documents claim SRS conformance while materially contradicting the current SRS. The smallest safe correction is to treat the existing UI and DTOs as a prototype, retire or reconcile the stale implementation-spec documents before generating the first migration, and implement the SRS build order from the foundation upward.
 
-## Current task
+## Verified completed work
 
-Independent frontend review against `docs/SRS.md`, `docs/UI_SPECS.md`, `docs/PERMISSIONS.md`, and `docs/AI_WORKFLOW.md` (2026-10-19). The repository's UI spec file is named `UI_SPECS.md` (plural); `UI_SPEC.md` does not exist.
+The following is verified by files and/or commands; it is not a claim of production readiness.
 
-## Review findings and changes
+- [x] Next.js App Router scaffold: Next `16.4.0`, React `19.3.0`, TypeScript strict, Tailwind CSS v4, ESLint flat config, and npm lockfile are present.
+- [x] Next 16 Cache Components and partial prefetching are enabled in `next.config.ts`; the dynamic router stale time is configured to 30 seconds.
+- [x] shadcn configuration exists in `components.json`; reusable controls live in `src/components/ui/` and use Base UI plus Lucide rather than Radix packages.
+- [x] Responsive office-shell, auth prototype pages, and feature-page prototypes exist under `src/app/(office)/` and `src/features/`.
+- [x] SRS-aligned baseline configuration exists in `src/config/identity.ts`, `src/config/app.ts`, and `src/config/limits.ts`.
+- [x] `src/lib/time.ts` centralises basic IST formatting, academic-year calculation, and next-IST-day locking helpers.
+- [x] SRS-shaped DTO/type files exist under `src/types/`, including `ActorContext`, permissions, volunteers, events, meetings, hours, requests, audit, and analytics shapes. These are compile-time models only; they are not backed by the database.
+- [x] Synthetic fixture accessors exist in `src/lib/mock-data/`; routes use them rather than a database.
+- [x] `npx tsc --noEmit` completed successfully on 19 Oct 2026.
+- [x] `npm run lint` completed successfully on 19 Oct 2026 with no output after ESLint started.
 
-- **Critical — none identified** in this frontend-only review.
-- **High — production authorization is not implemented.** Role labels, navigation and confirmations are prototype UI only; as required by the workflow and permissions spec, they provide no security boundary. Keep this mock-data phase off production until server authentication, per-request authorization, and RLS are implemented and tested.
-- **Medium — fixed:** event form participation choices were not proper keyboard-operable controls, live review state could be stale, and React Hook Form `watch()` produced React Compiler lint warnings. Choices now use controlled radio inputs and watched values; attendance and role dialogs use focused subscriptions.
-- **Medium — fixed:** the command dialog lacked its cmdk context and sidebar menu label lacked its required group, breaking those interactions; added the missing wrappers. Dashboard breadcrumb keys are now unique.
-- **Low — fixed:** replaced identifiable-looking coordinator mock identity with explicitly synthetic data, removed duplicate date/time formatter implementations, and replaced nonfunctional CTAs on unfinished Meetings / Hours / Requests screens with honest prototype status text.
-- **Low — caching:** enabled the 30-second Next.js client router stale time specified in the SRS. This is browser-side route segment reuse, not shared caching of private data. Current feature pages read local synthetic fixtures and make no Supabase calls, so no database request reduction is measurable yet. Future private-data routes must remain uncached in shared server caches and be refreshed after mutations.
+## Incomplete work
 
-## Latest validation (2026-10-19)
+### Database, platform, and security foundation (SRS build step 1)
 
-- `npx tsc --noEmit`: **PASSED** after frontend fixes (exit 0).
-- `npm run lint`: **PASSED** after frontend fixes (exit 0, no warnings).
-- `npm run build`: **NOT VERIFIED**. Three attempts did not finish; the latest remained at “Creating an optimized production build” with no diagnostics for 90 seconds and was stopped. No successful production build is claimed.
-- Browser routes: **manual in-app browser smoke check** visited `/dashboard`, `/volunteers`, `/events`, `/attendance`, `/meetings`, `/hours`, `/requests`, `/analytics`, `/audit-logs`, `/team`, `/settings` at a narrow viewport; route headings rendered and no document horizontal overflow was observed. This is not a Playwright test suite.
-- Command palette and account menu interactions: manually opened successfully after the context fixes.
-- Mobile navigation drawer/focus behavior: **outstanding**; the dev server became unavailable during the follow-up check, so no successful post-fix drawer assertion is claimed. An earlier direct mobile route load reported a hydration mismatch; verify on a clean dev session.
-- Automated browser tests: **not run**. Playwright 1.64 is installed, but its Chromium executable is missing; the repository has no test script/config/specs. No browser download was attempted.
-- Browser console: an earlier session reported a mobile sidebar hydration mismatch (outstanding, see above). The dashboard duplicate-key warning was fixed. Recheck console and errors in a clean browser session.
-- Bundle size, contrast, keyboard/focus, reduced-motion, and screen-reader audits: **not measured**; no bundle analyzer or accessibility test suite is configured.
+- [ ] Install and configure the SRS-required database/auth packages: Drizzle ORM + kit, `postgres`, `@supabase/ssr` and the compatible Supabase client.
+- [ ] Add the DB client, complete `src/db/schema/*.ts`, generated committed migrations, and the manual security/functions/cron SQL required by SRS Sections 8 and 19.
+- [ ] Implement the exact Section 8 schema, seed data, `SYSTEM` row, database roles, RLS, role timeouts, audit purge, permanent-delete function, and all required indexes/constraints. No schema or migration currently exists.
+- [ ] Add the SRS environment-variable contract and validation (`DATABASE_URL`, `ADMIN_DATABASE_URL`, Supabase public values, `CRON_SECRET`, `APP_ORIGIN`, `AGE_PUBLIC_KEY`) without exposing server secrets. There is no `.env.example` or environment validation today.
+- [ ] Add `seed/staff.template.csv`, ignored `seed/local/`, `scripts/seed.ts`, synthetic-load/data scripts, and the break-glass SQL/runbook material required by Appendix A and Section 19.
+- [ ] Provision and record separate staging and production Supabase projects; this cannot be verified from the repository.
 
-## Outstanding / dependencies
+### Application foundation after the database (SRS build step 2)
 
-- Re-run production build in an isolated output directory or when the pre-existing dev server is stopped.
-- Install/enable a managed Playwright browser and add repeatable route, interaction, and accessibility tests.
-- Verify mobile drawer hydration and behavior, focus restoration, reduced-motion behavior, and color contrast.
-- Keep backend authorization, RLS, private-data no-store behavior, and shared aggregate caching in the backend phase; this review did not implement backend work.
+- [ ] Supabase Google authentication, callback, server-side local JWT claim verification, access gate, and sign-out handling.
+- [ ] Per-request server-built `ActorContext`, permission union, tiers, emergency packs, SQL-level scope enforcement, and `NOT_FOUND` handling for out-of-scope records.
+- [ ] `runAudited()`, no-op detection, idempotency, Postgres-backed limits/cooldowns, and feature/maintenance/read-only gates.
+- [ ] Replace mock-data routes and client-only simulated mutations with services/repositories that follow `app -> feature service -> repo -> db`.
 
-## Decisions pending / Assumptions recorded
+### Product features and hardening (SRS build steps 3–8)
 
-- Staff-only field masking: Phone number and blood group are only accessible to coordinators and internal office staff; student views are completely masked per Section 6.
-- FCFS Reliability lockout: 3 missed FCFS events triggers an automated 30-day lockout; UI surfaces warning at >= 2 missed slots.
-- Coordinator Notes edit budget: Limited to 3 edits per semester per volunteer (soft rule S-06) with remaining edits tracked in the UI.
-- Attendance Locked State: When an event attendance session is locked, manual roll-call toggling is prevented and routed to the Audited Correction Flow requiring >= 10-char justification (SRS §11.7).
-- Multi-Wing Collaboration Cap: Project events strictly limit collaborating wings to at most 2 (max 3 total including host) per soft rule S-09.
-- Operational Settings & Circuit Breakers: Clear UI disclaimers state that kill switches, quota checks, and emergency mode are simulated frontend prototypes in Part 1 and require the Part 2 backend and RLS policies to be active.
-- Role Escalations: Tier 4/5 role assignments require explicit justification and secondary confirmation, mirroring the approved institutional 2-man rule.
-- Operational Settings & Circuit Breakers: Clear UI disclaimers state that kill switches, quota checks, and emergency mode are simulated frontend prototypes in Part 1 and require the Part 2 backend and RLS policies to be active.
-- Role Escalations: Tier 4/5 role assignments require explicit justification and secondary confirmation, mirroring the approved institutional 2-man rule.
+- [ ] Implement and test volunteers, roster, requests, events/FCFS/attendance, meetings/MOM, hours/imports, analytics, exports, audit viewer, settings, emergency access, caching, cron/backup, and acceptance/load tests in the prescribed dependency order.
+- [ ] Add Vitest + Testing Library, Playwright configuration/specs, SQL constraint tests, bundle-budget checks, and CI. `package.json` has no `test`, typecheck, format, migration, seed, or CI scripts, and no test/config/workflow files were found.
+- [ ] Write the missing SRS-required `docs/AUDIT_POLICY.md` and `docs/RUNBOOK.md`; update `README.md` from the create-next-app template once the setup is defined.
 
-## Next task
+## Existing technical debt and failures
 
-Proceed to Meetings management (`/meetings`), Service Hours approvals & adjustments (`/hours`), and Approval Requests / Emergency Packs (`/requests`).
+1. **No production boundary exists.** There is no database client, Drizzle schema/config/migrations, Supabase package/config, route handler, Server Action, auth gate, RLS, audit transaction, or environment‑variable contract. `src/lib/mock-data/` supplies every inspected feature route. `src/lib/permissions.ts` is a client‑only helper that does **not** enforce server‑side permissions.
+2. **The folder architecture does not yet meet SRS Section 16.1.** It has `app`, `config`, `features`, `lib`, `types`, and UI components, but lacks `db`, feature `service.ts`/`repo.ts`/DB schemas, `lib/auth`, `lib/authz`, `lib/audit`, `lib/limits`, `lib/cache`, `lib/platform`, `scripts`, `seed`, and `drizzle`.
+3. **Routing is prototype-oriented and differs from the SRS inventory.** The application uses `/dashboard` rather than `/overview`, `/access-denied` rather than `/denied`, has both `/audit` and `/audit-logs`, and uses mock-data `generateStaticParams()` for private volunteer/event/project routes. These routes must become request-authorised and private before release; do not preserve static generation merely because it exists.
+4. **The production build is unverified.** The first `npm run build` reached the “Creating an optimized production build …” stage but never terminated cleanly. A second attempt reported “Another next build process is already running”; the stale `.next/lock` file persisted. This indicates a lock‑file leftover that must be cleared before a successful build can be confirmed.
+5. **Dependencies do not yet match the SRS foundation.** Required Drizzle, `postgres`‑js, Supabase SSR/client, Vitest, and Testing Library packages are absent. `npm ls --depth=0` also reports three extraneous packages (`@img/sharp-wasm32`, `@napi-rs/wasm-runtime`, `@tybys/wasm-util`). Cleanup is postponed until an approved change set (see next tasks). Additionally, `@tanstack/react-query` is installed but never used; the `cn` package is redundant because `src/lib/utils.ts` already uses `clsx` + `tailwind‑merge`.
+6. **SRS‑required documentation is incomplete or stale.** `docs/AUDIT_POLICY.md` and `docs/RUNBOOK.md` are **missing** – both are mandatory for the database‑foundation phase. The SRS expects `docs/UI_SPEC.md`; the repository currently contains `docs/UI_SPECS.md`. A decision is required to pick a canonical filename and update references.
+7. **Several documents falsely state current-SRS conformance.** See the conflict register below. The previous progress file marked database documentation as exact and many backend-shaped UI features as complete; those statements were not supported by a database implementation and have been superseded by this audit.
+8. **Operations are not configured.** No GitHub workflow, Vercel configuration, cron route, backup workflow, environment sample, migration/seed command, or deployment/runbook is present.
 
+## Files that already implement useful portions
 
+| Area | Existing files | Audit assessment |
+|---|---|---|
+| SRS constants | `src/config/identity.ts`, `src/config/app.ts`, `src/config/limits.ts` | Closely aligned with Appendix C; retain and test against DB/schema validators. |
+| Time baseline | `src/lib/time.ts` | Useful start; audit again when implementing exact event-last-day, lock, and database/date behaviour. |
+| API DTOs | `src/types/auth.ts`, `project.ts`, `volunteer.ts`, `event.ts`, `hours.ts`, `requests.ts`, `audit.ts`, `analytics.ts` | Useful reference, but some compatibility aliases/prototype fields need an SRS-by-SRS reconciliation before services depend on them. |
+| UI foundation | `src/components/ui/`, `src/components/shared/`, `src/components/layout/`, `src/providers/theme-provider.tsx` | Reusable frontend foundation; not security or data foundation. |
+| Feature shells | `src/app/(office)/`, `src/features/{volunteers,projects,events,attendance,analytics,audit,team,settings}/` | Prototype routes/components to rewire gradually to authorised server DTOs. |
+| Synthetic data | `src/lib/mock-data/` | Valid only for development/demo; must never become production fallback or an authorisation source. |
+| App config/tooling | `package.json`, `package-lock.json`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `components.json` | Baseline exists; scripts and dependencies require an approved foundation update. |
 
+## SRS conflict register and smallest safe corrections
+
+| Finding | Evidence | Smallest safe correction |
+|---|---|---|
+| `docs/DATABASE.md` is not the SRS Section 8 schema despite its claim | It defines `event_project_slots`, `request_targets`, enum `audit_action`/`audit_entity_type`, different volunteer constraints, and a `meeting_status` that omits `ONGOING`; the current SRS instead specifies `event_projects`, `approval_requests.target_rolls`, text audit action/entity values, and `ONGOING` for meetings. | Do not generate migrations from this document. Replace/rewrite it from SRS Section 8 during the database task and explicitly mark it as "as built" only after migrations are reviewed. |
+| `docs/PERMISSIONS.md` has obsolete soft-rule mapping and permissions | Its S-03 through S-09 meanings differ materially from SRS 3.2 (for example it describes absence/domain-tenure rules not in the current soft-rule list). It also says POC/Builder central-event visibility/permissions more broadly than the SRS. | Replace its matrix and test matrix with an exact transcription of SRS Sections 4–6 before implementing authorisation. |
+| `docs/AI_WORKFLOW.md` says the current phase is frontend-only and prohibits production auth/database work | Current SRS Section 22 now directs build step 1 (foundation) and step 2 (auth). | Amend it in the first approved backend documentation change so it defers to SRS build order and removes conflicting phase instructions. |
+| `docs/DECISIONS.md` and previous progress contain pre-SRS assumptions | Examples: D-004 schedules auth for "Part 3"; D-013 describes a TanStack v9/mock-data foundation; the prior progress claims exact database documentation. | Keep them as historical records only; the new decision-log entry records that the SRS controls and that contradictions require reconciliation. |
+| UI route/document names do not match SRS | `/dashboard`, `/access-denied`, `/audit-logs`, `UI_SPECS.md` versus SRS `/overview`, `/denied`, `/audit`, `UI_SPEC.md`. | Decide one canonical routing/document migration plan before replacing mock data. Use redirects/renames deliberately; do not silently change public/private URLs. |
+
+## Exact next tasks (dependency order)
+
+1. Review and approve this audit; decide on the canonical UI‑spec filename (`UI_SPEC.md` vs `UI_SPECS.md`) and whether prototype route names are renamed or kept with redirects.
+2. Reconcile or replace `docs/DATABASE.md`, `docs/PERMISSIONS.md`, and `docs/AI_WORKFLOW.md` from the current SRS; add the missing audit-policy and runbook documents before depending on them operationally.
+3. Resolve the stale Next build state **safely** (clear `.next/lock`, ensure no stray dev server processes) and obtain a clean `npm run build` that completes successfully.
+4. Approve the exact SRS‑required package set (`drizzle-orm`, `postgres`, `@supabase/ssr`, `vitest`, `@playwright/test`, etc.). Add an `.env.example` with validated variables and update `package.json` scripts (e.g. `seed`, `migrate`, `test`). Commit the lockfile after the approved change.
+5. Implement `src/db/schema/*.ts` exactly from SRS Section 8, generate reviewed SQL migrations, and add `drizzle/manual` security/functions/cron SQL plus seed/synthetic scripts.
+6. Provision staging and production Supabase projects and apply migrations with the admin connection. Verify roles, RLS, public-key denial, audit immutability, `SYSTEM` row, and the permanent-delete FK coverage test on a scratch database.
+7. Implement server auth/access/authorisation, audited mutation primitives, limiter/idempotency, and their table-driven tests before wiring any prototype screen to production data.
+8. Convert feature areas in SRS order: volunteers/roster/requests; events/attendance; meetings; hours/imports; analytics/exports/audit/settings/emergency; then caching, jobs/backups, CI, load tests, and the Section 20 acceptance list.
+
+## Commands run and actual results
+
+| Command | Result |
+|---|---|
+| `git status --short` (before audit) | No tracked or untracked changes reported. |
+| `rg --files docs` | Found `SRS.md`, `PERMISSIONS.md`, `DATABASE.md`, `AI_WORKFLOW.md`, `DECISIONS.md`, `PROGRESS.md`, and `UI_SPECS.md`; did **not** find `AUDIT_POLICY.md` or `RUNBOOK.md`. |
+| `Get-Content` of `docs/SRS.md` in line chunks | Read the complete 3,422-line current SRS. |
+| `Get-Content` of every existing document in `docs/` | Read current documents; noted missing required files and conflicts above. |
+| `rg --files ...` for lock/config/test/DB/CI files | Found only `package-lock.json`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `components.json`, and `.gitignore`; no Drizzle, Vitest, Playwright, or GitHub Actions configuration. |
+| `rg -n -i "drizzle|supabase|database_url|..." src package.json ...` | No database/auth/env implementation found; feature routes reference `src/lib/mock-data/`. |
+| `npm ls --depth=0` | Dependency tree resolved; required database/auth/test dependencies are absent and three packages are reported extraneous. |
+| `npx tsc --noEmit` | Passed (completed in 13.7 s). |
+| `npm run lint` | Passed (completed in 30.2 s; ESLint produced no warnings/errors). |
+| `npm run build` | **Failed:** first attempt stopped at “Creating an optimized production build …” without exiting; second attempt reported an existing Next build process. A stale `.next/lock` file (0 B, last written 19 Oct 2026 14:08:15) remains. |
+| `npm run` | Only `dev`, `build`, `start`, and `lint` scripts are available. |
+| `git status --short` (before documentation update) | Clean. |
+
+Two read-only inspection commands had PowerShell/regular-expression quoting errors and were immediately re-run successfully; they did not modify the repository.
+
+## Risks requiring a decision
+
+- **Release risk:** absent backend controls; deploying the current prototype would expose private‑record routes without any server‑side guard.
+- **Schema risk:** using the stale `docs/DATABASE.md` would create a database incompatible with the authoritative SRS. It must not be used as a migration source.
+- **Security/privacy risk:** mock UI permissions, static‑parameter generation, and public‑looking prototype paths are unsafe for production. All private data must be protected by server‑side checks before any deployment.
+- **Operational risk:** the production build cannot be verified cleanly; there is no CI pipeline, backup system, cron jobs, or runbook in place.
+- **Product decision:** decide if prototype route names (`/dashboard`, `/audit‑logs`, etc.) will be renamed to match the SRS (`/overview`, `/audit`) or kept with redirects. Document the chosen approach.
+**Open SRS decisions:** retain SRS Section 21.2 defaults until the NSS board resolves open questions (e.g. hosting‑plan, data‑owner policy Q‑01 & Q‑11). Record any new decisions in `docs/DECISIONS.md`.
