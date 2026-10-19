@@ -1,9 +1,12 @@
+import React from "react";
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { BarChart3, Download } from "lucide-react";
+import { LoadingState } from "@/components/shared/loading-state";
+import { getDashboardSummary } from "@/lib/mock-data";
+import { AnalyticsView } from "@/features/analytics/analytics-view";
 
 export default function AnalyticsPage() {
+  const summary = getDashboardSummary();
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -15,25 +18,14 @@ export default function AnalyticsPage() {
             <span className="text-muted-foreground font-normal">Analytics &amp; Metrics</span>
           </div>
         }
-        title="Analytics &amp; Reports"
-        description="Cross-project volunteer turnout rates, domain engagement distributions, and service hour records."
-        actions={
-          <Button variant="outline" size="sm">
-            <Download className="size-3.5 mr-1.5" />
-            Export Analytics
-          </Button>
-        }
+        title="Institutional Analytics &amp; Reporting"
+        description="Cross-project volunteer turnout rates, seasonal drive participation trends, and domain specializations."
       />
 
-      <Card className="border-dashed p-8 text-center bg-card">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3">
-          <BarChart3 className="size-6" />
-        </div>
-        <h3 className="text-headline-md font-semibold text-foreground">Analytics Overview</h3>
-        <p className="text-body-sm text-muted-foreground max-w-md mx-auto mt-1">
-          Turnout distribution charts, gender ratios, and participation breakdown will be implemented in the Analytics phase.
-        </p>
-      </Card>
+      <React.Suspense fallback={<LoadingState message="Aggregating performance analytics..." />}>
+        <AnalyticsView summary={summary} />
+      </React.Suspense>
     </div>
   );
 }
+

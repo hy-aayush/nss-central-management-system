@@ -77,11 +77,33 @@ Part 1: Frontend foundation
   - `src/features/attendance/attendance-correction-dialog.tsx`: Audited correction modal with character count counter, reason validation, and old/new state badges.
   - `src/features/attendance/attendance-history-panel.tsx`: Immutable ledger of past corrections with timestamps, old/new statuses, and officer IDs.
   - `src/app/(office)/attendance/page.tsx`: Attendance register route with streaming Suspense boundary.
-- [x] Production build passes (57 static and partially prerendered routes generated in 3.5s).
+- [x] Institutional Analytics & Reporting module completed (`src/app/(office)/analytics/page.tsx`):
+  - `src/features/analytics/analytics-definitions.tsx`: Expandable definitions reference explaining Turnout %, Approved Service Hours, Active Standing, FCFS Reliability Index, Domain Engagement, and IST timestamp convention.
+  - `src/features/analytics/analytics-kpi-header.tsx`: Summary metric cards for Active Volunteers (year-wise breakdown), Approved Service Hours, Average Turnout Rate (90.4%), Completed Drives (138), and gender distribution.
+  - `src/features/analytics/analytics-project-comparison.tsx`: Performance and turnout matrix across all 9 designated project wings with search, sortable metrics, turnout progress meters, and PR leadership.
+  - `src/features/analytics/analytics-monthly-trends.tsx`: Month-by-month historical trend breakdown (May - Oct 2026) with community drive counts, attendance rates, and service hours delivered.
+  - `src/features/analytics/analytics-domain-summary.tsx`: Dedicated analysis of the 4 creative domains (Photography, Video Editing, Graphic Designing, Content Writing) with cross-domain overlap matrix and gender ratios.
+  - `src/features/analytics/analytics-view.tsx`: Client coordinator with reporting time horizon selector (Academic Year 2026-27, Q1, Q2, Last 30 Days), tab switcher, and bounded CSV data export trigger.
+- [x] Security & Audit Ledger module completed (`src/app/(office)/audit-logs/page.tsx` & `/audit`):
+  - `src/features/audit/audit-stats-header.tsx`: Immutable ledger metric cards for Total Ledger Records (13), Emergency Actions (2), Security Blocks / Denied Access Attempts (1), and Operating Officers (6).
+  - `src/features/audit/audit-table.tsx`: Searchable and filterable ledger (by Actor/Search, Action, Entity Type, Project Wing, Outcome, and Emergency filter toggle) with responsive desktop table and mobile layout.
+  - `src/features/audit/audit-detail-dialog.tsx`: Detail modal with JSON before/after state diff, correlation ID, actor role tier, origin IP, and mandatory policy justification reason.
+  - Distinguished visual styling for emergency actions (`EMERGENCY_ACCESS_GRANT`, `EMERGENCY_ACCESS_REVOKE`) with amber badges and clock indicators.
+- [x] Staff Directory & Team Management module completed (`src/app/(office)/team/page.tsx`):
+  - `src/features/team/team-stats-header.tsx`: Metric cards reflecting post tiers: Tier 5 Coordinators, Tiers 4/3 Tech Team, Tier 2 Project Representatives, and Tiers 1-2 Builders & POCs.
+  - `src/features/team/team-roster-table.tsx`: Filterable staff directory with search by name/roll/email, role tier filters, active/suspended status filter, role edit trigger, and sensitive suspension/reinstatement confirmation dialogs.
+  - `src/features/team/role-assignment-dialog.tsx`: React Hook Form + Zod schema modal allowing role assignments, project scope assignment, tech/builder sub-ranks, reason justification, and two-step confirmation alert for Tier 5/4 escalations.
+  - `src/features/team/team-manager.tsx`: Client state manager coordinating synthetic roster updates and dialog interactions.
+- [x] Operational Settings & System Overview module completed (`src/app/(office)/settings/page.tsx`):
+  - `src/features/settings/settings-system-overview.tsx`: Supabase Free-Tier Operational Guards (500MB DB quota status, Auth user quotas, and unlogged tables for fast FCFS queues).
+  - `src/features/settings/settings-guardrails-form.tsx`: Soft-rules configuration form for S-01 to S-09 guardrails (FCFS window duration, max collaborators, MOM window, edit budgets, absence thresholds, domain tenure hours).
+  - `src/features/settings/settings-emergency-card.tsx`: Global FCFS circuit breaker toggle with confirmation dialog, emergency pack overview, and prominent simulation notice.
+  - `src/features/settings/settings-view.tsx`: Tabbed coordinator for System Status, Soft Rules, and Emergency Circuit Breakers.
+- [x] Production build passes (57 static and partially prerendered routes generated in 2.8s).
 
 ## Current task
 
-Events Directory, Event Detail, Central & Project Event Creation Forms, and Attendance Register with Audited Correction Flow implemented, statically prerendered, and visually verified.
+Internal-office screens for Analytics (`/analytics`), Audit Logs (`/audit-logs`, `/audit`), Staff/Team Management (`/team`), and Settings (`/settings`) implemented, statically prerendered, and visually verified.
 
 ## Blockers
 
@@ -90,9 +112,9 @@ Events Directory, Event Detail, Central & Project Event Creation Forms, and Atte
 ## Latest validation
 
 - TypeScript check (`npx tsc --noEmit`): PASSED (Exit code 0, 0 errors)
-- ESLint (`npm run lint`): PASSED (Exit code 0, 0 errors)
-- Production Build (`npm run build`): PASSED (Exit code 0 - all 57 static / PPR routes compiled)
-- Visual Browser Validation: PASSED (Desktop & mobile verified across `/events`, `/events/1`, `/events/central/new`, `/events/project/new`, and `/attendance` including correction modal flow)
+- ESLint (`npm run lint`): PASSED (Exit code 0, 0 errors, 4 expected React Compiler hook warnings on React Hook Form `watch()`)
+- Production Build (`npm run build`): PASSED (Exit code 0 - all 57 static / PPR routes compiled cleanly)
+- Visual Browser Validation: PASSED (Desktop & mobile verified across `/analytics`, `/audit-logs`, `/team`, and `/settings` including dialog and tab interactions)
 
 ## Decisions pending / Assumptions recorded
 
@@ -101,8 +123,11 @@ Events Directory, Event Detail, Central & Project Event Creation Forms, and Atte
 - Coordinator Notes edit budget: Limited to 3 edits per semester per volunteer (soft rule S-06) with remaining edits tracked in the UI.
 - Attendance Locked State: When an event attendance session is locked, manual roll-call toggling is prevented and routed to the Audited Correction Flow requiring >= 10-char justification (SRS §11.7).
 - Multi-Wing Collaboration Cap: Project events strictly limit collaborating wings to at most 2 (max 3 total including host) per soft rule S-09.
+- Operational Settings & Circuit Breakers: Clear UI disclaimers state that kill switches, quota checks, and emergency mode are simulated frontend prototypes in Part 1 and require the Part 2 backend and RLS policies to be active.
+- Role Escalations: Tier 4/5 role assignments require explicit justification and secondary confirmation, mirroring the approved institutional 2-man rule.
 
 ## Next task
 
 Proceed to Meetings management (`/meetings`), Service Hours approvals & adjustments (`/hours`), and Approval Requests / Emergency Packs (`/requests`).
+
 

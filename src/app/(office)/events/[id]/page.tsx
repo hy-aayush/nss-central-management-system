@@ -8,6 +8,7 @@ import { MOCK_EVENTS, getEventById, getEventParticipants } from "@/lib/mock-data
 import { EventDetailHero } from "@/features/events/event-detail-hero";
 import { EventDetailTabs } from "@/features/events/event-detail-tabs";
 
+
 export async function generateStaticParams() {
   return MOCK_EVENTS.map((event) => ({
     id: String(event.id),
