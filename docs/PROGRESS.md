@@ -1,13 +1,107 @@
 # Database Foundation Progress
 
+## Task 3 — Initial migration and manual security SQL (19 Oct 2026)
+
+**Scope:** Review the foundational schema against the SRS, generate the initial
+migration, add the applicable SRS manual SQL, and apply both to a disposable
+local PostgreSQL database. No application features, later schema groups,
+staging or production database were touched.
+
+**Status:** Complete, awaiting review. The migration file is present in the
+working tree but has not been git-committed. The manual security SQL is
+implemented only for the tables that exist; the SRS functions that depend on
+later tables are documented as deferred blockers.
+
+### Files added or changed
+
+| File | Change |
+|---|---|
+| `drizzle/0000_moaning_ricochet.sql` | Generated the initial migration for four enums and three tables. Added the reviewed `ALTER TABLE volunteers SET (fillfactor = 85)` statement. |
+| `drizzle/meta/0000_snapshot.json`, `drizzle/meta/_journal.json` | Added the migration snapshot and journal entry. |
+| `drizzle/manual/security.sql` | Added the applicable SRS 8.7 role, grants, audit restrictions, RLS, timeouts and `SYSTEM` row. It is repeatable. |
+| `drizzle/manual/README.md` | Documented apply order, local role prerequisites, password handling and every deferred SRS block. |
+| `docs/DATABASE.md`, `docs/PROGRESS.md`, `docs/DECISIONS.md`, `docs/AI_WORKFLOW.md` | Recorded migration commands, validation, rollback considerations, decisions and the current phase. |
+
+### Commands and actual results
+
+Environment: Docker `postgres:17-alpine` (PostgreSQL 17.11), disposable database
+`nss_test`, admin user `postgres`, local-only port `55432`. No Supabase project
+was contacted.
+
+| Command / check | Actual result |
+|---|---|
+| `npm run db:generate` | Passed; created `drizzle/0000_moaning_ricochet.sql` with 3 tables, 4 enums, 3 indexes and 3 foreign keys. |
+| Manual review of generated SQL | Matched SRS 8.1/8.2. The only edit was the required `volunteers` fillfactor statement. |
+| `ADMIN_DATABASE_URL=... npm run db:migrate` | Passed; migration applied to the disposable database. |
+| `npm run db:migrate` a second time | Passed; Drizzle's ledger made it a no-op. |
+| `npm run db:generate` after applying | Passed with `No schema changes, nothing to migrate`. |
+| `npm run db:check` | Passed (`Everything's fine`). |
+| Catalog queries | Confirmed 3 tables, 4 enum value sets, 8 indexes, 15 constraints and `volunteers.reloptions = {fillfactor=85}`. |
+| Temporary SQL constraint test | Passed (`CONSTRAINT_TESTS_OK`): rejected every invalid check/enum/unique/FK case and confirmed all three `ON DELETE RESTRICT` rules. |
+| `psql -f drizzle/manual/security.sql` twice | Both runs passed; the second `SYSTEM` insert returned `INSERT 0 0`. |
+| Role and privilege checks | `app_user` has login and no superuser/createdb/createrole/bypassrls; it has DML on `volunteers` but cannot create tables in `public`. `anon` and `authenticated` have no table access. |
+| RLS checks | RLS enabled on all three tables; `app_all` exists only for `app_user`; a role with SELECT but no policy saw 0 rows. |
+| Temporary `audit_log` test | `security.sql` gave `app_user` SELECT/INSERT only. `app_user` inserted a synthetic business row and audit row in one transaction, then rolled back; a real UPDATE failed with `permission denied`. The temporary table was dropped afterward. |
+| `npx tsc --noEmit` | Passed. |
+| `npm run lint` | Passed. |
+| `npm run build` | Passed; existing pages still build. |
+
+### Deferred SRS blocks
+
+- `purge_audit_log()` and the `audit-purge` `pg_cron` schedule: `audit_log`,
+  `settings` and `pg_cron` do not exist yet.
+- `delete_volunteer_permanently(text)`: it must handle every FK pointing at
+  `volunteers`, and most of those tables are not implemented. A partial function
+  would violate SRS 8.7/rule 26.
+- Counter maintenance: SRS 11.10 puts it in TypeScript feature functions, not
+  database functions or triggers. No generic counter function was added.
+- Retention operations: they depend on events, meetings, requests and the daily
+  job, which are later build steps.
+
+These are documented in `drizzle/manual/README.md` and `docs/DATABASE.md`; they
+are not silently omitted.
+
+### Rollback considerations
+
+- The migration is forward-only. A local rollback is a reviewed reverse-order
+  `DROP TABLE`/`DROP TYPE` sequence and destroys data. It is not a production
+  rollback plan.
+- Production recovery uses the weekly backup/restore procedure or a reviewed
+  forward fix. No down migration was committed.
+- `security.sql` is repeatable, but dropping `app_user` requires revoking its
+  privileges first. Dropping the `SYSTEM` row is not part of a normal rollback.
+- `fillfactor` is a physical storage setting and does not change the logical
+  schema.
+
+### Unresolved issues / limitations
+
+- No Supabase/staging/production connection was tested. Session-mode pooler
+  behaviour, Supabase role membership and `pg_cron` remain unverified.
+- `audit_log` does not exist, so audit immutability is not active yet. The
+  guarded block in `security.sql` was tested against a temporary table.
+- The permanent-delete function, audit purge and retention operations remain
+  blocked until their dependent schema groups exist.
+- `app_user` has table-wide `UPDATE` per SRS 8.7; the counter-update restriction
+  is enforced by application code and review, not column privileges.
+
+### Next dependency
+
+The next schema group is `office_assignments` with `user_role`, `tech_kind`,
+`builder_kind` and `access_status`. It must be followed by `red_flags`,
+`approval_requests` and `import_batches`; then events, meetings, hours, audit and
+system tables. The permanent-delete function and audit purge should be added as
+soon as their dependencies exist.
+
+---
+
 ## Task 2A — Foundational schema (19 Oct 2026)
 
 **Scope:** The first SRS Section 8 schema group only: the four enums required by
 this group, `projects`, `volunteers`, and `volunteer_domains`.
 
-**Status:** Implemented, awaiting review. No migration was generated or applied;
-no authentication, repositories, API handlers, seed rows, dashboards or other
-schema groups were touched.
+**Status:** Implemented. Task 3 generated and locally validated the initial
+migration; no authentication, repositories, API handlers, seed rows, dashboards
+or other schema groups were touched.
 
 ### Files added or changed
 
@@ -32,7 +126,7 @@ schema groups were touched.
 | `npm run lint` | Passed with no output. |
 | `npm run db:check` | Passed (`Everything's fine`). |
 | `npm run build` | Passed; all existing application pages still build. |
-| `drizzle/meta/_journal.json` | Still has zero entries; no migration SQL was generated. |
+| `drizzle/meta/_journal.json` | Still had zero entries at Task 2A. Task 3 added migration index 0. |
 
 ### SRS comparison and known gap
 
@@ -43,17 +137,19 @@ stored counters are present because SRS 8.2 explicitly permits them. The
 `join_date` and `since` defaults follow the SRS `current_date`; callers should
 pass an explicit IST date when near-midnight precision matters (D-021).
 
-One gap is migration-level only: SRS 8.2 specifies
+One gap was migration-level only: SRS 8.2 specifies
 `WITH (fillfactor = 85)` on `volunteers`, but Drizzle 0.45's PostgreSQL schema
-API cannot express table storage parameters. It must be added by reviewed
-custom SQL when the first migration is generated; this is recorded in D-020.
+API cannot express table storage parameters. Task 3 added it to
+`drizzle/0000_moaning_ricochet.sql` after the table creation; this is recorded
+in D-020 and D-022.
 
 ### Unresolved issues / limitations
 
-- No migration was generated or applied, and no live database was contacted.
-- `fillfactor` remains pending the migration review.
-- Later schema groups, manual security SQL, roles/RLS, functions and seeds are
-  not implemented.
+- No live database was contacted during Task 2A; Task 3 later applied the
+  migration to a disposable local PostgreSQL database.
+- `fillfactor` was added to the Task 3 migration.
+- Later schema groups, the full security/functions SQL and seeds are not
+  implemented.
 
 ### Next dependency
 
@@ -130,8 +226,8 @@ implemented.
 - No live Supabase connection, role grant, RLS policy, migration application or
   query was tested. No credentials were supplied for this task.
 - No tables existed at Task 1, so the zero-entry journal was expected. Task 2A
-  now adds the foundational tables, but still generates no migration;
-  `drizzle/manual/security.sql` remains a later task.
+  added the foundational tables and Task 3 later generated the initial migration
+  plus the applicable `drizzle/manual/security.sql`.
 - `db:studio` uses the admin URL. It must be run locally against staging only and
   must never be exposed as a service.
 - The prior audit's stale `.next/lock` was removed after confirming no Next

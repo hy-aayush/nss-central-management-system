@@ -201,7 +201,8 @@ unimplemented.
 - `volunteer-domains.ts` — SRS 8.2 `volunteer_domains`.
 - `index.ts` — the single barrel; every schema file must be re-exported.
 
-No migration is generated until the group and its dependencies are reviewed.
+No migration was generated during Task 2A; Task 3 generated it after the
+group was reviewed.
 
 **Constraint naming:** SRS 8.2 declares the seven `volunteers` checks inline
 without names. PostgreSQL and Drizzle require identifiers, so the schema uses
@@ -222,9 +223,10 @@ The fillfactor gap is documented because it cannot be represented in the
 TypeScript schema and must not be forgotten during migration review.
 
 **Status:** Implemented and validated with TypeScript, Drizzle schema export,
-metadata inspection and inferred select/insert type checks. No migration or live
-database change was made. Next dependency: `office_assignments` plus its four
-enums (`user_role`, `tech_kind`, `builder_kind`, `access_status`).
+metadata inspection and inferred select/insert type checks. Task 3 generated the
+initial migration and added the fillfactor statement. Next dependency:
+`office_assignments` plus its four enums (`user_role`, `tech_kind`,
+`builder_kind`, `access_status`).
 
 ---
 
@@ -244,4 +246,46 @@ entry records the tension so the service layer handles it deliberately.
 
 **Status:** Documented; no schema deviation. Revisit when the date/time service
 layer is implemented.
+
+---
+
+## D-022: Initial migration and partial manual security SQL (19 Oct 2026)
+
+**Decision:** Use one generated migration file for the foundational schema,
+edit only the generated SQL to add `ALTER TABLE volunteers SET (fillfactor = 85)`,
+and put the applicable SRS 8.7 role/RLS/timeout/SYSTEM SQL in
+`drizzle/manual/security.sql`. Apply the migration first and the manual file
+second, both through the admin connection. The migration file is left for review
+and has not been git-committed by this task.
+
+- The migration is `drizzle/0000_moaning_ricochet.sql`. It is treated as
+  immutable after first application; future schema changes get a new migration.
+- `security.sql` is repeatable. It creates `app_user` only when missing, drops
+  and recreates its own policies, and inserts `SYSTEM` with
+  `ON CONFLICT DO NOTHING`.
+- The `app_user` password is never committed. The role is created without a
+  password and the operator sets it from the secret store.
+- Audit restrictions are guarded by `to_regclass('public.audit_log')` so the
+  same file can be re-run when the audit table is added. This is not a silent
+  skip: the block was tested against a temporary table and then removed.
+- `purge_audit_log()`, the `pg_cron` schedule and
+  `delete_volunteer_permanently()` are deliberately **not** created yet. They
+  reference tables from later schema groups; a partial permanent-delete
+  function would violate SRS 8.7 and rule 26.
+- Counter maintenance remains in the SRS 11.10 TypeScript feature functions.
+  No database trigger or generic counter function was added.
+- Local validation uses a disposable PostgreSQL instance. Production and
+  staging are not touched by this task.
+
+**Reason:** The SRS requires one reviewed, versioned migration, an application
+role that cannot run DDL, RLS on every table and insert-only audit access. The
+generated SQL cannot express fillfactor, so that one physical storage setting
+must be patched at the migration layer. The manual functions cannot be safely
+created before their dependent tables exist; documenting and deferring them is
+safer than shipping functions that fail at runtime or delete incomplete data.
+
+**Status:** Migration and applicable manual SQL verified on local PostgreSQL
+17.11. Deferred blocks are recorded in `drizzle/manual/README.md`. Re-run
+`security.sql` after every schema group that adds a table or a
+`volunteers` foreign key.
 
