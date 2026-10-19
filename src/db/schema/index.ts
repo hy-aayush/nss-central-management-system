@@ -1,23 +1,29 @@
 /**
  * Drizzle schema entry point.
  *
- * Task 1 intentionally stops at the database infrastructure. No application
- * tables, enums or relations are defined yet; the SRS Section 8 schema is a
- * separate, reviewed task.
+ * Both `drizzle.config.ts` and the typed connection module load this barrel, so
+ * a table that is not re-exported here is invisible to Drizzle Kit and to the
+ * application.
  *
- * When the schema is added:
- * - Put one domain group per file under `src/db/schema/` (for example
- *   `enums.ts`, `projects.ts`, `volunteers.ts`).
- * - Re-export every table, enum and relation from this file. Both
- *   `drizzle.config.ts` and the typed connection module load this one barrel,
- *   so a file that is not exported here is invisible to Drizzle Kit and to the
- *   application.
- * - Keep this file free of side effects and environment access. It is loaded
- *   by `drizzle-kit` outside the Next.js server runtime.
+ * File boundaries:
+ * - `enums.ts`             PostgreSQL enums required by the current group.
+ * - `projects.ts`          SRS 8.2 `projects`.
+ * - `volunteers.ts`        SRS 8.2 `volunteers`.
+ * - `volunteer-domains.ts` SRS 8.2 `volunteer_domains`.
  *
- * Schema files are not secrets and may be imported for type-only use, but
- * application code should get its handle from `src/db/index.ts`, which is
- * marked `server-only`.
+ * Later schema groups (office assignments, events, meetings, hours, audit,
+ * system tables) must be added as separate files and re-exported here. Do not
+ * define a second independent schema entry point.
+ *
+ * Keep this file free of side effects and environment access. It is loaded by
+ * `drizzle-kit` outside the Next.js server runtime.
+ *
+ * Schema files contain no credentials and may be imported for type-only use.
+ * Application code must get its database handle from `src/db/index.ts`, which
+ * is marked `server-only`.
  */
 
-export {};
+export * from "./enums";
+export * from "./projects";
+export * from "./volunteers";
+export * from "./volunteer-domains";

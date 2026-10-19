@@ -170,8 +170,8 @@ foundation.
   `db:generate` produces reviewed migration files.
 - Drizzle Studio is bound to `127.0.0.1` so the admin connection is not exposed
   on the local network.
-- `src/db/schema/index.ts` is the single schema barrel and currently exports no
-  tables. The SRS Section 8 schema is a separate task.
+- `src/db/schema/index.ts` is the single schema barrel. At the time of D-019 it
+  exported no tables; Task 2A adds the foundational group in D-020.
 - No database credentials are exposed with `NEXT_PUBLIC_`; `.env.example`
   contains placeholders only and is explicitly un-ignored for review.
 
@@ -182,6 +182,66 @@ client imports, while a single admin-only migration URL prevents DDL from
 running as the least-privilege application role.
 
 **Status:** Infrastructure validated with typecheck, lint, schema loading and
-migration-journal checks. A live database connection and the application schema
-remain unverified and unimplemented.
+migration-journal checks. A live database connection remains unverified. The
+foundational schema group is now implemented under D-020; later groups remain
+unimplemented.
+
+---
+
+## D-020: Foundational schema boundaries and fillfactor handling (19 Oct 2026)
+
+**Decision:** Implement only the first SRS Section 8 dependency group in
+`src/db/schema/`:
+
+- `enums.ts` — only the four enums needed by this group: `gender`,
+  `volunteer_status`, `blood_group`, `creative_domain`.
+- `projects.ts` — SRS 8.2 `projects`.
+- `volunteers.ts` — SRS 8.2 `volunteers`, including the stored counters but not
+  derived email/year/rates/status.
+- `volunteer-domains.ts` — SRS 8.2 `volunteer_domains`.
+- `index.ts` — the single barrel; every schema file must be re-exported.
+
+No migration is generated until the group and its dependencies are reviewed.
+
+**Constraint naming:** SRS 8.2 declares the seven `volunteers` checks inline
+without names. PostgreSQL and Drizzle require identifiers, so the schema uses
+`volunteers_<field>_check`. The expressions and bounds are copied exactly; only
+the otherwise-unspecified constraint names were chosen.
+
+**Known gap:** SRS 8.2 specifies `WITH (fillfactor = 85)` on `volunteers`.
+Drizzle 0.45's PostgreSQL schema API cannot express table storage parameters.
+This must be added through reviewed custom SQL in the first migration cycle
+(for example, a migration-level `ALTER TABLE volunteers SET (fillfactor = 85)`
+after table creation) rather than being silently omitted. The exact placement
+must be checked against how `drizzle-kit` wraps generated SQL.
+
+**Reason:** The SRS requires exact types, constraints and indexes, while also
+forbidding migrations before review. Keeping the schema split by table/domain
+makes the next groups reviewable and prevents a single unreviewable schema file.
+The fillfactor gap is documented because it cannot be represented in the
+TypeScript schema and must not be forgotten during migration review.
+
+**Status:** Implemented and validated with TypeScript, Drizzle schema export,
+metadata inspection and inferred select/insert type checks. No migration or live
+database change was made. Next dependency: `office_assignments` plus its four
+enums (`user_role`, `tech_kind`, `builder_kind`, `access_status`).
+
+---
+
+## D-021: `current_date` defaults versus IST calendar days (19 Oct 2026)
+
+**Decision:** Keep the exact SRS defaults `DEFAULT current_date` on
+`volunteers.join_date` and `volunteer_domains.since`. PostgreSQL evaluates
+`current_date` in the database session timezone, which may be UTC on Supabase.
+Services that need an exact IST calendar day must pass the date explicitly
+rather than relying on the default near midnight. The schema does not set a
+session timezone and does not replace the SRS default with a custom expression.
+
+**Reason:** SRS 8.2 specifies both `DEFAULT current_date` and IST calendar-day
+semantics for `date` columns. Changing the default silently would be a schema
+deviation; ignoring the timezone difference could record the wrong day. This
+entry records the tension so the service layer handles it deliberately.
+
+**Status:** Documented; no schema deviation. Revisit when the date/time service
+layer is implemented.
 

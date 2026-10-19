@@ -6,10 +6,11 @@ Build the NSS Central Management System as a responsive, internal office-managem
 
 ## Current phase
 
-Part 1b: server-only database infrastructure. The UI still uses synthetic mock
-data; authentication, the application schema and business features are separate,
-approved tasks. `docs/SRS.md` Section 22 controls the build order where this file
-and the SRS disagree.
+Part 2A: server-only database infrastructure plus the foundational schema group
+(`projects`, `volunteers`, `volunteer_domains` and their four enums). The UI
+still uses synthetic mock data; later schema groups, migrations, authentication
+and business features are separate, approved tasks. `docs/SRS.md` Section 22
+controls the build order where this file and the SRS disagree.
 
 ## Mandatory rules
 

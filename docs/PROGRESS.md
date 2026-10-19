@@ -1,5 +1,69 @@
 # Database Foundation Progress
 
+## Task 2A — Foundational schema (19 Oct 2026)
+
+**Scope:** The first SRS Section 8 schema group only: the four enums required by
+this group, `projects`, `volunteers`, and `volunteer_domains`.
+
+**Status:** Implemented, awaiting review. No migration was generated or applied;
+no authentication, repositories, API handlers, seed rows, dashboards or other
+schema groups were touched.
+
+### Files added or changed
+
+| File | Change |
+|---|---|
+| `src/db/schema/enums.ts` | Added `gender`, `volunteer_status`, `blood_group`, and `creative_domain` with the exact SRS values and SQL names. |
+| `src/db/schema/projects.ts` | Added the fixed-id `projects` table, `smallint[]` SDGs, defaults and `timestamptz` activity fields. |
+| `src/db/schema/volunteers.ts` | Added the full `volunteers` table, all seven SRS checks, both indexes, self/project foreign keys and stored counters. |
+| `src/db/schema/volunteer-domains.ts` | Added the composite-key `volunteer_domains` table, its domain enum and domain index. |
+| `src/db/schema/index.ts` | Re-exported the new files from the single schema barrel and documented the file boundaries. |
+| `docs/PROGRESS.md`, `docs/DATABASE.md`, `docs/DECISIONS.md`, `docs/AI_WORKFLOW.md` | Recorded scope, validation, the pending `fillfactor` step and the next dependency. |
+
+### Commands and actual results
+
+| Command | Result |
+|---|---|
+| `npx tsc --noEmit` | Passed. |
+| `npm run db:schema` | Passed and printed the SQL diff for four enums, three tables, seven checks, three indexes and three foreign keys. Compared field-by-field with SRS 8.1 and 8.2. |
+| `npx tsx -e` metadata inspection via `getTableConfig` | Confirmed table/column names, SQL types, nullability, defaults, check names, index names/columns, foreign keys and delete actions, composite primary key, and enum value arrays. |
+| Temporary runtime assertion file (`getTableConfig`, removed after use) | Passed (`SCHEMA_ASSERTIONS_OK`). Asserted all four enum arrays, every column name/type/nullability/default/primary/unique flag, the seven check names, both volunteer indexes, the domain index, the composite primary key, and all three foreign keys with `ON DELETE restrict`. |
+| Temporary TypeScript assertion file using `InferSelectModel` / `InferInsertModel` | Passed; verified inferred nullable fields, enum unions, required insert fields and optional defaulted fields. File was removed after the check. |
+| `npm run lint` | Passed with no output. |
+| `npm run db:check` | Passed (`Everything's fine`). |
+| `npm run build` | Passed; all existing application pages still build. |
+| `drizzle/meta/_journal.json` | Still has zero entries; no migration SQL was generated. |
+
+### SRS comparison and known gap
+
+The generated DDL matches SRS 8.1/8.2 for all column names, SQL types,
+nullability, defaults, primary keys, foreign keys, checks and indexes. Derived
+`email`, academic `year`, rates and project status are intentionally absent. The
+stored counters are present because SRS 8.2 explicitly permits them. The
+`join_date` and `since` defaults follow the SRS `current_date`; callers should
+pass an explicit IST date when near-midnight precision matters (D-021).
+
+One gap is migration-level only: SRS 8.2 specifies
+`WITH (fillfactor = 85)` on `volunteers`, but Drizzle 0.45's PostgreSQL schema
+API cannot express table storage parameters. It must be added by reviewed
+custom SQL when the first migration is generated; this is recorded in D-020.
+
+### Unresolved issues / limitations
+
+- No migration was generated or applied, and no live database was contacted.
+- `fillfactor` remains pending the migration review.
+- Later schema groups, manual security SQL, roles/RLS, functions and seeds are
+  not implemented.
+
+### Next dependency
+
+The next schema group in SRS order is `office_assignments` (roster and role
+history), which also needs `user_role`, `tech_kind`, `builder_kind` and
+`access_status`. After that: `red_flags`, `approval_requests`, and
+`import_batches`.
+
+---
+
 ## Task 1 — Database infrastructure (19 Oct 2026)
 
 **Scope:** Drizzle ORM + `postgres` (postgres-js) configuration for Supabase,
@@ -16,7 +80,7 @@ implemented.
 |---|---|
 | `src/db/client.ts` | Added the typed Drizzle/postgres-js connection factory with the Supavisor transaction-pooler settings (`prepare: false`, `max: 1`, short timeouts). |
 | `src/db/index.ts` | Added the `server-only` application database module with lazy `DATABASE_URL` validation, a `globalThis`-cached handle and `closeDatabase()`. |
-| `src/db/schema/index.ts` | Added the single schema barrel. It intentionally exports no tables yet. |
+| `src/db/schema/index.ts` | Added the single schema barrel. At Task 1 it intentionally exported no tables; Task 2A now exports the foundational group. |
 | `drizzle.config.ts` | Added Drizzle Kit config using the schema barrel, `drizzle/` output and `ADMIN_DATABASE_URL` only. |
 | `drizzle/meta/_journal.json` | Generated baseline journal (zero migrations). |
 | `.env.example` | Added the SRS Appendix D environment contract with placeholders only; notes that Drizzle Kit reads `.env`, not `.env.local`. |
@@ -65,8 +129,9 @@ implemented.
 
 - No live Supabase connection, role grant, RLS policy, migration application or
   query was tested. No credentials were supplied for this task.
-- No tables exist, so the zero-entry journal is expected. The SRS Section 8 schema
-  and `drizzle/manual/security.sql` are the next, separately reviewed task.
+- No tables existed at Task 1, so the zero-entry journal was expected. Task 2A
+  now adds the foundational tables, but still generates no migration;
+  `drizzle/manual/security.sql` remains a later task.
 - `db:studio` uses the admin URL. It must be run locally against staging only and
   must never be exposed as a service.
 - The prior audit's stale `.next/lock` was removed after confirming no Next
