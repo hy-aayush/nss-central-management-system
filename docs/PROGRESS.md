@@ -142,9 +142,12 @@ Independent frontend review against `docs/SRS.md`, `docs/UI_SPECS.md`, `docs/PER
 - Multi-Wing Collaboration Cap: Project events strictly limit collaborating wings to at most 2 (max 3 total including host) per soft rule S-09.
 - Operational Settings & Circuit Breakers: Clear UI disclaimers state that kill switches, quota checks, and emergency mode are simulated frontend prototypes in Part 1 and require the Part 2 backend and RLS policies to be active.
 - Role Escalations: Tier 4/5 role assignments require explicit justification and secondary confirmation, mirroring the approved institutional 2-man rule.
+- Operational Settings & Circuit Breakers: Clear UI disclaimers state that kill switches, quota checks, and emergency mode are simulated frontend prototypes in Part 1 and require the Part 2 backend and RLS policies to be active.
+- Role Escalations: Tier 4/5 role assignments require explicit justification and secondary confirmation, mirroring the approved institutional 2-man rule.
 
 ## Next task
 
 Proceed to Meetings management (`/meetings`), Service Hours approvals & adjustments (`/hours`), and Approval Requests / Emergency Packs (`/requests`).
+
 
 
