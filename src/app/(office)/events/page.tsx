@@ -9,8 +9,12 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { getEvents } from "@/lib/mock-data";
 import { EventsStatsHeader } from "@/features/events/events-stats-header";
 import { EventsTable } from "@/features/events/events-table";
+import { requireOfficeAccess } from "@/lib/auth/actor";
 
-export default function EventsPage() {
+export const instant = false;
+
+export default async function EventsPage() {
+  await requireOfficeAccess();
   const { items: events } = getEvents();
 
   return (

@@ -12,10 +12,17 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { applyManualSql, runMigrations } from "../../scripts/lib/database-ops";
 import { createScratchDatabase, type ScratchDatabase } from "./harness";
 
-const EXPECTED_TABLES = ["projects", "volunteer_domains", "volunteers"];
+const EXPECTED_TABLES = [
+  "office_assignments",
+  "projects",
+  "volunteer_domains",
+  "volunteers",
+];
 
 const EXPECTED_ENUMS = {
+  access_status: ["ACTIVE", "SUSPENDED", "REVOKED"],
   blood_group: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
+  builder_kind: ["GENERAL", "POC", "DOMAIN_LEAD"],
   creative_domain: [
     "PHOTOGRAPHY",
     "VIDEO_EDITING",
@@ -23,10 +30,20 @@ const EXPECTED_ENUMS = {
     "CONTENT_WRITING",
   ],
   gender: ["MALE", "FEMALE", "OTHER"],
+  tech_kind: ["MEMBER", "MENTOR"],
+  user_role: [
+    "COORDINATOR",
+    "TECH_TEAM",
+    "BUILDER",
+    "PROJECT_REPRESENTATIVE",
+  ],
   volunteer_status: ["ACTIVE", "SUSPENDED", "ARCHIVED"],
 };
 
 const EXPECTED_CHECKS = [
+  "oa_shape",
+  "office_assignments_end_reason_check",
+  "office_assignments_pr_slot_check",
   "volunteers_batch_year_check",
   "volunteers_city_state_check",
   "volunteers_hostel_check",
@@ -47,7 +64,7 @@ describe("committed migration and manual security SQL", () => {
     await scratch.cleanup();
   });
 
-  it("applies to a clean database and records one migration", async () => {
+  it("applies to a clean database and records both migrations", async () => {
     const before = await scratch.admin<{ tablename: string }[]>`
       select tablename from pg_tables where schemaname = 'public'
     `;
@@ -63,7 +80,7 @@ describe("committed migration and manual security SQL", () => {
     const ledger = await scratch.admin<{ count: number }[]>`
       select count(*)::int as count from drizzle.__drizzle_migrations
     `;
-    expect(ledger[0]?.count).toBe(1);
+    expect(ledger[0]?.count).toBe(2);
   });
 
   it("creates the four SRS enums with the exact value order", async () => {
@@ -71,7 +88,7 @@ describe("committed migration and manual security SQL", () => {
       select t.typname, array_agg(e.enumlabel order by e.enumsortorder) as labels
       from pg_type t
       join pg_enum e on e.enumtypid = t.oid
-      where t.typname in ('blood_group', 'creative_domain', 'gender', 'volunteer_status')
+      where t.typname in ('access_status', 'blood_group', 'builder_kind', 'creative_domain', 'gender', 'tech_kind', 'user_role', 'volunteer_status')
       group by t.typname
       order by t.typname
     `;
@@ -81,11 +98,11 @@ describe("committed migration and manual security SQL", () => {
     );
   });
 
-  it("creates eight indexes, fifteen constraints and the three foreign keys", async () => {
+  it("creates twelve indexes, twenty-three constraints and the seven foreign keys", async () => {
     const indexes = await scratch.admin<{ count: number }[]>`
       select count(*)::int as count from pg_indexes where schemaname = 'public'
     `;
-    expect(indexes[0]?.count).toBe(8);
+    expect(indexes[0]?.count).toBe(12);
 
     const namedIndexes = await scratch.admin<{ indexname: string }[]>`
       select indexname from pg_indexes
@@ -93,6 +110,7 @@ describe("committed migration and manual security SQL", () => {
       order by indexname
     `;
     expect(namedIndexes.map((row) => row.indexname)).toEqual([
+      "oa_roll_active_idx",
       "volunteer_domains_domain_idx",
       "volunteers_project_status_idx",
       "volunteers_status_idx",
@@ -106,9 +124,9 @@ describe("committed migration and manual security SQL", () => {
       order by contype
     `;
     expect(constraints).toEqual([
-      { contype: "c", count: 7 },
-      { contype: "f", count: 3 },
-      { contype: "p", count: 3 },
+      { contype: "c", count: 10 },
+      { contype: "f", count: 7 },
+      { contype: "p", count: 4 },
       { contype: "u", count: 2 },
     ]);
 
@@ -127,6 +145,22 @@ describe("committed migration and manual security SQL", () => {
       order by conname
     `;
     expect(foreignKeys).toEqual([
+      {
+        conname: "office_assignments_ended_by_volunteers_roll_number_fk",
+        confdeltype: "r",
+      },
+      {
+        conname: "office_assignments_granted_by_volunteers_roll_number_fk",
+        confdeltype: "r",
+      },
+      {
+        conname: "office_assignments_project_id_projects_id_fk",
+        confdeltype: "r",
+      },
+      {
+        conname: "office_assignments_roll_number_volunteers_roll_number_fk",
+        confdeltype: "r",
+      },
       {
         conname: "volunteer_domains_roll_number_volunteers_roll_number_fk",
         confdeltype: "r",
@@ -155,7 +189,7 @@ describe("committed migration and manual security SQL", () => {
     const ledger = await scratch.admin<{ count: number }[]>`
       select count(*)::int as count from drizzle.__drizzle_migrations
     `;
-    expect(ledger[0]?.count).toBe(1);
+    expect(ledger[0]?.count).toBe(2);
   });
 
   it("creates the app role, grants and RLS once, and is repeatable", async () => {
@@ -229,7 +263,7 @@ describe("committed migration and manual security SQL", () => {
       select count(*)::int as count from pg_policies
       where schemaname = 'public' and policyname = 'app_all'
     `;
-    expect(policies[0]?.count).toBe(3);
+    expect(policies[0]?.count).toBe(4);
 
     const roleSettings = await scratch.admin<{ rolconfig: string[] | null }[]>`
       select rolconfig from pg_roles where rolname = 'app_user'

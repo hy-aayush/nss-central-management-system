@@ -428,3 +428,92 @@ isolated without requiring manual cleanup between runs.
 **Status:** 5 files / 79 tests passed, 2 todos (81 total) in 8.94 s on
 PostgreSQL 17.11; build, lint and typecheck pass. Not wired into CI yet.
 
+---
+
+## D-028: Local JWT verification with `getClaims()`, never `getSession()` (21 Oct 2026)
+
+**Decision:** The server verifies sessions with `supabase.auth.getClaims()`.
+For asymmetric signing keys (the Supabase default) this checks the signature
+against the project's JWKS, which is fetched once and cached in memory, so a
+request costs no network call. `getSession()` — which trusts the cookie's
+stored payload — is never used on the server. Identity is then reduced to
+`email` + `email_verified` (+ optional matching `hd`); roles are never read
+from the JWT (SRS 2.4).
+
+**Reason:** The SRS (2.4) requires the JWT signature to be checked with the
+project's signing keys and forbids trusting unverified client session data.
+The pinned `@supabase/ssr@0.12.7` / `supabase-js@2.118.0` expose `getClaims()`;
+the JWKS endpoint keeps verification local after the first fetch.
+
+**Status:** Verified against a local RS256 JWKS server: valid token passes,
+tampered-signature token is rejected by the proxy with a 307 to login.
+
+---
+
+## D-029: Deny-by-default database gate; the proxy is optimistic routing only (21 Oct 2026)
+
+**Decision:** Office access is decided solely by one indexed SQL join of
+`volunteers` + active `office_assignments` (`ends_at is null` and
+`access_status = 'ACTIVE'`), run per request by `resolveOfficeAccess()`.
+`requireOfficeAccess()` wraps it and is called by the `(office)` layout, the
+`(office)` template (re-runs on every client navigation), the root page and
+every private page component before any data read. A missing volunteer, a
+suspended/archived volunteer, no active post or a database error all deny.
+The Next 16 proxy only checks "is the signature valid" and redirects
+anonymous visitors; it never decides authorization. A verified-but-unapproved
+identity is signed out and streamed to the minimal `/access-denied` page with
+no role, reason, email or roll disclosure.
+
+**Reason:** SRS 4.4 and 16.2 item 4 require real authorization inside pages,
+Server Actions, Route Handlers and data functions — middleware alone is
+explicitly insufficient. Deny-by-default (SRS 16.3) means no fallback to JWT
+roles, URL params or client state. The layout gate stops the private shell from
+rendering; the per-page gate stops the mock/DB reads.
+
+**Status:** Verified against real PostgreSQL: active coordinator and multi-post
+users are granted; no-post, suspended, revoked, suspended-volunteer, archived
+and missing-volunteer identities all deny. Live HTTP probe with a fake Supabase
+confirmed denied identities never receive volunteer records, metrics, actor
+identity or nav HTML.
+
+---
+
+## D-030: Private pages are never prerendered (`instant = false`) (21 Oct 2026)
+
+**Decision:** Every private page (all 18 `(office)` routes plus the root
+design page) and the `(office)` layout/template export
+`export const instant = false`, so Next.js 16 Cache Components never bakes them
+into the static shell. They are server-rendered per request after the gate
+resolves.
+
+**Reason:** With Cache Components, a page that is not explicitly made
+request-bound can be prerendered into a shell that is served before the
+gate's decision is known — leaking private markup. `instant = false` is the
+documented opt-out (`node_modules/next/dist/docs/.../route-segment-config`).
+This keeps SRS C5 ("private pages and API responses: `private, no-store`,
+never stored") true at the framework level, not by convention.
+
+**Status:** `npm run build` lists every office route as `ƒ` (dynamic), none as
+`○` (static). Denied-identity responses contain no data markers.
+
+---
+
+## D-031: Sign-out is POST-only with an Origin check; return URLs are sanitized (21 Oct 2026)
+
+**Decision:** `/auth/signout` accepts only POST and rejects requests whose
+`Origin` is absent or foreign (403). It revokes the Supabase session, deletes
+the HttpOnly cookies and sends `Clear-Site-Data: "cache"` before a hard
+redirect to `/login`. Post-sign-in and post-denial return paths go through
+`sanitizeReturnTo()`, which allows only a same-origin absolute path (no
+scheme, `//`, backslash, control characters, overlong values, or the auth
+pages themselves); anything else becomes `/dashboard`.
+
+**Reason:** SRS 16.2 item 5 and 16.3 require a hard navigation with cache
+cleanup on sign-out (so the back button shows nothing), and SRS 16.2 requires
+safe return URLs. A GET link must never end a session (CSRF), and `?next=` is
+untrusted URL input.
+
+**Status:** POST with matching Origin → 303 + `clear-site-data` + cookie
+deleted; POST without Origin → 403; GET → 405. `sanitizeReturnTo` covered by 5
+tests including `javascript:`, `//evil`, `data:` and control-character cases.
+

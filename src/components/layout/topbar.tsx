@@ -20,7 +20,13 @@ import { IstClock } from "@/components/layout/ist-clock";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-export function Topbar() {
+/** Display-only identity for the signed-in office member. */
+export interface TopbarActor {
+  name: string;
+  initials: string;
+}
+
+export function Topbar({ actor }: { actor: TopbarActor }) {
   const pathname = usePathname();
   const breadcrumbs = React.useMemo(() => getBreadcrumbs(pathname), [pathname]);
 
@@ -74,11 +80,11 @@ export function Topbar() {
         <Link
           href="/settings"
           className="md:hidden flex items-center p-0.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="Go to office profile and settings"
+          aria-label={`Go to office profile and settings for ${actor.name}`}
         >
           <Avatar className="size-7 rounded-full border border-border">
             <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
-              AS
+              {actor.initials}
             </AvatarFallback>
           </Avatar>
         </Link>

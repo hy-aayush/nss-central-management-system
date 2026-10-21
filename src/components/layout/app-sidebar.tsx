@@ -37,7 +37,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function AppSidebar() {
+/** Display-only identity for the signed-in office member. */
+export interface SidebarActor {
+  name: string;
+  email: string;
+  roleLabel: string;
+  initials: string;
+}
+
+export function AppSidebar({ actor }: { actor: SidebarActor }) {
   const pathname = usePathname();
   const router = useRouter();
   const { state, toggleSidebar, isMobile } = useSidebar();
@@ -157,7 +165,7 @@ export function AppSidebar() {
                 <div className="relative shrink-0">
                   <Avatar className="size-8 rounded-lg border border-border">
                     <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                      DC
+                      {actor.initials}
                     </AvatarFallback>
                   </Avatar>
                   <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-success ring-2 ring-surface-container-lowest" />
@@ -167,14 +175,14 @@ export function AppSidebar() {
                   <div className="grid flex-1 text-left leading-tight truncate">
                     <div className="flex items-center gap-1.5">
                       <span className="truncate font-semibold text-xs text-foreground">
-                        Demo Coordinator
+                        {actor.name}
                       </span>
-                      <Badge variant="accent" className="text-[9px] h-3.5 px-1 py-0 uppercase">
-                        Coord
+                      <Badge variant="accent" className="max-w-24 truncate text-[9px] h-3.5 px-1 py-0 uppercase">
+                        {actor.roleLabel}
                       </Badge>
                     </div>
                     <span className="truncate text-[10px] text-muted-foreground">
-                      synthetic-demo@kiit.ac.in
+                      {actor.email}
                     </span>
                   </div>
                 )}
@@ -192,15 +200,15 @@ export function AppSidebar() {
                   <DropdownMenuLabel className="p-2 font-normal">
                     <div className="flex flex-col space-y-1">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold leading-none text-foreground">
-                          Demo Coordinator
+                        <p className="truncate text-xs font-semibold leading-none text-foreground">
+                          {actor.name}
                         </p>
-                        <Badge variant="accent" className="text-[9px]">
-                          Coordinator
+                        <Badge variant="accent" className="max-w-28 truncate text-[9px]">
+                          {actor.roleLabel}
                         </Badge>
                       </div>
-                      <p className="text-[11px] leading-none text-muted-foreground">
-                        synthetic-demo@kiit.ac.in
+                      <p className="truncate text-[11px] leading-none text-muted-foreground">
+                        {actor.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
@@ -228,13 +236,15 @@ export function AppSidebar() {
                   <span>Workspace Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="flex items-center gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-                  onClick={() => alert("Sign out is disabled during frontend prototype phase.")}
-                >
-                  <LogOut className="size-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
+                <form action="/auth/signout" method="post">
+                  <button
+                    type="submit"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10 focus-visible:bg-destructive/10"
+                  >
+                    <LogOut className="size-4" />
+                    <span>Sign out</span>
+                  </button>
+                </form>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

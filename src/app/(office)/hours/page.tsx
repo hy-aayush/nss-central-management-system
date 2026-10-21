@@ -2,7 +2,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 
-export default function HoursPage() {
+import { requireOfficeAccess } from "@/lib/auth/actor";
+
+export const instant = false;
+
+export default async function HoursPage() {
+  await requireOfficeAccess();
   return (
     <div className="space-y-6">
       <PageHeader

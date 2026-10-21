@@ -2,8 +2,12 @@ import React from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { LoadingState } from "@/components/shared/loading-state";
 import { SettingsView } from "@/features/settings/settings-view";
+import { requireOfficeAccess } from "@/lib/auth/actor";
 
-export default function SettingsPage() {
+export const instant = false;
+
+export default async function SettingsPage() {
+  await requireOfficeAccess();
   return (
     <div className="space-y-6">
       <PageHeader

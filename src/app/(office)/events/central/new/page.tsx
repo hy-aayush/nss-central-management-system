@@ -5,8 +5,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EventForm } from "@/features/events/event-form";
+import { requireOfficeAccess } from "@/lib/auth/actor";
 
-export default function NewCentralEventPage() {
+export const instant = false;
+
+export default async function NewCentralEventPage() {
+  await requireOfficeAccess();
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">

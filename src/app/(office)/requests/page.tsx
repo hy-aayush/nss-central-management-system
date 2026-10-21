@@ -2,7 +2,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Inbox } from "lucide-react";
 
-export default function RequestsPage() {
+import { requireOfficeAccess } from "@/lib/auth/actor";
+
+export const instant = false;
+
+export default async function RequestsPage() {
+  await requireOfficeAccess();
   return (
     <div className="space-y-6">
       <PageHeader

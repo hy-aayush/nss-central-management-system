@@ -8,8 +8,12 @@ import { cn } from "@/lib/utils";
 import { LoadingState } from "@/components/shared/loading-state";
 import { getEvents } from "@/lib/mock-data";
 import { AttendanceManager } from "@/features/attendance/attendance-manager";
+import { requireOfficeAccess } from "@/lib/auth/actor";
 
-export default function AttendancePage() {
+export const instant = false;
+
+export default async function AttendancePage() {
+  await requireOfficeAccess();
   const { items: events } = getEvents();
 
   return (

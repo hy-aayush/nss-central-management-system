@@ -14,6 +14,8 @@ import {
 } from "@/lib/mock-data";
 import { FolderX, ArrowLeft } from "lucide-react";
 
+import { requireOfficeAccess } from "@/lib/auth/actor";
+
 interface ProjectDetailPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -40,7 +42,10 @@ export async function generateMetadata({ params }: ProjectDetailPageProps) {
   };
 }
 
+export const instant = false;
+
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
+  await requireOfficeAccess();
   const { slug } = await params;
   const project = getProjectBySlug(slug);
 

@@ -1,16 +1,18 @@
 # Database Infrastructure, Foundational Schema and Initial Migration (as built)
 
 **Status:** Task 1 infrastructure, Task 2A foundational schema, Task 3 initial
-migration/manual security SQL, and the seed + database integration test work are
-implemented. The migration, seed and 81 integration tests were run only against
-a disposable local PostgreSQL 17.11 database. No staging or production database
-was contacted.
-**Date:** 21 Oct 2026 (Task 4 seed/test pass; earlier sections dated 19 Oct 2026).
+migration/manual security SQL, the seed + database integration test work, and
+the Task 5 office-assignment schema group are implemented. The migrations, seed
+and 119 integration tests were run only against a disposable local PostgreSQL
+17.11 database. No staging or production database was contacted.
+**Date:** 21 Oct 2026 (Task 5 office-assignment pass; Task 4 seed/test pass;
+earlier sections dated 19 Oct 2026).
 **Authority:** `docs/SRS.md` (Sections 2.2, 3.1 rules 13, 20 and 26, 8, 9.4, 16.1,
 19.1 and Appendices A and D).
 
-> Only the foundational schema group (`projects`, `volunteers`,
-> `volunteer_domains` and their four enums) exists. The SRS 8.7 audit-purge,
+> The foundational schema group (`projects`, `volunteers`, `volunteer_domains`)
+> and the office-assignment group (`office_assignments` with `user_role`,
+> `tech_kind`, `builder_kind`, `access_status`) exist. The SRS 8.7 audit-purge,
 > permanent-delete, counter and retention functions, `pg_cron`, and later schema
 > groups do **not** exist yet. `drizzle/manual/security.sql` is intentionally
 > limited to the SQL that is valid for this schema, and the seed writes only the
@@ -25,14 +27,16 @@ was contacted.
 |---|---|
 | `src/db/client.ts` | Typed Drizzle + `postgres` (postgres-js) connection factory. Contains the Supavisor pool settings. Takes an explicit connection string so scripts/tests can use a staging or local URL. |
 | `src/db/index.ts` | **Server-only** application entry point. Imports `server-only`, reads `DATABASE_URL` lazily and caches one Drizzle handle on `globalThis` for the lifetime of a serverless instance. Also exports `closeDatabase()` for scripts/tests. |
-| `src/db/schema/enums.ts` | The four enums required by the foundational group: `gender`, `volunteer_status`, `blood_group`, `creative_domain`. |
+| `src/db/schema/enums.ts` | The eight enums required so far: `gender`, `volunteer_status`, `blood_group`, `creative_domain`, `user_role`, `tech_kind`, `builder_kind`, `access_status`. |
 | `src/db/schema/projects.ts` | SRS 8.2 `projects`. |
 | `src/db/schema/volunteers.ts` | SRS 8.2 `volunteers`. |
 | `src/db/schema/volunteer-domains.ts` | SRS 8.2 `volunteer_domains`. |
+| `src/db/schema/office-assignments.ts` | SRS 8.3 `office_assignments` (roster + role history; PR slots; the `oa_shape`/`oa_pr_slot_uq`/`oa_active_role_uq` rules). |
 | `src/db/schema/index.ts` | Single Drizzle schema barrel. Every schema file must be re-exported here. |
 | `drizzle.config.ts` | Drizzle Kit configuration. Points at the schema barrel and `drizzle/`; reads **`ADMIN_DATABASE_URL`**, never `DATABASE_URL`. |
 | `drizzle/0000_moaning_ricochet.sql` | First migration file: four enums, three tables, seven checks, three indexes, three foreign keys, two unique constraints and the reviewed `volunteers` fillfactor statement. |
-| `drizzle/meta/` | Drizzle journal and snapshot for this migration. |
+| `drizzle/0001_tired_agent_zero.sql` | Second migration file: `office_assignments` with four enums, ten checks, four indexes, four foreign keys and two unique constraints. |
+| `drizzle/meta/` | Drizzle journal and snapshots for both migrations. |
 | `drizzle/manual/security.sql` | SRS 8.7 role, grants, audit restrictions, RLS, timeouts and `SYSTEM` row. Repeatable. |
 | `drizzle/manual/README.md` | Manual-SQL order, local role prerequisites and deferred SRS blocks. |
 | `src/db/seed/reference-data.ts` | Pure SRS Appendix A.1 fixed project rows; no env, no database import. |
@@ -274,8 +278,9 @@ editable data, not a business identifier.
 
 Deliberately **not** seeded yet: Appendix A.2 event categories, A.3 adjustment
 tags, A.4 settings and the A.5 staff CSV rows. Their tables
-(`event_categories`, hours types, `settings`, `office_assignments`) do not
-exist; adding invented columns would be worse than waiting.
+(`event_categories`, hours types, `settings`) do not exist, and the A.5 staff
+seed additionally needs the all-or-nothing validated CSV plus its
+`office_assignments` posts; adding invented columns would be worse than waiting.
 
 ### 7.2 Exact commands
 
@@ -392,19 +397,20 @@ database, so no test depends on another file's rows.
 ### 8.4 Coverage and verified schema
 
 The migration test inspects the catalog directly and verifies the schema this
-repository actually creates: 3 tables, 4 enums with the SRS value order,
-8 indexes (3 named + 3 primary keys + 2 unique constraints), 15 constraints
-(3 primary keys, 2 unique, 7 checks by name, 3 foreign keys with
-`ON DELETE RESTRICT`), and `volunteers.reloptions = {fillfactor=85}`.
+repository actually creates: 4 tables, 8 enums with the SRS value order,
+12 indexes (4 named + 4 primary keys + 2 unique constraints + 2 PostgreSQL
+implicit), 23 constraints (4 primary keys, 2 unique, 10 checks by name, 7
+foreign keys with `ON DELETE RESTRICT`), and
+`volunteers.reloptions = {fillfactor=85}`.
 
 | Required area | Test | Result |
 |---|---|---|
 | Migration on a clean database | `tests/db/migrations.test.ts` | Passed (empty `public` schema → migrated, one ledger row, second run a no-op) |
 | Required fields and nullability | `tests/db/constraints.test.ts` | Passed (NOT NULL on roll/name/gender/batch/counters; optional fields accept NULL; defaults applied) |
-| Enum and CHECK violations | `tests/db/constraints.test.ts` | Passed (4 enums; all 7 checks and their boundary values) |
-| Primary, unique and foreign keys | `tests/db/constraints.test.ts` | Passed (duplicate PK/slug/name/domain pair; 5 foreign-key cases; RESTRICT deletes) |
+| Enum and CHECK violations | `tests/db/constraints.test.ts` | Passed (8 enums; all 10 checks and their boundary values) |
+| Primary, unique and foreign keys | `tests/db/constraints.test.ts` | Passed (duplicate PK/slug/name/domain pair; 10 foreign-key cases; RESTRICT deletes) |
 | Project integrity | `tests/db/constraints.test.ts` | Passed (exactly ids 1–9 seeded; no orphan `project_id`; FK rejects 999) |
-| Office-assignment integrity | `tests/db/constraints.test.ts` | **Not testable yet**: `it.todo` — `office_assignments` does not exist |
+| Office-assignment integrity | `tests/db/constraints.test.ts` | Passed (`oa_shape`, PR slot 1–2 and end-reason checks, `oa_active_role_uq` frees the post when ended, `oa_pr_slot_uq` two-slot limit, four RESTRICT foreign keys) |
 | Audit UPDATE/DELETE restrictions as `app_user` | `tests/db/audit-access.test.ts` | Passed (SELECT/INSERT allowed; UPDATE, DELETE and TRUNCATE fail with `42501`; row intact) |
 | Counter invariants | `tests/db/constraints.test.ts` | Partial: `numeric(7,1)` rounding and overflow verified; SRS 11.10 counter functions are `it.todo` |
 | Seed twice without duplicates | `tests/db/seed.test.ts` | Passed (9 → 9 projects, 6 → 6 volunteers, 5 → 5 domain rows) |
@@ -438,13 +444,11 @@ container `nss-task4-pg`. No Supabase, staging or production database used.
 | `npm run build` | Passed; all existing pages build, exit 0. |
 
 **Not verified:** Supabase role membership, session/transaction pooler behaviour,
-`pg_cron`, the real `audit_log`, `office_assignments`, the SRS 11.10 counter
-functions, staging or production migration, and backup/restore.
+`pg_cron`, the real `audit_log`, the SRS 11.10 counter functions, staging or
+production migration, and backup/restore.
 
 ### 8.6 Limitations
 
-- `office_assignments` does not exist, so project/office-assignment integrity is
-  only partially testable. The skipped test is an `it.todo`, not a pass.
 - The SRS 11.10 counter functions do not exist; counter tests cover column
   defaults, nullability and numeric precision only.
 - The real `audit_log` table does not exist. Its immutability rules were tested
@@ -455,6 +459,22 @@ functions, staging or production migration, and backup/restore.
   container or the documented Docker command.
 
 ## 9. Validation history
+
+### Task 5 — office-assignment schema group and access gate (21 Oct 2026)
+
+Environment: Docker `postgres:17-alpine`, PostgreSQL 17.11, local port 55432,
+container `nss-task5-pg` (removed after the run). No Supabase, staging or
+production database was contacted.
+
+| Command / check | Actual result |
+|---|---|
+| `npm run db:generate` | Created `drizzle/0001_tired_agent_zero.sql`: `office_assignments` plus `user_role`, `tech_kind`, `builder_kind`, `access_status` enums. |
+| `npm run db:migrate` on a clean database | Passed; both migrations applied, ledger shows 2 rows; second run a no-op. |
+| Catalog inspection via `tests/db/migrations.test.ts` | 4 tables, 8 enums in SRS order, 12 indexes, 23 constraints (10 checks, 7 RESTRICT FKs, 4 PKs, 2 uniques). |
+| `tests/db/constraints.test.ts` (office-assignment section) | Passed: `oa_shape` for all four role kinds, PR slot 1–2, end-reason length, `oa_active_role_uq` frees the post when ended, `oa_pr_slot_uq` two-slot limit, all four foreign keys reject with `23503`. |
+| `tests/db/access-gate.test.ts` | Passed (9 tests, see PROGRESS Task 5): active coordinator and multi-post grant; no-post, suspended, revoked, suspended-volunteer, archived-volunteer and missing-volunteer deny; roll-number matching. |
+| `npx vitest run` | **9 files passed, 118 tests passed, 1 todo (119 total), 13.4 s**; exit 0. |
+| `npx tsc --noEmit`, `npm run lint`, `npm run build` (with and without Supabase env) | All passed, exit 0. |
 
 ### Task 4 — seeds and integration tests (21 Oct 2026)
 
@@ -527,7 +547,7 @@ functions, staging or production migration application, and backup/restore.
 
 ## 10. Known limitations and next steps
 
-- Only the foundational schema group is implemented. `office_assignments`,
+- The foundational group and `office_assignments` are implemented.
   `red_flags`, `approval_requests`, `import_batches`, events, meetings, hours,
   audit and system tables are still pending.
 - `drizzle/manual/security.sql` covers only the applicable SRS 8.7 SQL. The
@@ -548,17 +568,15 @@ functions, staging or production migration application, and backup/restore.
 - `db:studio` uses the admin connection and is restricted to `127.0.0.1`.
   Do not expose it or run it against production.
 - The seed covers Appendix A.1 only. A.2 event categories, A.3 adjustment tags,
-  A.4 settings and A.5 staff CSV rows need their tables first; the A.5 staff
-  seed will also need `office_assignments` for the posts.
-- Two integration tests are `it.todo` because their objects do not exist
-  (`office_assignments` integrity, SRS 11.10 counter functions). They are
-  reported as skipped, never as passed. Replace them with real tests in the
-  same change that adds those objects.
+  A.4 settings and A.5 staff CSV rows need their tables first (A.5's posts now
+  have a home in `office_assignments`, but the validated CSV flow is still
+  pending).
+- One integration test is `it.todo` because its object does not exist (the SRS
+  11.10 counter functions). It is reported as skipped, never as passed.
+  Replace it with a real test in the same change that adds those functions.
 - The audit-immutability test uses a SRS 8.6 stand-in table in a scratch
   database. Re-run it against the real `audit_log` when its schema group lands.
 - `npm run test:db` is not wired into CI and runs against local PostgreSQL only.
-- The next schema group in SRS order is `office_assignments` with `user_role`,
-  `tech_kind`, `builder_kind` and `access_status`. After that: `red_flags`,
-  `approval_requests`, `import_batches`, then events/meetings/hours/audit. When
-  it lands, extend `scripts/seed.ts` with the A.5 staff CSV seed and the
-  office-assignment tests together.
+- The next schema group in SRS order is `red_flags`, then `approval_requests`,
+  `import_batches`, then events/meetings/hours/audit. When it lands, extend
+  `scripts/seed.ts` with the A.5 staff CSV seed.

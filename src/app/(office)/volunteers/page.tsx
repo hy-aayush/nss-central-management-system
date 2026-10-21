@@ -7,12 +7,18 @@ import { VolunteerTable } from "@/features/volunteers/volunteer-table";
 import { getVolunteers, getDashboardSummary } from "@/lib/mock-data";
 import { Download, UserPlus } from "lucide-react";
 
+import { requireOfficeAccess } from "@/lib/auth/actor";
+
+/** The directory must be request-bound: it is gated on every navigation. */
+export const instant = false;
+
 export const metadata = {
   title: "Volunteer Directory | NSS Central Management System",
   description: "Internal office volunteer directory with search, project filtering, academic year tracking, and service hours.",
 };
 
 export default async function VolunteersPage() {
+  await requireOfficeAccess();
   const { items: allVolunteers } = getVolunteers();
   const summary = getDashboardSummary();
 

@@ -4,8 +4,12 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { getAuditLogs } from "@/lib/mock-data";
 import { AuditStatsHeader } from "@/features/audit/audit-stats-header";
 import { AuditTable } from "@/features/audit/audit-table";
+import { requireOfficeAccess } from "@/lib/auth/actor";
 
-export default function AuditLogsPage() {
+export const instant = false;
+
+export default async function AuditLogsPage() {
+  await requireOfficeAccess();
   const { items: logs } = getAuditLogs();
 
   return (

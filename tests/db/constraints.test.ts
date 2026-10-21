@@ -18,6 +18,7 @@ import {
   createScratchDatabase,
   deleteVolunteer,
   expectPgError,
+  insertAssignment,
   insertVolunteer,
   type ScratchDatabase,
 } from "./harness";
@@ -36,6 +37,10 @@ describe("PostgreSQL constraints on projects, volunteers and volunteer_domains",
   });
 
   afterEach(async () => {
+    await scratch.admin`delete from office_assignments
+      where roll_number like '88%'
+         or granted_by like '88%'
+         or ended_by like '88%'`;
     await scratch.admin`delete from volunteer_domains where roll_number like '88%'`;
     await scratch.admin`delete from volunteers where roll_number like '88%'`;
     await scratch.admin`delete from projects where id in (10, 11)`;
@@ -532,9 +537,222 @@ describe("PostgreSQL constraints on projects, volunteers and volunteer_domains",
       expect(orphans?.count).toBe(0);
     });
 
-    it.todo(
-      "office_assignments integrity (active posts per volunteer, one post per role slot, PROJECT_REPRESENTATIVE scope) — requires the office_assignments schema group",
-    );
+    it("accepts each valid office post shape", async () => {
+      await insertVolunteer(scratch.admin, { rollNumber: "8800700" });
+      await insertVolunteer(scratch.admin, { rollNumber: "8800701" });
+
+      const rows = [
+        await insertAssignment(scratch.admin, {
+          rollNumber: "8800700",
+          role: "COORDINATOR",
+        }),
+        await insertAssignment(scratch.admin, {
+          rollNumber: "8800701",
+          role: "TECH_TEAM",
+          techKind: "MENTOR",
+        }),
+      ];
+
+      expect(rows.map((row) => row.role)).toEqual(["COORDINATOR", "TECH_TEAM"]);
+
+      const assignment = await insertAssignment(scratch.admin, {
+        rollNumber: "8800701",
+        role: "PROJECT_REPRESENTATIVE",
+        projectId: 1,
+        prSlot: 2,
+      });
+      expect(assignment.project_id).toBe(1);
+
+      const builder = await insertAssignment(scratch.admin, {
+        rollNumber: "8800701",
+        role: "BUILDER",
+        builderKind: "DOMAIN_LEAD",
+        domain: "PHOTOGRAPHY",
+      });
+      expect(builder.builder_kind).toBe("DOMAIN_LEAD");
+    });
+
+    it("rejects a COORDINATOR row that carries another role's fields", async () => {
+      await insertVolunteer(scratch.admin, { rollNumber: "8800702" });
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800702",
+          role: "COORDINATOR",
+          projectId: 1,
+        }),
+        { code: "23514", constraint: "oa_shape" },
+      );
+    });
+
+    it("requires a tech kind for a TECH_TEAM row", async () => {
+      await insertVolunteer(scratch.admin, { rollNumber: "8800703" });
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800703",
+          role: "TECH_TEAM",
+        }),
+        { code: "23514", constraint: "oa_shape" },
+      );
+    });
+
+    it("requires a project and slot for a PROJECT_REPRESENTATIVE row", async () => {
+      await insertVolunteer(scratch.admin, { rollNumber: "8800704" });
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800704",
+          role: "PROJECT_REPRESENTATIVE",
+          projectId: 1,
+        }),
+        { code: "23514", constraint: "oa_shape" },
+      );
+    });
+
+    it("requires a domain only for a DOMAIN_LEAD builder", async () => {
+      await insertVolunteer(scratch.admin, { rollNumber: "8800705" });
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800705",
+          role: "BUILDER",
+          builderKind: "DOMAIN_LEAD",
+        }),
+        { code: "23514", constraint: "oa_shape" },
+      );
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800705",
+          role: "BUILDER",
+          builderKind: "GENERAL",
+          domain: "PHOTOGRAPHY",
+        }),
+        { code: "23514", constraint: "oa_shape" },
+      );
+    });
+
+    it("rejects a PR slot outside 1-2 and an overlong end reason", async () => {
+      await insertVolunteer(scratch.admin, { rollNumber: "8800706" });
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800706",
+          role: "PROJECT_REPRESENTATIVE",
+          projectId: 1,
+          prSlot: 3,
+        }),
+        { code: "23514", constraint: "office_assignments_pr_slot_check" },
+      );
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800706",
+          role: "COORDINATOR",
+          endReason: "r".repeat(301),
+        }),
+        { code: "23514", constraint: "office_assignments_end_reason_check" },
+      );
+    });
+
+    it("allows only one active post per person per role", async () => {
+      await insertVolunteer(scratch.admin, { rollNumber: "8800707" });
+      await insertAssignment(scratch.admin, {
+        rollNumber: "8800707",
+        role: "COORDINATOR",
+      });
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800707",
+          role: "COORDINATOR",
+        }),
+        { code: "23505", constraint: "oa_active_role_uq" },
+      );
+    });
+
+    it("frees the post when the previous row is ended", async () => {
+      await insertVolunteer(scratch.admin, { rollNumber: "8800708" });
+      const first = await insertAssignment(scratch.admin, {
+        rollNumber: "8800708",
+        role: "COORDINATOR",
+      });
+
+      await scratch.admin`update office_assignments
+        set ends_at = now(), ended_by = roll_number, end_reason = 'role rotation'
+        where id = ${Number(first.id)}`;
+
+      const second = await insertAssignment(scratch.admin, {
+        rollNumber: "8800708",
+        role: "COORDINATOR",
+      });
+
+      expect(second.id).not.toBe(first.id);
+    });
+
+    it("enforces two active PR slots per project", async () => {
+      await insertVolunteer(scratch.admin, { rollNumber: "8800709" });
+      await insertVolunteer(scratch.admin, { rollNumber: "8800710" });
+
+      await insertAssignment(scratch.admin, {
+        rollNumber: "8800709",
+        role: "PROJECT_REPRESENTATIVE",
+        projectId: 1,
+        prSlot: 1,
+      });
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800710",
+          role: "PROJECT_REPRESENTATIVE",
+          projectId: 1,
+          prSlot: 1,
+        }),
+        { code: "23505", constraint: "oa_pr_slot_uq" },
+      );
+    });
+
+    it("restricts assignments for missing volunteers and projects", async () => {
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8899999",
+          role: "COORDINATOR",
+          grantedBy: "8899999",
+        }),
+        {
+          code: "23503",
+          constraint: "office_assignments_roll_number_volunteers_roll_number_fk",
+        },
+      );
+
+      await insertVolunteer(scratch.admin, { rollNumber: "8800711" });
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800711",
+          role: "PROJECT_REPRESENTATIVE",
+          projectId: 999,
+          prSlot: 1,
+        }),
+        {
+          code: "23503",
+          constraint: "office_assignments_project_id_projects_id_fk",
+        },
+      );
+
+      await expectPgError(
+        insertAssignment(scratch.admin, {
+          rollNumber: "8800711",
+          role: "COORDINATOR",
+          grantedBy: "8888888",
+        }),
+        {
+          code: "23503",
+          constraint: "office_assignments_granted_by_volunteers_roll_number_fk",
+        },
+      );
+    });
   });
 
   describe("counter columns", () => {

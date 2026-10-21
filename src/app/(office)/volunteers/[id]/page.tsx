@@ -14,6 +14,8 @@ import {
 } from "@/lib/mock-data";
 import { UserX, ArrowLeft } from "lucide-react";
 
+import { requireOfficeAccess } from "@/lib/auth/actor";
+
 interface VolunteerDetailPageProps {
   params: Promise<{ id: string }>;
 }
@@ -40,7 +42,10 @@ export async function generateMetadata({ params }: VolunteerDetailPageProps) {
   };
 }
 
+export const instant = false;
+
 export default async function VolunteerDetailPage({ params }: VolunteerDetailPageProps) {
+  await requireOfficeAccess();
   const { id } = await params;
   const volunteer = getVolunteerByRoll(id);
 
