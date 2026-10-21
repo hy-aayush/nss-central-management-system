@@ -11,7 +11,10 @@
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio --host 127.0.0.1"
+    "db:security": "tsx scripts/apply-security.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:studio": "drizzle-kit studio --host 127.0.0.1",
+    "test:db": "vitest run --config vitest.config.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -53,6 +56,8 @@
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^4.1.12"
   }
 }

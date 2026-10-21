@@ -117,6 +117,7 @@ What exists today:
 - **The complete UI shell and every office screen** (dashboard, volunteers, projects, events, attendance, meetings, hours, analytics, audit, team, requests, settings) — currently driven by **synthetic mock data** in `src/lib/mock-data/`. No real volunteer data is in this repository, by hard rule.
 - **All TypeScript domain types** (SRS Section 10) and the **config files** of Appendix C (identity, app, limits).
 - **Database infrastructure and the first schema group**, validated against a disposable PostgreSQL 17 instance (see [docs/PROGRESS.md](docs/PROGRESS.md) for the exact test results).
+- **Seed + integration-test foundation**: the nine fixed Appendix A.1 projects, an idempotent seed CLI with production guards, optional synthetic fixtures, and a real-PostgreSQL constraint/migration/audit suite (`npm run test:db`).
 
 ## Database and schema
 
@@ -241,7 +242,7 @@ npm run dev
 # → http://localhost:3000
 ```
 
-The UI runs fully on synthetic mock data at this stage — no database is required to browse it.
+The UI runs fully on synthetic mock data at this stage — no database is required to browse it. Database integration tests need a disposable local PostgreSQL; the exact command, seed/migration commands and verified results are in [docs/DATABASE.md](docs/DATABASE.md) §7–8.
 
 ### Available scripts
 
@@ -253,6 +254,9 @@ The UI runs fully on synthetic mock data at this stage — no database is requir
 | `npm run db:check` | Validate the migration journal and SQL files (no connection needed). |
 | `npm run db:migrate` | Apply committed migrations using `ADMIN_DATABASE_URL` (admin connection only). |
 | `npm run db:schema` | Export the current schema SQL (no connection needed). |
+| `npm run db:security` | Apply the repeatable `drizzle/manual/security.sql` with `ADMIN_DATABASE_URL`. |
+| `npm run db:seed` | Seed the nine fixed projects from Appendix A.1. Dry run by default; add `--apply` to write, `--fixtures` for synthetic dev/test volunteers. Refuses a production target. |
+| `npm run test:db` | Real-PostgreSQL integration tests against `TEST_ADMIN_DATABASE_URL` (see [docs/DATABASE.md](docs/DATABASE.md) for the disposable Docker command). |
 | `npm run db:studio` | Drizzle Studio — inspect the database (use against staging locally). |
 
 ## Repository map
@@ -279,6 +283,7 @@ nss-central-management-system/
 │   │                          #   app.ts (IST, academic year, page sizes), limits.ts (all rate limits)
 │   ├── db/
 │   │   ├── schema/            # Drizzle schema = SRS Section 8 (enums, projects, volunteers, domains)
+│   │   ├── seed/              #   Appendix A.1 reference data, optional synthetic fixtures, guards
 │   │   ├── index.ts           #   server-only typed connection (app_user)
 │   │   └── client.ts          #   postgres-js client: prepare:false, max:1 (pooler-friendly)
 │   ├── features/<feature>/    # Feature UI per SRS 16.1 (volunteers, events, attendance, analytics,
@@ -287,13 +292,14 @@ nss-central-management-system/
 │   ├── lib/
 │   │   ├── mock-data/         # ★ Synthetic fixtures driving the current UI — fake data only
 │   │   ├── time.ts            #   IST day-boundary / academic-year helpers (the only source of truth)
-│   │   ├── permissions.ts     #   client-side mirror of the permission matrix (server checks are the gate)
 │   │   ├── navigation.ts      #   role-aware sidebar items
 │   │   ├── constants.ts       #   UI constants aligned with the SRS/UI spec
-│   │   └── formatters.ts, utils.ts
-│   ├── providers/             # Theme (next-themes) and TanStack Query providers
+│   │   └── utils.ts
+│   ├── providers/             # Theme provider (next-themes)
 │   └── types/                 # ★ SRS Section 10 domain types: auth, project, volunteer, event, hours,
 │                              #   requests, audit, analytics, index
+├── scripts/                   # seed.ts, apply-security.ts and their shared helpers
+├── tests/db/                  # Real-PostgreSQL integration tests + scratch-database harness
 ├── public/                    # Static assets (icons; no image optimisation by design)
 ├── components.json            # shadcn/ui configuration
 ├── next.config.ts, tsconfig.json, eslint.config.mjs
@@ -332,7 +338,7 @@ Ideas and known gaps beyond the immediate roadmap:
 
 - **Hosting plan B — Cloudflare.** Documented in SRS 2.5: potentially a larger free request allowance, edge delivery and free firewall rules without Vercel's pause-on-quota risk. Hosting-specific code is isolated in `src/lib/platform/` so a move is a few files, not a rewrite. (A first Cloudflare deployment attempt caused problems; Vercel runs v1.)
 - **CI pipeline.** Wire lint, typecheck, unit tests, Playwright e2e/authorization tests, the SQL constraint suite and a bundle-budget check into GitHub Actions so every PR is verified automatically.
-- **A repeatable schema-test harness.** Script the disposable-PostgreSQL validation performed in Task 3 (apply migrations + manual SQL, assert constraints/FKs/RLS/audit restrictions) so it runs on every schema change.
+- **Test coverage for the later schema groups.** The real-PostgreSQL harness now covers migrations, constraints, seeds and audit immutability for the foundational schema; `office_assignments` integrity, the SRS 11.10 counter functions and the real `audit_log` remain `it.todo` until their tables land.
 - **Full caching pass + performance measurement.** Implement the C2 shared-aggregate cache, measure real CPU per route with a scripted “busy day” in staging, and record the numbers in docs/DATABASE.md before launch.
 - **Restore drills and monitoring hardening.** Automated quarterly restore tests, uptime checks on the keep-alive job, and alerting when any free-tier quota passes 60% mid-month.
 - **Yearly re-verification of free-tier limits.** Vercel/Supabase/GitHub quotas change; the SRS says re-check the vendor docs every year and update `src/config/limits.ts` in the same PR.

@@ -1,5 +1,95 @@
 # Database Foundation Progress
 
+## Task 4 (seed/test track) — Safe synthetic seeds and database integration tests (21 Oct 2026)
+
+**Scope:** The fixed SRS Appendix A.1 project seed data, an idempotent seed CLI
+with production guards, optional clearly synthetic development fixtures, and
+real-PostgreSQL integration tests for the foundational schema. No authentication,
+API routes, business UI or later schema groups were touched. (This is the
+seed/test task; the SRS build step labelled "Task 4" earlier in this file is
+authentication.)
+
+**Status:** Complete, awaiting review. Changes are uncommitted in the working
+tree; nothing was committed or pushed.
+
+### Files added or changed
+
+| File | Change |
+|---|---|
+| `src/db/seed/reference-data.ts` | Added the nine fixed Appendix A.1 projects with empty tagline/description and documented UI accent defaults. Pure data: no env, no database import. |
+| `src/db/seed/fixtures.ts` | Added optional synthetic volunteers (`999xxxx` rolls, `Synthetic Volunteer NN` names, no contact details) and five domain rows. |
+| `src/db/seed/index.ts` | Added idempotent `seedProjectReferenceData`, `seedSyntheticFixtures`, read-only plans and drift reporting. |
+| `src/db/seed/targets.ts` | Added the seed guard: refuses `NODE_ENV=production`, `SEED_TARGET=production` and unapproved remote hosts; prints host/port/database only. |
+| `src/db/seed/validation.ts` | Added Zod validation for seed rows; issues are row/field/message only and never echo a value. |
+| `scripts/seed.ts` | Added the seed CLI (dry run by default, `--apply`, `--fixtures`, `--url`, `--help`). |
+| `scripts/apply-security.ts` | Added `npm run db:security` so the repeatable manual SQL can be applied without psql. |
+| `scripts/lib/env.ts`, `scripts/lib/database-ops.ts` | Added the `.env` loader and shared migration/manual-SQL helpers used by scripts and tests. |
+| `tests/db/harness.ts` | Added scratch-database creation, role setup, the app-role connection and PostgreSQL error assertions. |
+| `tests/db/migrations.test.ts` | Added clean-database migration, catalog, repeat-run and manual-SQL tests. |
+| `tests/db/constraints.test.ts` | Added nullability, enum, CHECK, key, foreign-key, project-integrity and numeric-counter tests. |
+| `tests/db/seed.test.ts` | Added fixed-data fidelity, idempotency, drift, fixture and validation tests. |
+| `tests/db/audit-access.test.ts` | Added the audit UPDATE/DELETE/TRUNCATE restriction test against the real `app_user` role. |
+| `tests/db/seed-guards.test.ts` | Added pure guard tests and the "seed is never automatic" package-script check. |
+| `vitest.config.mts` | Added the Vitest configuration (node environment, serial files, 30 s timeout). |
+| `package.json`, `package-lock.json` | Added `vitest@4.1.12`, `tsx@4.23.15`, `db:security`, `db:seed` and `test:db`. |
+| `.env.example` | Added the local `TEST_ADMIN_DATABASE_URL` placeholder. |
+| `docs/DATABASE.md`, `docs/DECISIONS.md`, `drizzle/manual/README.md` | Recorded the seed/test workflow, verified results, decisions D-026/D-027 and the `db:security` command. |
+
+### Commands and actual results
+
+Environment: Docker `postgres:17-alpine`, PostgreSQL 17.11, local port 55432.
+No Supabase, staging or production database was contacted.
+
+| Command / check | Actual result |
+|---|---|
+| `npm install --save-dev vitest` | Vitest 5 refused: it needs `@types/node` ≥ 22 and this repo pins 20. Vitest 3.2.7 installed, then upgraded to **4.1.12** because 3.x pulled a critical `tinypool` advisory; `npm audit` returned to the pre-existing 13 (4 moderate, 9 high), 0 critical. |
+| `npm run db:migrate` on a fresh database | Passed; `migrations applied successfully`. |
+| `npm run db:security` twice | Passed; repeatable, one `SYSTEM` row. |
+| `npm run db:seed` (dry run) | `Projects: 0/9 present; 9 would be inserted`; nothing written. |
+| `npm run db:seed -- --apply` | `9 inserted, 0 already present (9/9 total)`. |
+| Second `--apply` run | `0 inserted, 9 already present`; still 9 projects. |
+| `--apply --fixtures` twice | First: 6 volunteers + 5 domain rows inserted. Second: 0 + 0 inserted. |
+| Row counts after the CLI run | `projects=9`, `volunteers=7` (`SYSTEM` + 6 fixtures), `fixtures=6`, `domains=5`, `system=1`. |
+| `NODE_ENV=production npm run db:seed -- --apply` | Refused, exit 1: `Refusing to seed: NODE_ENV=production`. |
+| `SEED_TARGET=production npm run db:seed -- --apply` | Refused, exit 1: `Refusing to seed: SEED_TARGET=production`. |
+| `npm run test:db` | **5 files passed, 79 tests passed, 2 todo (81 total), 8.94 s**; exit 0. |
+| `npx tsc --noEmit` | Passed (exit 0). |
+| `npm run lint` | Passed (exit 0). |
+| `npm run build` | Passed; all existing pages build (exit 0). |
+
+### Coverage
+
+The suite verifies: migration application to a clean database and its ledger;
+the four enums and their value order; 3 tables, 8 indexes, 15 constraints,
+7 named CHECKs and 3 RESTRICT foreign keys; required/nullable columns and
+defaults; every invalid enum and CHECK case plus boundary values; duplicate
+primary/unique keys; project FK integrity and RESTRICT deletes; `numeric(7,1)`
+rounding and overflow; seed fidelity to Appendix A.1, idempotency and drift;
+fixture synthetic-ness and no staff-roll collision; and `app_user` being unable
+to UPDATE, DELETE or TRUNCATE `audit_log`. Detail is in `docs/DATABASE.md` §8.4.
+
+### Known limitations / deferred
+
+- `office_assignments` does not exist, so office-assignment integrity is an
+  `it.todo` (reported as skipped, not passed). The SRS 11.10 counter functions
+  are likewise an `it.todo`; only column-level counter behaviour is tested.
+- The real `audit_log` table does not exist. The immutability test uses the SRS
+  8.6 shape in a scratch database and the real `security.sql` guarded block;
+  it must be repeated against the real table later.
+- Appendix A.2 event categories, A.3 adjustment tags, A.4 settings and A.5 staff
+  CSV seeding wait for their tables (and `office_assignments` for staff posts).
+- The suite runs only against local PostgreSQL and is not wired into CI yet.
+- Supabase pooler behaviour, role membership and `pg_cron` remain untested.
+
+### Next dependency
+
+`office_assignments` (with `user_role`, `tech_kind`, `builder_kind`,
+`access_status`) is the next schema group. It unlocks the A.5 staff seed, the
+office-assignment tests and the deferred permanent-delete function. The SRS
+build order otherwise still has authentication next.
+
+---
+
 ## Frontend Quality Pass — independent-audit fixes (19 Oct 2026)
 
 **Scope:** Implement the safe subset of the independent repository audit's
@@ -8,8 +98,7 @@ the shadowed root route, on-demand chart loading, IST/en-IN date consistency,
 and the office-wide synthetic-data banner. No authentication, authorization,
 database, server-action or business-logic work; Tasks 4 and 5 were not touched.
 
-**Status:** Complete, awaiting review. Changes are uncommitted in the working
-tree.
+**Status:** Complete; committed in `6dee4f3`.
 
 ### Files added or changed
 

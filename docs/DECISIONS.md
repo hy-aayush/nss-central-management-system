@@ -353,3 +353,78 @@ inconsistent (dashboard only).
 **Status:** Both pages render correctly in dark and light themes on a
 production build; banner verified on `/dashboard` and `/volunteers`.
 
+---
+
+## D-026: Seed data policy — fixed reference data and synthetic fixtures (21 Oct 2026)
+
+**Decision:** Seeds are split into two modules and two modes.
+
+- `src/db/seed/reference-data.ts` holds the nine fixed SRS Appendix A.1
+  projects (ids 1–9, names, slugs, SDGs). Taglines and descriptions are empty
+  until the NSS team supplies copy. `accent_color` uses the prototype's existing
+  hues as `#rrggbb` seed defaults because the UI spec does not define project
+  colours yet; that column is editable data, not a business identifier.
+- `src/db/seed/fixtures.ts` holds optional synthetic volunteers from the
+  reserved `999xxxx` roll block, with `Synthetic Volunteer NN` names, no phone,
+  hostel, blood group, city/state or email, and a `SYNTHETIC TEST FIXTURE` note.
+  They are written only with `--fixtures`.
+- The CLI is a dry run by default; writing needs `--apply`. Inserts use
+  `on conflict do nothing` and never update or delete, so the seed is idempotent
+  and cannot overwrite a tagline the team edited. Drift on the fixed fields
+  (`id`, `name`, `slug`, `sdgs`) is reported, not silently fixed.
+- Nothing runs the seed automatically: it is absent from `dev`, `build`,
+  `start`, `postinstall` and every other lifecycle script (asserted by a test).
+- `NODE_ENV=production` and `SEED_TARGET=production` are always refused; a
+  remote host additionally requires `SEED_TARGET=staging` and
+  `SEED_ALLOW_REMOTE=1`. Output prints only host/port/database and counts.
+- The `SYSTEM` row stays owned by `drizzle/manual/security.sql` and is not
+  duplicated by the seed.
+- Appendix A.2 event categories, A.3 adjustment tags, A.4 settings and the A.5
+  staff CSV are **not** seeded yet: their tables do not exist, and the staff
+  posts need `office_assignments`. Inventing columns or partial CSV rows now
+  would create false data; they are added with the schema groups that own them.
+
+**Reason:** SRS Appendix A.1 fixes the project ids and names, Appendix A.5
+requires an all-or-nothing validated staff seed, and rule 20 forbids real
+volunteer data outside the git-ignored staff file. A dry-run-first, insert-only
+seed is the only shape that is both repeatable and safe around production.
+
+**Status:** Verified on local PostgreSQL 17.11: 9 projects inserted once and 0
+on the second run; 6 fixtures + 5 domain rows inserted once and 0 on the second
+run; both production guards refused with exit code 1.
+
+---
+
+## D-027: Real-PostgreSQL integration tests with per-file scratch databases (21 Oct 2026)
+
+**Decision:** Database integration tests run against a real PostgreSQL server
+through `TEST_ADMIN_DATABASE_URL`; no driver, query or constraint is mocked.
+
+- `tests/db/harness.ts` creates a uniquely named database per test file, applies
+  the committed migrations through the same Drizzle migrator used by scripts,
+  and drops it with `WITH (FORCE)` in `cleanup()`. Tests therefore never share
+  rows and never depend on execution order between files.
+- The harness creates the `anon` and `authenticated` roles that `security.sql`
+  revokes from, and sets a generated password on `app_user` so privilege tests
+  connect as the real application role. No test password is committed.
+- The server must be a loopback host; `ALLOW_REMOTE_TEST_DB=1` exists only for
+  an explicitly approved staging database.
+- The audit test creates the SRS 8.6 `audit_log` shape in its scratch database
+  (text for the enums owned by a later schema group), applies the real
+  `security.sql` and asserts `UPDATE`/`DELETE`/`TRUNCATE` fail with `42501`.
+- Missing objects are `it.todo`, never silently passed: `office_assignments`
+  integrity and the SRS 11.10 counter functions are the two current todos.
+- `npm run test:db` uses **Vitest 4.1.12** with `vitest.config.mts` (ESM config
+  because `package.json` has no `type: module`). Vitest 5 was rejected because
+  it requires `@types/node` ≥ 22 while this repository pins 20; Vitest 3.x was
+  replaced because it pulls a critical `tinypool` advisory.
+
+**Reason:** SRS Sections 20 and 21.1 require SQL constraint tests against a
+scratch database and acceptance criterion 28 explicitly says audit privileges
+are "tested with a real connection". Mocking PostgreSQL would prove nothing
+about the schema. Per-file scratch databases keep the suite repeatable and
+isolated without requiring manual cleanup between runs.
+
+**Status:** 5 files / 79 tests passed, 2 todos (81 total) in 8.94 s on
+PostgreSQL 17.11; build, lint and typecheck pass. Not wired into CI yet.
+

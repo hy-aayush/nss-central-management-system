@@ -1,18 +1,21 @@
 # Database Infrastructure, Foundational Schema and Initial Migration (as built)
 
-**Status:** Task 1 infrastructure, Task 2A foundational schema and Task 3 initial
-migration/manual security SQL are implemented. The migration was applied only
-to a disposable local PostgreSQL 17.11 database. No staging or production
-database was contacted.
-**Date:** 19 Oct 2026.
-**Authority:** `docs/SRS.md` (Sections 2.2, 3.1 rules 13 and 26, 8, 9.4, 16.1,
-19.1 and Appendix D).
+**Status:** Task 1 infrastructure, Task 2A foundational schema, Task 3 initial
+migration/manual security SQL, and the seed + database integration test work are
+implemented. The migration, seed and 81 integration tests were run only against
+a disposable local PostgreSQL 17.11 database. No staging or production database
+was contacted.
+**Date:** 21 Oct 2026 (Task 4 seed/test pass; earlier sections dated 19 Oct 2026).
+**Authority:** `docs/SRS.md` (Sections 2.2, 3.1 rules 13, 20 and 26, 8, 9.4, 16.1,
+19.1 and Appendices A and D).
 
 > Only the foundational schema group (`projects`, `volunteers`,
 > `volunteer_domains` and their four enums) exists. The SRS 8.7 audit-purge,
-> permanent-delete, counter and retention functions, `pg_cron`, later schema
-> groups and seed records do **not** exist yet. `drizzle/manual/security.sql`
-> is intentionally limited to the SQL that is valid for this schema.
+> permanent-delete, counter and retention functions, `pg_cron`, and later schema
+> groups do **not** exist yet. `drizzle/manual/security.sql` is intentionally
+> limited to the SQL that is valid for this schema, and the seed writes only the
+> nine fixed projects plus optional synthetic fixtures. Appendix A.2–A.5 seed
+> data waits for the tables it belongs to.
 
 ---
 
@@ -32,7 +35,17 @@ database was contacted.
 | `drizzle/meta/` | Drizzle journal and snapshot for this migration. |
 | `drizzle/manual/security.sql` | SRS 8.7 role, grants, audit restrictions, RLS, timeouts and `SYSTEM` row. Repeatable. |
 | `drizzle/manual/README.md` | Manual-SQL order, local role prerequisites and deferred SRS blocks. |
-| `.env.example` | Placeholder-only environment contract. |
+| `src/db/seed/reference-data.ts` | Pure SRS Appendix A.1 fixed project rows; no env, no database import. |
+| `src/db/seed/fixtures.ts` | Optional, clearly synthetic volunteers and domains (SRS rule 20). |
+| `src/db/seed/index.ts` | Idempotent seed operations (`on conflict do nothing`) and drift reporting. |
+| `src/db/seed/targets.ts` | Seed-target guard: production refusal and remote-host opt-in. |
+| `src/db/seed/validation.ts` | Zod validation for seed rows; issues never echo a value. |
+| `scripts/seed.ts` | `npm run db:seed`: dry run by default, `--apply`, `--fixtures`, `--url`. |
+| `scripts/apply-security.ts` | `npm run db:security`: applies `drizzle/manual/security.sql` without psql. |
+| `scripts/lib/*.ts` | Shared `.env` loader and migration/manual-SQL helpers used by scripts and tests. |
+| `tests/db/*.test.ts`, `tests/db/harness.ts` | Real-PostgreSQL integration tests and the scratch-database harness. |
+| `vitest.config.mts` | Vitest configuration; one test file at a time, 30 s test timeout. |
+| `.env.example` | Placeholder-only environment contract, including the local test URL. |
 
 Dependency direction remains `app → features/*/service → features/*/repo → db`.
 Client Components must never import `src/db/index.ts`; the `server-only` import
@@ -79,6 +92,7 @@ in `.env.local`, export `ADMIN_DATABASE_URL` in the shell before running
 | `CRON_SECRET` | Server only | Bearer token for `/api/cron/*`. |
 | `APP_ORIGIN` | Server only | Origin checks for Route Handlers. |
 | `AGE_PUBLIC_KEY` | GitHub backup job | Public key for encrypted backups. |
+| `TEST_ADMIN_DATABASE_URL` | Local/CI test runs only | Disposable local PostgreSQL admin URL for `npm run test:db`. Loopback only unless `ALLOW_REMOTE_TEST_DB=1`. |
 
 There is **no** service-role key in this application (SRS 16.3). Never prefix
 `DATABASE_URL`, `ADMIN_DATABASE_URL`, `CRON_SECRET` or any future secret with
@@ -111,10 +125,13 @@ Apply order:
 4. Apply only to a scratch/staging database first with
    `ADMIN_DATABASE_URL` set.
 5. Apply the manual SQL with the admin connection:
-   `psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f drizzle/manual/security.sql`.
-6. Re-run `security.sql` after adding a table so the RLS loop and default
+   `npm run db:security` (equivalent to
+   `psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f drizzle/manual/security.sql`;
+   the script exists because psql is not installed everywhere).
+6. Re-run the manual SQL after adding a table so the RLS loop and default
    privileges cover it.
-7. Record the verified result and any index/size measurements in this file.
+7. Run the seed (see Section 7) and `npm run test:db` on a clean database.
+8. Record the verified result and any index/size measurements in this file.
 
 There is intentionally no `db:push` script. `push` can apply destructive schema
 changes without a reviewable migration; this project commits generated SQL and
@@ -238,7 +255,215 @@ rollback: dropping `app_user` requires revoking its object privileges first, and
 dropping the `SYSTEM` row is not part of a normal rollback. The
 `__drizzle_migrations` ledger is what makes `db:migrate` a no-op on a second run.
 
-## 7. Validation history
+## 7. Seed data (Task 4)
+
+### 7.1 What is seeded
+
+| Kind | Source | Rows | When |
+|---|---|---|---|
+| Fixed reference data | `src/db/seed/reference-data.ts` | The nine SRS Appendix A.1 projects (ids 1–9) | Every environment, explicitly |
+| `SYSTEM` row | `drizzle/manual/security.sql` | 1 | With the manual SQL, not the seed script |
+| Optional synthetic fixtures | `src/db/seed/fixtures.ts` | 6 volunteers (`999xxxx`) and 5 domain rows | Only with `--fixtures`; local dev/tests |
+
+The nine rows use the exact Appendix A.1 fields: `id`, `name`, `slug` and `sdgs`.
+`tagline` and `description` are empty strings until the NSS team supplies copy.
+`accent_color` is a UI choice and the UI spec does not define project colours
+yet, so the seed uses the hues already present in the prototype's
+`PROJECT_COLOR_MAP` as `#rrggbb` values (`#10b981` … `#f97316`). That column is
+editable data, not a business identifier.
+
+Deliberately **not** seeded yet: Appendix A.2 event categories, A.3 adjustment
+tags, A.4 settings and the A.5 staff CSV rows. Their tables
+(`event_categories`, hours types, `settings`, `office_assignments`) do not
+exist; adding invented columns would be worse than waiting.
+
+### 7.2 Exact commands
+
+```bash
+# Dry run (read-only; the default)
+npm run db:seed
+
+# Write the nine fixed projects
+npm run db:seed -- --apply
+
+# Also write the synthetic development/test volunteers
+npm run db:seed -- --apply --fixtures
+
+# Explicit database instead of ADMIN_DATABASE_URL
+npm run db:seed -- --url "postgresql://postgres:postgres@127.0.0.1:55432/nss_dev" --apply
+```
+
+`ADMIN_DATABASE_URL` is the same admin connection the migrations use
+(session-mode pooler / 5432 on Supabase). The seed never uses `DATABASE_URL`.
+
+### 7.3 Idempotency and drift
+
+- Inserts use `on conflict do nothing` and existing rows are never updated or
+deleted, so running the seed twice inserts nothing new (SRS Appendix A.5) and
+never overwrites a tagline, description or accent colour the team edited.
+- `seedProjectReferenceData()` returns `inserted`, `skipped`, `total` and
+`drift`. Drift compares only the fixed fields (`id`, `name`, `slug`, `sdgs`)
+and the CLI prints a warning for each mismatch without fixing it. Fixing a fixed
+field needs a reviewed migration, not a silent seed update.
+- Synthetic fixtures are skipped row by row on a second run. They need the
+project rows first because `volunteers.project_id` is a foreign key; the seed
+refuses with a clear message instead of surfacing a raw FK error.
+- The `SYSTEM` row (Appendix A.6) is owned by `security.sql` and inserted with
+`ON CONFLICT DO NOTHING`; the seed does not duplicate it.
+
+### 7.4 Safety rules
+
+- Nothing runs the seed automatically. It is not in `dev`, `build`, `start`,
+`postinstall` or any other lifecycle script; `tests/db/seed-guards.test.ts`
+asserts this against `package.json`.
+- `NODE_ENV=production` and `SEED_TARGET=production` are always refused
+(exit code 1). A remote host also requires `SEED_TARGET=staging` **and**
+`SEED_ALLOW_REMOTE=1`, for an explicitly approved staging database only.
+- The default is a dry run; writing needs `--apply`.
+- Fixtures are clearly synthetic: names start with `Synthetic Volunteer`, roll
+numbers come from the reserved `999xxxx` block, there are no phone numbers,
+hostels, blood groups, city/state values or email fields, and every row's notes
+carry `SYNTHETIC TEST FIXTURE`. A test asserts no fixture reuses an Appendix A.5
+staff roll number.
+- No production roster, real email, phone number or staff detail is in the
+repository; `src/db/seed/*` has no personal data at all.
+- Output prints only the host/port/database (never a password) and counts, not
+field values.
+
+## 8. Integration tests against real PostgreSQL (Task 4)
+
+### 8.1 Creating a clean local test database
+
+```bash
+docker run -d --name nss-task4-pg \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_USER=postgres \
+  -p 55432:5432 postgres:17-alpine
+
+# Wait until it accepts connections
+docker exec nss-task4-pg pg_isready -U postgres
+
+export TEST_ADMIN_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:55432/postgres"
+```
+
+PowerShell: `$env:TEST_ADMIN_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:55432/postgres"`.
+
+Remove it afterwards with `docker rm -f nss-task4-pg`. No project file stores
+this URL; `.env.example` only has the placeholder.
+
+The harness requires a loopback host. `ALLOW_REMOTE_TEST_DB=1` exists only for
+an explicitly approved staging database and is not a normal workflow.
+
+### 8.2 Exact commands
+
+```bash
+# Apply committed migrations to a database
+ADMIN_DATABASE_URL="postgresql://..." npm run db:migrate
+
+# Apply the repeatable manual security SQL (role, grants, RLS, SYSTEM row)
+ADMIN_DATABASE_URL="postgresql://..." npm run db:security
+
+# Seed fixed projects and (optionally) synthetic fixtures
+ADMIN_DATABASE_URL="postgresql://..." npm run db:seed -- --apply
+
+# Run every database integration test
+TEST_ADMIN_DATABASE_URL="postgresql://..." npm run test:db
+```
+
+`npm run test:db` runs Vitest 4.1.12. Vitest 5 requires `@types/node` ≥ 22 while
+this repository pins `@types/node@20`; 4.1.12 is the newest version that supports
+Node 20 types and does not pull the vulnerable `tinypool` chain. The tests are
+not wired into CI yet.
+
+### 8.3 What the harness does
+
+`tests/db/harness.ts` creates a uniquely named database
+(`nss_test_<label>_<random>`) on `TEST_ADMIN_DATABASE_URL`, applies the real
+`drizzle/` migrations through the same Drizzle migrator the scripts use, and
+drops it with `with (force)` in `cleanup()`. It also creates the `anon` and
+`authenticated` roles that `security.sql` deliberately revokes from, and can set
+a temporary password on `app_user` so tests can connect as the real application
+role. The password is generated per run and never committed.
+
+Files run one at a time (`fileParallelism: false`) because they create
+databases and set a cluster-wide role password. Every test file owns its
+database, so no test depends on another file's rows.
+
+### 8.4 Coverage and verified schema
+
+The migration test inspects the catalog directly and verifies the schema this
+repository actually creates: 3 tables, 4 enums with the SRS value order,
+8 indexes (3 named + 3 primary keys + 2 unique constraints), 15 constraints
+(3 primary keys, 2 unique, 7 checks by name, 3 foreign keys with
+`ON DELETE RESTRICT`), and `volunteers.reloptions = {fillfactor=85}`.
+
+| Required area | Test | Result |
+|---|---|---|
+| Migration on a clean database | `tests/db/migrations.test.ts` | Passed (empty `public` schema → migrated, one ledger row, second run a no-op) |
+| Required fields and nullability | `tests/db/constraints.test.ts` | Passed (NOT NULL on roll/name/gender/batch/counters; optional fields accept NULL; defaults applied) |
+| Enum and CHECK violations | `tests/db/constraints.test.ts` | Passed (4 enums; all 7 checks and their boundary values) |
+| Primary, unique and foreign keys | `tests/db/constraints.test.ts` | Passed (duplicate PK/slug/name/domain pair; 5 foreign-key cases; RESTRICT deletes) |
+| Project integrity | `tests/db/constraints.test.ts` | Passed (exactly ids 1–9 seeded; no orphan `project_id`; FK rejects 999) |
+| Office-assignment integrity | `tests/db/constraints.test.ts` | **Not testable yet**: `it.todo` — `office_assignments` does not exist |
+| Audit UPDATE/DELETE restrictions as `app_user` | `tests/db/audit-access.test.ts` | Passed (SELECT/INSERT allowed; UPDATE, DELETE and TRUNCATE fail with `42501`; row intact) |
+| Counter invariants | `tests/db/constraints.test.ts` | Partial: `numeric(7,1)` rounding and overflow verified; SRS 11.10 counter functions are `it.todo` |
+| Seed twice without duplicates | `tests/db/seed.test.ts` | Passed (9 → 9 projects, 6 → 6 volunteers, 5 → 5 domain rows) |
+| Seed safety and no auto-run | `tests/db/seed-guards.test.ts` | Passed (production refusal, remote opt-in, no lifecycle script) |
+
+The audit test creates an `audit_log` stand-in with the SRS 8.6 shape in its own
+scratch database (text instead of the `user_role`/`audit_outcome` enums that
+belong to a later schema group), applies the real `security.sql`, and tests the
+guarded block with a real `app_user` connection. This verifies the SQL that is
+committed today; the real table must be re-tested when its schema group lands.
+
+### 8.5 Actual results (21 Oct 2026)
+
+Environment: Docker `postgres:17-alpine`, PostgreSQL 17.11, local port 55432,
+container `nss-task4-pg`. No Supabase, staging or production database used.
+
+| Command / check | Actual result |
+|---|---|
+| `npm run db:migrate` on a fresh database | Passed; `migrations applied successfully`. |
+| `npm run db:security` twice | Passed; second run idempotent (one `SYSTEM` row). |
+| `npm run db:seed` (dry run) | `0/9 present; 9 would be inserted`, nothing written. |
+| `npm run db:seed -- --apply` | `9 inserted, 0 already present (9/9 total)`. |
+| Second `--apply` run | `0 inserted, 9 already present`; still 9 rows. |
+| `--apply --fixtures` twice | First: 6 volunteers + 5 domain rows inserted. Second: 0 + 0 inserted, all present. |
+| Row counts after the CLI run | `projects=9`, `volunteers=7` (`SYSTEM` + 6 fixtures), `fixtures=6`, `domains=5`, `system=1`. |
+| `NODE_ENV=production npm run db:seed -- --apply` | Refused, exit code 1: `Refusing to seed: NODE_ENV=production`. |
+| `SEED_TARGET=production npm run db:seed -- --apply` | Refused, exit code 1: `Refusing to seed: SEED_TARGET=production`. |
+| `npm run test:db` (Vitest 4.1.12) | **5 files passed, 79 tests passed, 2 todo (81 total), 8.94 s**; exit 0. |
+| `npx tsc --noEmit` | Passed (exit 0). |
+| `npm run lint` | Passed (exit 0). |
+| `npm run build` | Passed; all existing pages build, exit 0. |
+
+**Not verified:** Supabase role membership, session/transaction pooler behaviour,
+`pg_cron`, the real `audit_log`, `office_assignments`, the SRS 11.10 counter
+functions, staging or production migration, and backup/restore.
+
+### 8.6 Limitations
+
+- `office_assignments` does not exist, so project/office-assignment integrity is
+  only partially testable. The skipped test is an `it.todo`, not a pass.
+- The SRS 11.10 counter functions do not exist; counter tests cover column
+  defaults, nullability and numeric precision only.
+- The real `audit_log` table does not exist. Its immutability rules were tested
+  against the SRS 8.6 stand-in described above.
+- Tests run against local PostgreSQL only. Supabase-specific behaviour (pooler,
+  role membership, `pg_cron`) is untested.
+- The integration suite is not part of CI yet; it needs a PostgreSQL service
+  container or the documented Docker command.
+
+## 9. Validation history
+
+### Task 4 — seeds and integration tests (21 Oct 2026)
+
+Environment and every command result are recorded in Section 8.5. In summary:
+`npm run test:db` passed 5 files / 79 tests with 2 documented todos; the seed
+CLI inserted 9 projects and 6 synthetic fixtures and inserted nothing on a
+second run; `NODE_ENV=production` and `SEED_TARGET=production` were refused with
+exit code 1; `npx tsc --noEmit`, `npm run lint` and `npm run build` all exited 0.
+Nothing was committed or pushed.
 
 ### Task 1 — infrastructure (19 Oct 2026)
 
@@ -300,7 +525,7 @@ was used.
 behaviour, `pg_cron`, a real `audit_log`, the deferred permanent-delete/purge
 functions, staging or production migration application, and backup/restore.
 
-## 8. Known limitations and next steps
+## 10. Known limitations and next steps
 
 - Only the foundational schema group is implemented. `office_assignments`,
   `red_flags`, `approval_requests`, `import_batches`, events, meetings, hours,
@@ -322,6 +547,18 @@ functions, staging or production migration application, and backup/restore.
   `0000_moaning_ricochet.sql` after it has been applied anywhere.
 - `db:studio` uses the admin connection and is restricted to `127.0.0.1`.
   Do not expose it or run it against production.
+- The seed covers Appendix A.1 only. A.2 event categories, A.3 adjustment tags,
+  A.4 settings and A.5 staff CSV rows need their tables first; the A.5 staff
+  seed will also need `office_assignments` for the posts.
+- Two integration tests are `it.todo` because their objects do not exist
+  (`office_assignments` integrity, SRS 11.10 counter functions). They are
+  reported as skipped, never as passed. Replace them with real tests in the
+  same change that adds those objects.
+- The audit-immutability test uses a SRS 8.6 stand-in table in a scratch
+  database. Re-run it against the real `audit_log` when its schema group lands.
+- `npm run test:db` is not wired into CI and runs against local PostgreSQL only.
 - The next schema group in SRS order is `office_assignments` with `user_role`,
   `tech_kind`, `builder_kind` and `access_status`. After that: `red_flags`,
-  `approval_requests`, `import_batches`, then events/meetings/hours/audit.
+  `approval_requests`, `import_batches`, then events/meetings/hours/audit. When
+  it lands, extend `scripts/seed.ts` with the A.5 staff CSV seed and the
+  office-assignment tests together.

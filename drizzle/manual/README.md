@@ -6,8 +6,13 @@ application and never use `DATABASE_URL`.
 
 ```bash
 npm run db:migrate
-psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f drizzle/manual/security.sql
+npm run db:security
 ```
+
+`npm run db:security` is the script form of
+`psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f drizzle/manual/security.sql`; it
+exists because psql is not installed on every developer machine. Both commands
+read `ADMIN_DATABASE_URL`.
 
 Run both commands with the same admin role. `security.sql` sets default
 privileges for objects created by that role; migrations run by a different role
