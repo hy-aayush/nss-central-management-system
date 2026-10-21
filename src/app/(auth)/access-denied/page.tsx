@@ -6,10 +6,10 @@ import { buttonVariants } from "@/components/ui/button";
 /**
  * Minimal "Access denied" page (SRS 4.4).
  *
- * Shown to anyone who reaches a private route without an approved session.
- * Deliberately discloses nothing: no roles, no reasons beyond the basics, no
- * private reads. Authentication itself lands in a later task; this page is
- * static and contains no auth logic.
+ * Shown to anyone who reaches a private route without an approved session. It
+ * deliberately discloses nothing: no role, no reason, no email, no roll number
+ * and no private reads. `/auth/denied` signs the Supabase session out before
+ * redirecting here.
  */
 
 export const metadata = {
@@ -32,13 +32,26 @@ export default function AccessDeniedPage() {
         </p>
         <p className="mt-1 text-body-sm text-muted-foreground">
           If you believe this is a mistake, contact a Coordinator or a Tech Team
-          member.
+          member. Access is checked again on every request.
         </p>
+
+        <form action="/auth/signout" method="post" className="mt-6">
+          <button
+            type="submit"
+            className={buttonVariants({
+              variant: "outline",
+              className: "w-full",
+            })}
+          >
+            Sign out
+          </button>
+        </form>
+
         <Link
           href="/login"
           className={buttonVariants({
-            variant: "outline",
-            className: "mt-6 w-full",
+            variant: "ghost",
+            className: "mt-2 w-full",
           })}
         >
           Back to sign in
@@ -47,4 +60,3 @@ export default function AccessDeniedPage() {
     </main>
   );
 }
-

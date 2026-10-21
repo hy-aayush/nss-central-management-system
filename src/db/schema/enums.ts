@@ -1,23 +1,26 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
 /**
- * PostgreSQL enums required by the foundational schema group.
+ * PostgreSQL enums for the implemented schema groups.
  *
- * SRS Section 8.1 defines every enum. Only the four enums used by `volunteers`
- * and `volunteer_domains` are defined here:
+ * SRS Section 8.1 defines every enum. The enums used by `volunteers`,
+ * `volunteer_domains` and `office_assignments` are defined here:
  *
- * - `gender`          -> volunteers.gender
- * - `volunteer_status` -> volunteers.status
- * - `blood_group`     -> volunteers.blood_group
- * - `creative_domain` -> volunteer_domains.domain
+ * - `gender`            -> volunteers.gender
+ * - `volunteer_status`  -> volunteers.status
+ * - `blood_group`       -> volunteers.blood_group
+ * - `creative_domain`   -> volunteer_domains.domain, office_assignments.domain
+ * - `user_role`         -> office_assignments.role
+ * - `tech_kind`         -> office_assignments.tech_kind
+ * - `builder_kind`      -> office_assignments.builder_kind
+ * - `access_status`     -> office_assignments.access_status
  *
  * The first argument to `pgEnum` is the exact PostgreSQL type name. Do not
  * rename it: migrations and raw SQL depend on the SQL name, not the TypeScript
  * export name. Values are also in the exact SRS order.
  *
- * Other SRS enums (user_role, tech_kind, builder_kind, access_status,
- * event_type, ...) belong to later schema groups and must be added when their
- * tables are implemented.
+ * Later schema groups add the remaining SRS enums (event_type,
+ * participation_mode, event_status, ...) with their tables.
  */
 
 /** SRS 8.1: `gender` — compulsory on every volunteer. */
@@ -52,4 +55,32 @@ export const creativeDomainEnum = pgEnum("creative_domain", [
   "VIDEO_EDITING",
   "GRAPHIC_DESIGNING",
   "CONTENT_WRITING",
+]);
+
+/** SRS 8.1 and 8.2: the post a person holds (roster row). */
+export const userRoleEnum = pgEnum("user_role", [
+  "COORDINATOR",
+  "TECH_TEAM",
+  "BUILDER",
+  "PROJECT_REPRESENTATIVE",
+]);
+
+/** SRS 8.1: only meaningful for `role = 'TECH_TEAM'`. */
+export const techKindEnum = pgEnum("tech_kind", ["MEMBER", "MENTOR"]);
+
+/** SRS 8.1: only meaningful for `role = 'BUILDER'`. */
+export const builderKindEnum = pgEnum("builder_kind", [
+  "GENERAL",
+  "POC",
+  "DOMAIN_LEAD",
+]);
+
+/**
+ * SRS 8.1: access on a post. Access is valid only while `ends_at is null` and
+ * `access_status = 'ACTIVE'` (SRS 4.4).
+ */
+export const accessStatusEnum = pgEnum("access_status", [
+  "ACTIVE",
+  "SUSPENDED",
+  "REVOKED",
 ]);

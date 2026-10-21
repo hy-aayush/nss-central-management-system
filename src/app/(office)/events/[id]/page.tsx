@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { MOCK_EVENTS, getEventById, getEventParticipants } from "@/lib/mock-data";
 import { EventDetailHero } from "@/features/events/event-detail-hero";
 import { EventDetailTabs } from "@/features/events/event-detail-tabs";
+import { requireOfficeAccess } from "@/lib/auth/actor";
 
 
 export async function generateStaticParams() {
@@ -19,7 +20,10 @@ interface EventPageProps {
   params: Promise<{ id: string }>;
 }
 
+export const instant = false;
+
 export default async function EventDetailPage({ params }: EventPageProps) {
+  await requireOfficeAccess();
   const { id } = await params;
   const event = getEventById(id);
 

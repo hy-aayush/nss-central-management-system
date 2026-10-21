@@ -3,8 +3,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { LoadingState } from "@/components/shared/loading-state";
 import { getDashboardSummary } from "@/lib/mock-data";
 import { AnalyticsView } from "@/features/analytics/analytics-view";
+import { requireOfficeAccess } from "@/lib/auth/actor";
 
-export default function AnalyticsPage() {
+export const instant = false;
+
+export default async function AnalyticsPage() {
+  await requireOfficeAccess();
   const summary = getDashboardSummary();
 
   return (

@@ -1,5 +1,129 @@
 # Database Foundation Progress
 
+## Task 5 — Supabase Google authentication and the office access gate (21 Oct 2026)
+
+**Scope:** Google sign-in via Supabase Auth, server-side identity verification
+with `getClaims()`, the database-backed office access gate on every private
+entry point, sign-out with session cleanup, safe return URLs, and the
+`office_assignments` schema group the gate reads. No role-permission system
+(`can()`, packs, scopes) — that is the next task. No email/password login, no
+public volunteer accounts.
+
+**Status:** Complete, awaiting review. Changes are uncommitted in the working
+tree; nothing was committed or pushed.
+
+### Architecture (exactly SRS 2.4, 4.4 and 16.2)
+
+1. `/login` posts to a Server Action that starts the Supabase Google OAuth flow
+   (`hd=kiit.ac.in` hint, PKCE verifier in an HttpOnly cookie).
+2. `/auth/callback` exchanges the code, then **verifies the JWT locally** with
+   `supabase.auth.getClaims()` (present in the pinned `@supabase/ssr@0.12.7` /
+   `@supabase/supabase-js@2.118.0`; asymmetric keys verify against a cached
+   JWKS, no network round-trip per request). `getSession()` is never used on the
+   server.
+3. Verified claims yield identity only (`email`, `email_verified`, optional
+   `hd` must match, local part must match `ROLL_NUMBER_PATTERN`). Roles are
+   never read from the JWT (SRS 2.4).
+4. `resolveOfficeAccess()` runs one indexed SQL join against `volunteers` +
+   active `office_assignments` (`ends_at is null` and
+   `access_status = 'ACTIVE'`). Deny by default: missing volunteer,
+   suspended/archived volunteer, no active post, DB failure all deny.
+5. `requireOfficeAccess()` is called by the `(office)` layout, the
+   `(office)` template (re-runs per client navigation), the root design page
+   and **every private page component** before any mock/DB read. The proxy
+   (`src/proxy.ts`) is optimistic only: it verifies the session signature and
+   redirects anonymous visitors, but is never the authorization decision.
+6. Denials stream a `NEXT_REDIRECT` to `/auth/denied`, which revokes the
+   Supabase session, deletes the cookies and shows the minimal `/access-denied`
+   page (no role, reason, email or roll disclosure).
+7. Sign-out is POST-only with an Origin check (GET → 405, cross-origin → 403),
+   calls `auth.signOut()`, deletes cookies and sends
+   `Clear-Site-Data: "cache"`.
+
+### Files added or changed
+
+| File | Change |
+|---|---|
+| `src/db/schema/enums.ts` | Added `user_role`, `tech_kind`, `builder_kind`, `access_status` enums. |
+| `src/db/schema/office-assignments.ts`, `src/db/schema/index.ts` | Added SRS 8.3 `office_assignments` (shape check, PR-slot rules, active-role uniqueness) and exported it. |
+| `drizzle/0001_tired_agent_zero.sql`, `drizzle/meta/*` | Generated migration for the above. |
+| `src/lib/supabase/config.ts` | Validated public env reader (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`); missing pair degrades to "not configured", never crashes the build. No service-role key exists in the app. |
+| `src/lib/supabase/server.ts` | Per-request Server-Component client (HttpOnly/SameSite=Lax/Secure cookies; `setAll` failure swallowed, proxy refreshes). |
+| `src/lib/supabase/route.ts` | Route-Handler client that collects cookie writes and `apply()`s them onto the real response with `private, no-store`. |
+| `src/lib/auth/claims.ts` | `identityFromClaims()` — verified email/domain/hd/roll validation; never trusts roles or `user_metadata`. |
+| `src/lib/auth/session.ts` | `getSession()` — `getClaims()`-based session state (`React.cache` per request). |
+| `src/lib/auth/gate.ts` | `resolveOfficeAccess()` — the DB join; pure and testable without Next.js. |
+| `src/lib/auth/actor.ts` | `loadOfficeAccess()` / `requireOfficeAccess()` — the gate every entry point calls; DB failure denies. |
+| `src/lib/auth/return-to.ts` | `sanitizeReturnTo()` — same-origin absolute paths only; auth pages, schemes, `//`, backslashes, control chars and overlong values fall back to `/dashboard`. |
+| `src/lib/auth/actions.ts` | `signInWithGoogle()` Server Action (PKCE, `hd` hint, `prompt=select_account`). |
+| `src/lib/auth/display.ts` | Display-only initials and highest-post label for the shell (never used for authorization). |
+| `src/lib/platform/request-origin.ts` | `getRequestOrigin()` — `APP_ORIGIN` wins, forwarded host fallback; never from `?next=`. |
+| `src/app/auth/callback/route.ts` | Code exchange + claims verification + gate; verified-but-unapproved → signed out → `/access-denied`. |
+| `src/app/auth/signout/route.ts` | POST-only sign-out with Origin check and `Clear-Site-Data`. |
+| `src/app/auth/denied/route.ts` | Gate-denial cleanup: revoke, delete cookies, redirect to the minimal denied page. |
+| `src/proxy.ts` | Next 16 proxy: signature check + anonymous redirect + cookie refresh; `/` is no longer public. |
+| `src/app/(auth)/login/page.tsx` | Real login page: Google button (disabled when unconfigured), safe `next`, honest error notices. |
+| `src/app/(auth)/access-denied/page.tsx` | Minimal denied page; sign-out form and back-to-sign-in only. |
+| `src/app/(office)/layout.tsx`, `template.tsx` | Gate before the shell renders; template re-runs it on every client navigation. |
+| All 18 private `page.tsx` files (incl. `src/app/page.tsx`) | `await requireOfficeAccess()` before any data read + `export const instant = false` so private pages are never prerendered. |
+| `src/components/layout/app-sidebar.tsx`, `topbar.tsx` | Real identity (initials, highest-post label) wired from the gate instead of mock constants. |
+| `.env.example` | Replaced a leaked real-looking pooler URL with a placeholder; documented the Supabase Auth variables. |
+| `tests/auth/claims.test.ts` | 9 tests: verified email, case normalization, hd match/mismatch, unverified, bad domain, bad roll, roles-never-trusted. |
+| `tests/auth/access-gate.test.ts` | 9 tests against real PostgreSQL: active/multi-post grant; no-post/suspended/revoked/suspended-volunteer/archived/missing-volunteer deny; roll-number matching. |
+| `tests/auth/return-to.test.ts` | 5 tests: internal paths kept; scheme/`//`/backslash/auth-page/overlong/control rejected. |
+| `tests/auth/proxy.test.ts` | 6 tests: anonymous redirect with `next`; forged cookie fails closed; `/` protected; public auth pages pass; redirects uncacheable. |
+| `tests/db/harness.ts`, `constraints.test.ts`, `migrations.test.ts` | `insertAssignment` helper; office-assignment constraint tests; migration catalog expectations updated to 4 tables / 8 enums. |
+| `docs/DATABASE.md`, `docs/DECISIONS.md`, `docs/PROGRESS.md` | Schema counts, decisions D-028…D-031 and this record. |
+
+### Commands and actual results
+
+Environment: Docker `postgres:17-alpine`, PostgreSQL 17.11, port 55432.
+No real Supabase project, Google account or personal data was contacted.
+
+| Command / check | Actual result |
+|---|---|
+| `npx vitest run` (with `TEST_ADMIN_DATABASE_URL`) | **9 files passed, 118 passed, 1 todo (119), 13.4 s**; exit 0. |
+| `npx tsc --noEmit` | Passed; exit 0. |
+| `npm run lint` | Passed; exit 0. |
+| `npm run build` with Supabase env | Passed; every office route is `ƒ` (dynamic), no private page prerendered. |
+| `npm run build` with **no** Supabase env (clean checkout) | Passed; login shows an honest "not configured" notice with a disabled button; private routes still redirect. |
+| HTTP probe, unauthenticated | `/`, `/dashboard`, `/volunteers`, `/team`, `/volunteers/2105101` → **307** to `/login?next=…`, `cache-control: private, no-store`. |
+| HTTP probe, forged cookie | **307** to `/login` (proxy fails closed; JWKS signature check rejects it). |
+| HTTP probe, signed-but-unapproved identities (no post, suspended post, revoked post, suspended volunteer, missing volunteer, gmail.com, wrong hd, unverified email) | Dashboard/volunteers/team/projects/settings stream the `NEXT_REDIRECT` to `/auth/denied`; response contains **zero** volunteer records, names, roll numbers, metrics or actor identity; no sidebar/nav HTML. |
+| Browser-like follow of a denied session | `/dashboard` → `/auth/denied` (**307**, session cookie deleted) → `/access-denied` (200, minimal page) → `/dashboard` now **307** to `/login`. |
+| HTTP probe, valid coordinator | 200 on `/dashboard`, `/volunteers`, `/team`, `/projects`, `/settings`, `/`, `/volunteers/2105101`; shell shows the real name and "Coordinator" label; no redirect markers. |
+| Sign-out POST with matching `Origin` | **303** to `/login`, `clear-site-data: "cache"`, auth cookie deleted. |
+| Sign-out POST without `Origin` | **403** (CSRF). |
+| Sign-out GET | **405**. |
+| `npm run db:generate` + clean-database migrate | Migration `0001` applies; catalog = 4 tables, 8 enums, 12 indexes, 23 constraints (verified by `migrations.test.ts`). |
+
+The E2E probe used a local fake Supabase Auth endpoint serving an RS256 JWKS
+and forged/valid session cookies; it exercised the real built server, real
+proxy, real `getClaims()` verification and the real PostgreSQL gate. No real
+Google account or Supabase project was involved.
+
+### Remaining manual setup (Supabase dashboard — cannot be scripted here)
+
+1. **Enable the Google provider**: Supabase Dashboard → Authentication →
+   Providers → Google. Create an OAuth client in Google Cloud Console with the
+   redirect URL Supabase shows (`https://<project-ref>.supabase.co/auth/v1/callback`),
+   then paste the client ID and secret into Supabase.
+2. **Restrict to the institute domain**: in the Google consent screen set the
+   authorized domain to `kiit.ac.in`, and in Supabase → Authentication →
+   Providers → Google disable "Allow new users" if the NSS team wants
+   invite-only behaviour. The app re-checks the domain server-side regardless.
+3. **Redirect URLs**: Supabase → Authentication → URL Configuration → add
+   `https://<vercel-domain>/auth/callback` (and `http://localhost:3000/auth/callback`
+   for local dev) to the allow-list. Set the Site URL to the production origin.
+4. **Environment variables** (Vercel project settings, and `.env` locally):
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (both public by
+   design), plus `DATABASE_URL` (app_user pooler) and `APP_ORIGIN`. The
+   service-role key must never be added to the app (SRS 16.3).
+5. **Grant office posts**: once the A.5 staff CSV flow exists, posts are
+   granted through the roster; until then insert `office_assignments` rows
+   manually (with `granted_by` = an existing volunteer roll, e.g. `SYSTEM`).
+   A signed-in account with no active post always sees the denied page.
+
 ## Task 4 (seed/test track) — Safe synthetic seeds and database integration tests (21 Oct 2026)
 
 **Scope:** The fixed SRS Appendix A.1 project seed data, an idempotent seed CLI

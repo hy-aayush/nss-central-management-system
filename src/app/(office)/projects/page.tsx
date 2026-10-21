@@ -8,12 +8,17 @@ import { DomainRosterSection } from "@/features/projects/domain-roster-section";
 import { getProjects, getCreativeDomains, getDashboardSummary } from "@/lib/mock-data";
 import { CalendarPlus } from "lucide-react";
 
+import { requireOfficeAccess } from "@/lib/auth/actor";
+
 export const metadata = {
   title: "Projects & Domains | NSS Central Management System",
   description: "Internal office directory of 9 designated SDG project wings and 4 creative specialized domains.",
 };
 
+export const instant = false;
+
 export default async function ProjectsPage() {
+  await requireOfficeAccess();
   const projects = getProjects();
   const domains = getCreativeDomains();
   const summary = getDashboardSummary();

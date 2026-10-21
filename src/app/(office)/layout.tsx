@@ -1,10 +1,24 @@
 import * as React from "react";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { SyntheticDataNotice } from "@/components/shared/synthetic-data-notice";
+import { requireOfficeAccess } from "@/lib/auth/actor";
+import {
+  initialsFromName,
+  primaryRoleLabel,
+} from "@/lib/auth/display";
+
+/**
+ * Private pages must never be prerendered or served as a static shell: the
+ * session and the office assignment are checked at request time. Blocking
+ * navigation here is deliberate (SRS 4.4 and 16.2) — this is an internal
+ * office tool, not a public site.
+ */
+export const instant = false;
 
 function ShellSkeleton() {
   return (
@@ -18,11 +32,27 @@ function SidebarSkeleton() {
   );
 }
 
-export default function OfficeLayout({
+export default async function OfficeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Never prerender the private shell. At build time this aborts prerendering;
+  // at request time `requireOfficeAccess` verifies the session and the active
+  // office assignment before anything private renders (SRS 4.4 and 16.2).
+  await connection();
+  const access = await requireOfficeAccess();
+
+  const actor = {
+    name: access.volunteer.name,
+    email: access.identity.email,
+    roleLabel: primaryRoleLabel(access.assignments),
+    initials: initialsFromName(
+      access.volunteer.name,
+      access.volunteer.rollNumber,
+    ),
+  };
+
   return (
     <SidebarProvider defaultOpen={true}>
       {/* Keyboard Accessibility Skip Link */}
@@ -36,13 +66,13 @@ export default function OfficeLayout({
       <div className="relative flex min-h-screen w-full bg-background overflow-x-hidden">
         {/* Collapsible Desktop / Tablet Sidebar */}
         <Suspense fallback={<SidebarSkeleton />}>
-          <AppSidebar />
+          <AppSidebar actor={actor} />
         </Suspense>
 
         {/* Content Area with Sticky Topbar */}
         <SidebarInset className="flex flex-col flex-1 min-w-0 bg-background">
           <Suspense fallback={<ShellSkeleton />}>
-            <Topbar />
+            <Topbar actor={actor} />
           </Suspense>
 
           {/* Page Content Slot */}

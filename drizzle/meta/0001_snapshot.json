@@ -1,0 +1,776 @@
+{
+  "id": "d104da65-69ff-4826-8137-0479a57a917a",
+  "prevId": "85a7f1a4-9049-42fa-809f-04a3a402fe62",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.projects": {
+      "name": "projects",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sdgs": {
+          "name": "sdgs",
+          "type": "smallint[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tagline": {
+          "name": "tagline",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "accent_color": {
+          "name": "accent_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'#64748b'"
+        },
+        "last_activity_at": {
+          "name": "last_activity_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "projects_slug_unique": {
+          "name": "projects_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        },
+        "projects_name_unique": {
+          "name": "projects_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.volunteers": {
+      "name": "volunteers",
+      "schema": "",
+      "columns": {
+        "roll_number": {
+          "name": "roll_number",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gender": {
+          "name": "gender",
+          "type": "gender",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hostel": {
+          "name": "hostel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_group": {
+          "name": "blood_group",
+          "type": "blood_group",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city_state": {
+          "name": "city_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "batch_year": {
+          "name": "batch_year",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "volunteer_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "join_date": {
+          "name": "join_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "current_date"
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes_updated_by": {
+          "name": "notes_updated_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes_updated_at": {
+          "name": "notes_updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes_edit_count": {
+          "name": "notes_edit_count",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "events_attended": {
+          "name": "events_attended",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "events_fcfs_final": {
+          "name": "events_fcfs_final",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "events_fcfs_present": {
+          "name": "events_fcfs_present",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "events_missed_fcfs": {
+          "name": "events_missed_fcfs",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "meetings_present": {
+          "name": "meetings_present",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "meetings_absent": {
+          "name": "meetings_absent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "allocated_hours": {
+          "name": "allocated_hours",
+          "type": "numeric(7, 1)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "red_flag_count": {
+          "name": "red_flag_count",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "volunteers_project_status_idx": {
+          "name": "volunteers_project_status_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "volunteers_status_idx": {
+          "name": "volunteers_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "volunteers_project_id_projects_id_fk": {
+          "name": "volunteers_project_id_projects_id_fk",
+          "tableFrom": "volunteers",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "volunteers_notes_updated_by_volunteers_roll_number_fk": {
+          "name": "volunteers_notes_updated_by_volunteers_roll_number_fk",
+          "tableFrom": "volunteers",
+          "tableTo": "volunteers",
+          "columnsFrom": [
+            "notes_updated_by"
+          ],
+          "columnsTo": [
+            "roll_number"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "volunteers_roll_number_check": {
+          "name": "volunteers_roll_number_check",
+          "value": "\"volunteers\".\"roll_number\" ~ '^[A-Za-z0-9]{4,20}$'"
+        },
+        "volunteers_name_check": {
+          "name": "volunteers_name_check",
+          "value": "char_length(\"volunteers\".\"name\") between 2 and 100"
+        },
+        "volunteers_phone_check": {
+          "name": "volunteers_phone_check",
+          "value": "\"volunteers\".\"phone\" ~ '^[6-9][0-9]{9}$'"
+        },
+        "volunteers_hostel_check": {
+          "name": "volunteers_hostel_check",
+          "value": "char_length(\"volunteers\".\"hostel\") <= 60"
+        },
+        "volunteers_city_state_check": {
+          "name": "volunteers_city_state_check",
+          "value": "char_length(\"volunteers\".\"city_state\") <= 60"
+        },
+        "volunteers_batch_year_check": {
+          "name": "volunteers_batch_year_check",
+          "value": "\"volunteers\".\"batch_year\" between 2000 and 2100"
+        },
+        "volunteers_notes_check": {
+          "name": "volunteers_notes_check",
+          "value": "char_length(\"volunteers\".\"notes\") <= 1000"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.volunteer_domains": {
+      "name": "volunteer_domains",
+      "schema": "",
+      "columns": {
+        "roll_number": {
+          "name": "roll_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "domain": {
+          "name": "domain",
+          "type": "creative_domain",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "since": {
+          "name": "since",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "current_date"
+        }
+      },
+      "indexes": {
+        "volunteer_domains_domain_idx": {
+          "name": "volunteer_domains_domain_idx",
+          "columns": [
+            {
+              "expression": "domain",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "volunteer_domains_roll_number_volunteers_roll_number_fk": {
+          "name": "volunteer_domains_roll_number_volunteers_roll_number_fk",
+          "tableFrom": "volunteer_domains",
+          "tableTo": "volunteers",
+          "columnsFrom": [
+            "roll_number"
+          ],
+          "columnsTo": [
+            "roll_number"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "volunteer_domains_pkey": {
+          "name": "volunteer_domains_pkey",
+          "columns": [
+            "roll_number",
+            "domain"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.office_assignments": {
+      "name": "office_assignments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "office_assignments_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "roll_number": {
+          "name": "roll_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tech_kind": {
+          "name": "tech_kind",
+          "type": "tech_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "builder_kind": {
+          "name": "builder_kind",
+          "type": "builder_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pr_slot": {
+          "name": "pr_slot",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "domain": {
+          "name": "domain",
+          "type": "creative_domain",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_status": {
+          "name": "access_status",
+          "type": "access_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "granted_by": {
+          "name": "granted_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ended_by": {
+          "name": "ended_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end_reason": {
+          "name": "end_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "oa_active_role_uq": {
+          "name": "oa_active_role_uq",
+          "columns": [
+            {
+              "expression": "roll_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"office_assignments\".\"ends_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "oa_pr_slot_uq": {
+          "name": "oa_pr_slot_uq",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pr_slot",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"office_assignments\".\"ends_at\" is null and \"office_assignments\".\"role\" = 'PROJECT_REPRESENTATIVE'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "oa_roll_active_idx": {
+          "name": "oa_roll_active_idx",
+          "columns": [
+            {
+              "expression": "roll_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"office_assignments\".\"ends_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "office_assignments_roll_number_volunteers_roll_number_fk": {
+          "name": "office_assignments_roll_number_volunteers_roll_number_fk",
+          "tableFrom": "office_assignments",
+          "tableTo": "volunteers",
+          "columnsFrom": [
+            "roll_number"
+          ],
+          "columnsTo": [
+            "roll_number"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "office_assignments_project_id_projects_id_fk": {
+          "name": "office_assignments_project_id_projects_id_fk",
+          "tableFrom": "office_assignments",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "office_assignments_granted_by_volunteers_roll_number_fk": {
+          "name": "office_assignments_granted_by_volunteers_roll_number_fk",
+          "tableFrom": "office_assignments",
+          "tableTo": "volunteers",
+          "columnsFrom": [
+            "granted_by"
+          ],
+          "columnsTo": [
+            "roll_number"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "office_assignments_ended_by_volunteers_roll_number_fk": {
+          "name": "office_assignments_ended_by_volunteers_roll_number_fk",
+          "tableFrom": "office_assignments",
+          "tableTo": "volunteers",
+          "columnsFrom": [
+            "ended_by"
+          ],
+          "columnsTo": [
+            "roll_number"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "office_assignments_pr_slot_check": {
+          "name": "office_assignments_pr_slot_check",
+          "value": "\"office_assignments\".\"pr_slot\" in (1, 2)"
+        },
+        "office_assignments_end_reason_check": {
+          "name": "office_assignments_end_reason_check",
+          "value": "char_length(\"office_assignments\".\"end_reason\") <= 300"
+        },
+        "oa_shape": {
+          "name": "oa_shape",
+          "value": "(\n        (\"office_assignments\".\"role\" = 'PROJECT_REPRESENTATIVE'\n          and \"office_assignments\".\"project_id\" is not null and \"office_assignments\".\"pr_slot\" is not null\n          and \"office_assignments\".\"tech_kind\" is null and \"office_assignments\".\"builder_kind\" is null\n          and \"office_assignments\".\"domain\" is null)\n        or (\"office_assignments\".\"role\" = 'BUILDER'\n          and \"office_assignments\".\"builder_kind\" is not null\n          and \"office_assignments\".\"project_id\" is null and \"office_assignments\".\"pr_slot\" is null\n          and \"office_assignments\".\"tech_kind\" is null\n          and ((\"office_assignments\".\"builder_kind\" = 'DOMAIN_LEAD') = (\"office_assignments\".\"domain\" is not null)))\n        or (\"office_assignments\".\"role\" = 'TECH_TEAM'\n          and \"office_assignments\".\"tech_kind\" is not null\n          and \"office_assignments\".\"project_id\" is null and \"office_assignments\".\"pr_slot\" is null\n          and \"office_assignments\".\"builder_kind\" is null and \"office_assignments\".\"domain\" is null)\n        or (\"office_assignments\".\"role\" = 'COORDINATOR'\n          and \"office_assignments\".\"project_id\" is null and \"office_assignments\".\"pr_slot\" is null\n          and \"office_assignments\".\"tech_kind\" is null and \"office_assignments\".\"builder_kind\" is null\n          and \"office_assignments\".\"domain\" is null)\n      )"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.access_status": {
+      "name": "access_status",
+      "schema": "public",
+      "values": [
+        "ACTIVE",
+        "SUSPENDED",
+        "REVOKED"
+      ]
+    },
+    "public.blood_group": {
+      "name": "blood_group",
+      "schema": "public",
+      "values": [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-"
+      ]
+    },
+    "public.builder_kind": {
+      "name": "builder_kind",
+      "schema": "public",
+      "values": [
+        "GENERAL",
+        "POC",
+        "DOMAIN_LEAD"
+      ]
+    },
+    "public.creative_domain": {
+      "name": "creative_domain",
+      "schema": "public",
+      "values": [
+        "PHOTOGRAPHY",
+        "VIDEO_EDITING",
+        "GRAPHIC_DESIGNING",
+        "CONTENT_WRITING"
+      ]
+    },
+    "public.gender": {
+      "name": "gender",
+      "schema": "public",
+      "values": [
+        "MALE",
+        "FEMALE",
+        "OTHER"
+      ]
+    },
+    "public.tech_kind": {
+      "name": "tech_kind",
+      "schema": "public",
+      "values": [
+        "MEMBER",
+        "MENTOR"
+      ]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": [
+        "COORDINATOR",
+        "TECH_TEAM",
+        "BUILDER",
+        "PROJECT_REPRESENTATIVE"
+      ]
+    },
+    "public.volunteer_status": {
+      "name": "volunteer_status",
+      "schema": "public",
+      "values": [
+        "ACTIVE",
+        "SUSPENDED",
+        "ARCHIVED"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

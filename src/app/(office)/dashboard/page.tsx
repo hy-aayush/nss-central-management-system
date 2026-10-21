@@ -7,6 +7,7 @@ import {
   LazyGenderDonutChart,
   LazyMonthlyTrendsChart,
 } from "@/components/dashboard/dashboard-charts";
+import { requireOfficeAccess } from "@/lib/auth/actor";
 import { academicYearLabel } from "@/lib/time";
 import { UpcomingEventsCard } from "@/components/dashboard/upcoming-events-card";
 import { RecentAttendanceCard } from "@/components/dashboard/recent-attendance-card";
@@ -40,7 +41,12 @@ export const metadata = {
 const METRIC_ICONS = [Users, Clock, TrendingUp, CalendarCheck];
 const METRIC_COLORS = ["text-blue-500", "text-emerald-500", "text-purple-500", "text-amber-500"];
 
+export const instant = false;
+
 export default async function DashboardPage() {
+  // Page-level gate: a layout alone can be bypassed by PPR streaming, so the
+  // private page never renders (or serialises its data) before this check.
+  await requireOfficeAccess();
   // Server-side retrieval of synthetic mock datasets through typed query helpers
   const summary = getDashboardSummary();
   const metricCards = getMetricCards();

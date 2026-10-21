@@ -2,7 +2,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { CalendarCheck } from "lucide-react";
 
-export default function MeetingsPage() {
+import { requireOfficeAccess } from "@/lib/auth/actor";
+
+export const instant = false;
+
+export default async function MeetingsPage() {
+  await requireOfficeAccess();
   return (
     <div className="space-y-6">
       <PageHeader

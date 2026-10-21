@@ -315,8 +315,61 @@ export async function insertVolunteer(
   return row as Record<string, unknown>;
 }
 
-/** Deletes a volunteer and its domain rows (FK is ON DELETE RESTRICT). */
+export interface AssignmentInsert {
+  rollNumber: string;
+  role: "COORDINATOR" | "TECH_TEAM" | "BUILDER" | "PROJECT_REPRESENTATIVE";
+  techKind?: "MEMBER" | "MENTOR" | null;
+  builderKind?: "GENERAL" | "POC" | "DOMAIN_LEAD" | null;
+  projectId?: number | null;
+  prSlot?: number | null;
+  domain?:
+    | "PHOTOGRAPHY"
+    | "VIDEO_EDITING"
+    | "GRAPHIC_DESIGNING"
+    | "CONTENT_WRITING"
+    | null;
+  accessStatus?: "ACTIVE" | "SUSPENDED" | "REVOKED";
+  endsAt?: Date | null;
+  endReason?: string | null;
+  grantedBy?: string;
+}
+
+/** Inserts one office assignment with parameter binding. */
+export async function insertAssignment(
+  sql: TestSql,
+  values: AssignmentInsert,
+): Promise<Record<string, unknown>> {
+  const {
+    rollNumber,
+    role,
+    techKind = null,
+    builderKind = null,
+    projectId = null,
+    prSlot = null,
+    domain = null,
+    accessStatus = "ACTIVE",
+    endsAt = null,
+    endReason = null,
+    grantedBy = rollNumber,
+  } = values;
+
+  const [row] = await sql`
+    insert into office_assignments (
+      roll_number, role, tech_kind, builder_kind, project_id, pr_slot, domain,
+      access_status, ends_at, end_reason, granted_by
+    ) values (
+      ${rollNumber}, ${role}, ${techKind}, ${builderKind}, ${projectId},
+      ${prSlot}, ${domain}, ${accessStatus}, ${endsAt}, ${endReason}, ${grantedBy}
+    )
+    returning *
+  `;
+
+  return row as Record<string, unknown>;
+}
+
+/** Deletes a volunteer and every row that restricts its deletion. */
 export async function deleteVolunteer(sql: TestSql, rollNumber: string): Promise<void> {
+  await sql`delete from office_assignments where roll_number = ${rollNumber}`;
   await sql`delete from volunteer_domains where roll_number = ${rollNumber}`;
   await sql`delete from volunteers where roll_number = ${rollNumber}`;
 }

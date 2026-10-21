@@ -9,6 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
+
+import { requireOfficeAccess } from "@/lib/auth/actor";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -23,7 +25,13 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-export default function DesignSystemPage() {
+/** The root page reads the session; it is never prerendered. */
+export const instant = false;
+
+export default async function DesignSystemPage() {
+  // The design reference is internal too (SRS 18.5): only office users see it.
+  await requireOfficeAccess();
+
   return (
     <div className="min-h-screen bg-background text-foreground antialiased selection:bg-primary/15 selection:text-primary">
       {/* Restrained Glass Header */}
