@@ -113,6 +113,35 @@ export function volunteerYear(batchYear: number, input: string | Date = new Date
 }
 
 /**
+ * Human-readable academic-year label for UI display, e.g. "2026–27".
+ * Use this instead of hardcoding the year anywhere in the interface.
+ */
+export function academicYearLabel(input: string | Date = new Date()): string {
+  const start = academicYearStart(input);
+  return `${start}\u2013${String(start + 1).slice(-2)}`;
+}
+
+/**
+ * Formats a "YYYY-MM" key (or any date) as an IST month label,
+ * e.g. "January 2026". Deterministic on server and client: always formatted
+ * in Asia/Kolkata with the en-IN locale, so it never depends on the host
+ * time zone (SRS 2.6 and 11.1).
+ */
+export function formatMonthYearIST(input: string | Date): string {
+  try {
+    const d = parseInstant(input);
+    if (isNaN(d.getTime())) return "\u2014";
+    return new Intl.DateTimeFormat(LOCALE, {
+      timeZone: TZ,
+      month: "long",
+      year: "numeric",
+    }).format(d);
+  } catch {
+    return "\u2014";
+  }
+}
+
+/**
  * Computes midnight IST at the start of the NEXT IST day after the given instant.
  * Locks use this: locks apply when now() >= lockAt.
  * IST is UTC+05:30. Midnight IST next day = (next IST day 00:00:00 IST) in UTC.

@@ -10,3 +10,4 @@ export * from "./error-state";
 export * from "./confirm-dialog";
 export * from "./data-table";
 export * from "./theme-toggle";
+export * from "./synthetic-data-notice";

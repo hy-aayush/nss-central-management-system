@@ -1,5 +1,68 @@
 # Database Foundation Progress
 
+## Frontend Quality Pass — independent-audit fixes (19 Oct 2026)
+
+**Scope:** Implement the safe subset of the independent repository audit's
+findings: real pages for the two blank auth routes, removal of dead modules and
+the shadowed root route, on-demand chart loading, IST/en-IN date consistency,
+and the office-wide synthetic-data banner. No authentication, authorization,
+database, server-action or business-logic work; Tasks 4 and 5 were not touched.
+
+**Status:** Complete, awaiting review. Changes are uncommitted in the working
+tree.
+
+### Files added or changed
+
+| File | Change |
+|---|---|
+| `src/app/(auth)/login/page.tsx` | Replaced the `return null` stub with a minimal static sign-in shell (disabled provider button, no auth logic). |
+| `src/app/(auth)/access-denied/page.tsx` | Replaced the `return null` stub with the minimal SRS 4.4 denied page (no role disclosure). |
+| `src/app/(office)/page.tsx` | Deleted. It was shadowed by `src/app/page.tsx` at `/` and never rendered. |
+| `src/lib/permissions.ts`, `src/lib/formatters.ts`, `src/providers/query-provider.tsx` | Deleted after re-verifying zero importers. |
+| `src/components/dashboard/dashboard-charts.tsx` | New client wrapper loading both Recharts dashboard charts on demand (`ssr: false` + skeleton). |
+| `src/app/(office)/dashboard/page.tsx` | Uses the lazy chart wrappers; academic-year badge derived from the data snapshot via `lib/time`. |
+| `src/components/shared/synthetic-data-notice.tsx` | New shared server component; banner moved out of the dashboard page. |
+| `src/components/shared/index.ts` | Barrel export for the new notice. |
+| `src/app/(office)/layout.tsx` | Renders the synthetic-data banner on every office screen. |
+| `src/lib/time.ts` | Added `academicYearLabel()` and `formatMonthYearIST()`. |
+| `src/features/analytics/analytics-monthly-trends.tsx`, `analytics-kpi-header.tsx` | en-IN/IST month and date formatting via `lib/time`; academic-year labels derived from data, not hardcoded. |
+| `docs/DECISIONS.md` | Recorded D-023 to D-025. |
+
+### Commands and actual results
+
+| Command / check | Actual result |
+|---|---|
+| `npm run build` (intermediate attempt 1) | Failed: plain `next/dynamic` in the Server Component page did not split the chart chunk under Cache Components (measured 424 KB gz initial, slightly worse than before). Replaced with the `ssr: false` client wrapper. |
+| `npm run build` (intermediate attempt 2) | Failed prerendering `/dashboard`: `new Date()` is an unstable value during Cache Components prerender. Fixed by deriving academic-year labels from data-snapshot timestamps. |
+| Stale `.next/dev/types/validator.ts` | Referenced the deleted `(office)/page.tsx` and broke type-checking until removed; it is a gitignored `next dev` artifact, regenerated on the next dev run. |
+| `npm run build` (final) | Passed; 57 static pages, TypeScript step clean. |
+| `npm run lint` | Passed (exit 0, no warnings). |
+| `npx tsc --noEmit` | Passed (exit 0). |
+| Bundle measurement (gzip of `/_next/static/chunks/*.js` referenced by each route's HTML) | `/dashboard` initial JS: **417 KB gz → 310 KB gz** (-107 KB, -26%). Recharts (92 + 16 + 8 KB gz) no longer in the initial scripts; it now loads on demand. `/volunteers` unchanged at 312 KB gz (no charts). |
+| `next start` on port 3100 + browser checks | `/login`, `/access-denied`, `/dashboard`, `/volunteers` all 200. Login and denied pages render correctly in dark and light themes. Dashboard shows the banner; both lazy charts rendered (`svg.recharts-surface` x2, no skeletons left); academic-year badge shows `2026–27`; zero console errors. Server stopped and tab closed afterward. |
+
+### Known limitations / deferred
+
+- Google sign-in, the access gate and route protection remain Task 4 work; the
+  `/login` provider button is intentionally disabled.
+- `/dashboard` at 310 KB gz is still above the SRS 16.6 target of 170 KB; the
+  remainder is the shared framework/shadcn/TanStack baseline, not charts. Needs
+  a dedicated bundle pass after Task 4.
+- `motion`, `date-fns` and `@tanstack/react-query` remain installed but unused;
+  dependency removal is deferred to a dedicated decision.
+- Root `/` stays a design-system page until the team decides its fate.
+- Deferred audit findings: loading/error-boundary coverage on most routes,
+  `/audit` vs `/audit-logs` canonical URL, header touch-target sizes, and a
+  pre-existing duplicated page-title suffix (pages re-append "| NSS Central
+  Management System" which the root template already adds).
+
+### Next dependency
+
+Task 4 — auth, access gate, `ActorContext`, permission resolver, limiter and
+idempotency (SRS 16.2 and 17).
+
+---
+
 ## Task 3 — Initial migration and manual security SQL (19 Oct 2026)
 
 **Scope:** Review the foundational schema against the SRS, generate the initial
@@ -7,8 +70,8 @@ migration, add the applicable SRS manual SQL, and apply both to a disposable
 local PostgreSQL database. No application features, later schema groups,
 staging or production database were touched.
 
-**Status:** Complete, awaiting review. The migration file is present in the
-working tree but has not been git-committed. The manual security SQL is
+**Status:** Complete, awaiting review. The migration file is committed with
+the Task 3 work (commit `2ad42a3`). The manual security SQL is
 implemented only for the tables that exist; the SRS functions that depend on
 later tables are documented as deferred blockers.
 

@@ -3,6 +3,7 @@
 import { Users, Clock, CheckCircle2, Calendar, TrendingUp, ShieldAlert } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import type { DashboardSummary } from "@/types/analytics";
+import { academicYearLabel, formatDateIST } from "@/lib/time";
 
 interface AnalyticsKpiHeaderProps {
   summary: DashboardSummary;
@@ -137,7 +138,9 @@ export function AnalyticsKpiHeader({ summary }: AnalyticsKpiHeaderProps) {
 
         <div className="flex items-center gap-2">
           <ShieldAlert className="size-3.5 text-muted-foreground" />
-          <span>Calculated for Academic Year 2026-27 • Updated: {new Date(lastUpdated).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
+          {/* Academic year derived from the snapshot time, not `new Date()`:
+              Cache Components forbids reading the clock during prerender. */}
+          <span>Calculated for Academic Year {academicYearLabel(lastUpdated)} • Updated: {formatDateIST(lastUpdated)}</span>
         </div>
       </div>
     </div>

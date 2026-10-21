@@ -289,3 +289,67 @@ safer than shipping functions that fail at runtime or delete incomplete data.
 `security.sql` after every schema group that adds a table or a
 `volunteers` foreign key.
 
+---
+
+## D-023: On-demand chart loading and prerender-safe date labels (19 Oct 2026)
+
+**Decision:** Dashboard Recharts components are loaded through a thin client
+wrapper (`src/components/dashboard/dashboard-charts.tsx`) using
+`next/dynamic` with `ssr: false` and a skeleton fallback. Academic-year and
+month labels are derived from data-snapshot timestamps through new
+`lib/time.ts` helpers (`academicYearLabel`, `formatMonthYearIST`) instead of
+hardcoding "2026-27" or reading the clock.
+
+**Reason:** Two measured facts. (1) Plain `next/dynamic` inside the Server
+Component page does NOT split the chart chunk under Cache Components/PPR —
+the prerendered shell still hydrates it eagerly (424 KB gz initial for
+`/dashboard`, worse than the original 417 KB). The `ssr: false` client
+wrapper reduced initial JS to 310 KB gz and moved Recharts (116 KB gz) to an
+on-demand fetch (SRS 16.6). (2) Cache Components rejects `new Date()` during
+prerender, which is why the year had previously been hardcoded; deriving the
+label from `summary.lastUpdated` / the latest trend month is deterministic,
+prerender-safe, and semantically ties the label to the displayed data.
+
+**Status:** Verified with `next build`, lint, `tsc --noEmit`, gzip
+measurements of the route's initial chunks, and a browser check (both charts
+render, zero console errors).
+
+---
+
+## D-024: Dead module and shadowed-route removal (19 Oct 2026)
+
+**Decision:** Deleted `src/lib/permissions.ts`, `src/lib/formatters.ts`,
+`src/providers/query-provider.tsx` (all re-verified to have zero importers)
+and the shadowed `src/app/(office)/page.tsx`, which was silently dropped at
+`/` because `src/app/page.tsx` owns that route. The root design-system
+page stays until the team decides its fate.
+
+**Reason:** The audit found these looked like implemented functionality but
+were dead code — a trap for future agents (especially `permissions.ts`,
+which could be mistaken for real authorization). `motion`, `date-fns` and
+`@tanstack/react-query` remain installed but unused; removing dependencies
+is deferred to a dedicated decision.
+
+**Status:** Build, lint and typecheck pass after removal. A stale
+gitignored `.next/dev/types/validator.ts` had to be cleared because it still
+referenced the deleted route.
+
+---
+
+## D-025: Static auth-route stubs and office-wide synthetic-data banner (19 Oct 2026)
+
+**Decision:** `/login` and `/access-denied` are minimal static pages (no auth
+logic; the provider button is disabled with an honest caption). The
+synthetic-data disclosure banner moved from the dashboard page into a shared
+server component rendered by the office layout, so every office screen shows
+it.
+
+**Reason:** Both routes previously rendered `return null` (a blank screen),
+which failed SRS 4.4 and basic accessibility. Real sign-in and the access
+gate belong to Task 4; these shells must not pretend otherwise. The banner is
+required by SRS rule 20 (synthetic data only in development) and was
+inconsistent (dashboard only).
+
+**Status:** Both pages render correctly in dark and light themes on a
+production build; banner verified on `/dashboard` and `/volunteers`.
+

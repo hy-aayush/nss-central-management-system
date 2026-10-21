@@ -1,12 +1,13 @@
-import * as React from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/shared/stat-card";
 import { DataQualityAlert } from "@/components/dashboard/data-quality-alert";
-import { GenderDonutChart } from "@/components/dashboard/gender-donut-chart";
-import { MonthlyTrendsChart } from "@/components/dashboard/monthly-trends-chart";
+import {
+  LazyGenderDonutChart,
+  LazyMonthlyTrendsChart,
+} from "@/components/dashboard/dashboard-charts";
+import { academicYearLabel } from "@/lib/time";
 import { UpcomingEventsCard } from "@/components/dashboard/upcoming-events-card";
 import { RecentAttendanceCard } from "@/components/dashboard/recent-attendance-card";
 import { ProjectDistributionCard } from "@/components/dashboard/project-distribution-card";
@@ -29,7 +30,6 @@ import {
   CalendarCheck,
   CalendarPlus,
   ClipboardCheck,
-  FlaskConical,
 } from "lucide-react";
 
 export const metadata = {
@@ -58,7 +58,9 @@ export default async function DashboardPage() {
             <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-foreground font-semibold">NSS Central Office</span>
             <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground font-mono">Academic Year 2026–27</span>
+            {/* Derived from the data snapshot, not `new Date()`: Cache Components
+                forbids reading the clock during prerender (SRS 16.4). */}
+            <span className="text-muted-foreground font-mono">Academic Year {academicYearLabel(summary.lastUpdated)}</span>
             <span className="text-muted-foreground">•</span>
             <span className="text-muted-foreground">IST (UTC+05:30)</span>
           </div>
@@ -83,22 +85,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
         }
-      />
-
-      {/* Demonstration Environment Notice */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs">
-        <div className="flex items-center gap-2">
-          <FlaskConical className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-          <span>
-            <strong className="font-semibold">Demonstration Mode:</strong> All volunteer data, attendance figures, project rosters, and audit entries are synthetic test fixtures. No production records or student personal data are stored.
-          </span>
-        </div>
-        <Badge variant="outline" className="border-amber-500/40 text-[10px] uppercase tracking-wider shrink-0 bg-amber-500/15">
-          Synthetic Sandbox
-        </Badge>
-      </div>
-
-      {/* Operational Action Items & Data Quality Alerts */}
+      />      {/* Operational Action Items & Data Quality Alerts */}
       <DataQualityAlert issues={summary.dataQualityIssues} />
 
       {/* Top Summary Metric Cards */}
@@ -129,10 +116,10 @@ export default async function DashboardPage() {
       <section aria-labelledby="analytics-heading" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <h2 id="analytics-heading" className="sr-only">Visual Analytics and Engagement Trends</h2>
         <div className="lg:col-span-5 flex flex-col">
-          <GenderDonutChart data={summary.volunteers.gender} className="h-full" />
+          <LazyGenderDonutChart data={summary.volunteers.gender} className="h-full" />
         </div>
         <div className="lg:col-span-7 flex flex-col">
-          <MonthlyTrendsChart trends={summary.monthlyTrends} className="h-full" />
+          <LazyMonthlyTrendsChart trends={summary.monthlyTrends} className="h-full" />
         </div>
       </section>
 

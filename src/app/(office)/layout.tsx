@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { SyntheticDataNotice } from "@/components/shared/synthetic-data-notice";
 
 function ShellSkeleton() {
   return (
@@ -50,6 +51,8 @@ export default function OfficeLayout({
             tabIndex={-1}
             className="flex-1 min-w-0 px-4 py-4 md:px-6 md:py-6 lg:px-8 max-w-7xl w-full mx-auto pb-20 md:pb-8 outline-none"
           >
+            {/* Synthetic-data disclosure (SRS rule 20) — shown on every office screen */}
+            <SyntheticDataNotice className="mb-6" />
             {children}
           </main>
 

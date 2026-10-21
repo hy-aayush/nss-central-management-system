@@ -4,6 +4,7 @@ import { TrendingUp, CalendarDays, CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { MonthlyTrendPoint } from "@/types/analytics";
+import { academicYearLabel, formatMonthYearIST } from "@/lib/time";
 
 interface AnalyticsMonthlyTrendsProps {
   trends: MonthlyTrendPoint[];
@@ -11,6 +12,12 @@ interface AnalyticsMonthlyTrendsProps {
 
 export function AnalyticsMonthlyTrends({ trends }: AnalyticsMonthlyTrendsProps) {
   const maxHours = Math.max(...trends.map((t) => t.hoursCompleted));
+  // Academic year derived from the latest data point — deterministic at
+  // prerender time (Cache Components forbids reading the clock, SRS 16.4).
+  const latestMonthKey = trends[trends.length - 1]?.month;
+  const academicYear = latestMonthKey
+    ? academicYearLabel(`${latestMonthKey}-01`)
+    : "";
 
   return (
     <Card className="p-6 bg-card border-border shadow-xs space-y-4">
@@ -24,15 +31,15 @@ export function AnalyticsMonthlyTrends({ trends }: AnalyticsMonthlyTrendsProps) 
             Monthly progression of drives, attendance rates, and verified service credit.
           </p>
         </div>
-        <Badge variant="outline" className="text-label-xs bg-muted/40 self-start sm:self-auto">
-          Academic Year 2026-27
-        </Badge>
+        <Badge variant="outline" className="text-label-xs bg-muted/40 self-start sm:self-auto">            Academic Year {academicYear}
+          </Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {trends.map((point) => {
-          const dateObj = new Date(point.month + "-01");
-          const monthName = dateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+          // IST month label via lib/time (SRS 2.6/11.1): en-IN + Asia/Kolkata,
+          // deterministic on server and client (no host-timezone drift).
+          const monthName = formatMonthYearIST(`${point.month}-01`);
           const hoursPercentage = Math.round((point.hoursCompleted / maxHours) * 100);
 
           return (
