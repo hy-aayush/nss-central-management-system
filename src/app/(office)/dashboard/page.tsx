@@ -1,106 +1,124 @@
 import Link from "next/link";
-import { PageHeader } from "@/components/layout/page-header";
+
 import { buttonVariants } from "@/components/ui/button";
+import { SectionHeader } from "@/components/shared/section-header";
 import { StatCard } from "@/components/shared/stat-card";
+import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { DataQualityAlert } from "@/components/dashboard/data-quality-alert";
 import {
   LazyGenderDonutChart,
   LazyMonthlyTrendsChart,
 } from "@/components/dashboard/dashboard-charts";
 import { requireOfficeAccess } from "@/lib/auth/actor";
-import { academicYearLabel } from "@/lib/time";
+import { academicYearLabel, formatDateIST, formatTimeIST } from "@/lib/time";
 import { UpcomingEventsCard } from "@/components/dashboard/upcoming-events-card";
 import { RecentAttendanceCard } from "@/components/dashboard/recent-attendance-card";
 import { ProjectDistributionCard } from "@/components/dashboard/project-distribution-card";
 import { RecentAuditCard } from "@/components/dashboard/recent-audit-card";
 import { QuickActionsCard } from "@/components/dashboard/quick-actions-card";
-import {
-  getDashboardSummary,
-  getMetricCards,
-  getEvents,
-  getMeetings,
-  getProjects,
-  getAuditLogs,
-  MOCK_ATTENDANCE_RECORDS,
-  MOCK_ATTENDANCE_SUMMARIES,
-} from "@/lib/mock-data";
+import { getDashboardSnapshot } from "@/lib/mock-data/cached";
 import {
   Users,
   Clock,
   TrendingUp,
   CalendarCheck,
-  CalendarPlus,
-  ClipboardCheck,
+  ArrowRight,
 } from "lucide-react";
 
 export const metadata = {
-  title: "Office Dashboard | NSS Central Management System",
-  description: "Internal office overview of volunteer deployment, events, verified attendance, and audit activity.",
+  title: "Office Dashboard",
+  description:
+    "Internal office overview of volunteer deployment, events, verified attendance, and audit activity.",
 };
 
 const METRIC_ICONS = [Users, Clock, TrendingUp, CalendarCheck];
-const METRIC_COLORS = ["text-blue-500", "text-emerald-500", "text-purple-500", "text-amber-500"];
 
 export const instant = false;
 
 export default async function DashboardPage() {
   // Page-level gate: a layout alone can be bypassed by PPR streaming, so the
   // private page never renders (or serialises its data) before this check.
-  await requireOfficeAccess();
+  const access = await requireOfficeAccess();
   // Server-side retrieval of synthetic mock datasets through typed query helpers
-  const summary = getDashboardSummary();
-  const metricCards = getMetricCards();
-  const events = getEvents().items;
-  const meetings = getMeetings().items;
-  const projects = getProjects();
-  const auditLogs = getAuditLogs().items;
+  // Cached, request-independent synthetic snapshot (`use cache`, one hour).
+  const {
+    summary,
+    metricCards,
+    events,
+    meetings,
+    projects,
+    auditLogs,
+    attendanceRecords,
+    attendanceSummaries,
+  } = await getDashboardSnapshot();
+
+  const upcomingEvents = events.filter((event) =>
+    ["SCHEDULED", "PUBLISHED", "RESCHEDULED", "ONGOING"].includes(event.status),
+  );
+  const upcomingMeetings = meetings.filter((meeting) =>
+    ["SCHEDULED", "RESCHEDULED", "ONGOING"].includes(meeting.status),
+  );
+
+  const nextOperation = [
+    ...upcomingEvents.map((event) => ({
+      title: event.title,
+      when: `${formatDateIST(event.startsAt)} · ${formatTimeIST(event.startsAt)}`,
+      venue: event.venue,
+      href: `/events/${event.id}`,
+      kind: event.type === "CENTRAL" ? "Central event" : "Project event",
+      at: new Date(event.startsAt).getTime(),
+    })),
+    ...upcomingMeetings.map((meeting) => ({
+      title: meeting.agenda,
+      when: `${formatDateIST(`${meeting.date}T${meeting.startTime}:00+05:30`)} · ${formatTimeIST(`${meeting.date}T${meeting.startTime}:00+05:30`)}`,
+      venue: meeting.venue,
+      href: "/meetings",
+      kind: `${meeting.type.toLowerCase()} meeting`,
+      at: new Date(`${meeting.date}T${meeting.startTime}:00+05:30`).getTime(),
+    })),
+  ]
+    .filter((operation) => Number.isFinite(operation.at))
+    .sort((a, b) => a.at - b.at)[0];
 
   return (
-    <div className="space-y-6">
-      {/* Header with Title, Context, and Primary Operational Actions */}
-      <PageHeader
-        badge={
-          <div className="flex items-center gap-2 text-xs font-medium">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-foreground font-semibold">NSS Central Office</span>
-            <span className="text-muted-foreground">•</span>
-            {/* Derived from the data snapshot, not `new Date()`: Cache Components
-                forbids reading the clock during prerender (SRS 16.4). */}
-            <span className="text-muted-foreground font-mono">Academic Year {academicYearLabel(summary.lastUpdated)}</span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground">IST (UTC+05:30)</span>
-          </div>
-        }
-        title="Operational Dashboard"
-        description="Central office command center: volunteer totals, project distribution, verified event turnout, and security logs."
-        actions={
-          <div className="flex items-center gap-2">
-            <Link
-              href="/attendance"
-              className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1.5 text-xs font-medium" })}
-            >
-              <ClipboardCheck className="size-3.5" />
-              Take Attendance
-            </Link>
-            <Link
-              href="/events/central/new"
-              className={buttonVariants({ variant: "default", size: "sm", className: "gap-1.5 text-xs font-medium" })}
-            >
-              <CalendarPlus className="size-3.5" />
-              Schedule Event
-            </Link>
-          </div>
-        }
-      />      {/* Operational Action Items & Data Quality Alerts */}
-      <DataQualityAlert issues={summary.dataQualityIssues} />
+    <div className="space-y-7">
+      <DashboardHero
+        name={access.volunteer.name}
+        academicYear={academicYearLabel(summary.lastUpdated)}
+        sessionLabel={`Session ${summary.academicYear}`}
+        activeVolunteers={summary.volunteers.active}
+        upcomingCount={upcomingEvents.length + upcomingMeetings.length}
+        nextOperation={nextOperation}
+      />
 
-      {/* Top Summary Metric Cards */}
-      <section aria-labelledby="metrics-heading">
-        <h2 id="metrics-heading" className="sr-only">Core Operational Metrics</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {summary.dataQualityIssues.length > 0 ? (
+        <DataQualityAlert issues={summary.dataQualityIssues} />
+      ) : null}
+
+      {/* Unit snapshot */}
+      <section aria-labelledby="metrics-heading" className="space-y-3">
+        <SectionHeader
+          id="metrics-heading"
+          eyebrow="This cycle"
+          title="Unit snapshot"
+          description="Verified figures for the current academic session, updated from the operational record."
+          actions={
+            <Link
+              href="/analytics"
+              className={buttonVariants({
+                variant: "ghost",
+                size: "sm",
+                className: "gap-1 text-muted-foreground hover:text-foreground",
+              })}
+            >
+              Open analytics
+              <ArrowRight className="size-3.5" />
+            </Link>
+          }
+        />
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
           {metricCards.map((card, idx) => {
             const Icon = METRIC_ICONS[idx % METRIC_ICONS.length];
-            const iconColor = METRIC_COLORS[idx % METRIC_COLORS.length];
             return (
               <StatCard
                 key={card.title}
@@ -111,52 +129,81 @@ export default async function DashboardPage() {
                 changePeriod={card.changePeriod}
                 description={card.description}
                 icon={Icon}
-                iconColor={iconColor}
+                accent={idx === 0}
               />
             );
           })}
         </div>
       </section>
 
-      {/* Visual Analytics Row: Gender Diversity Donut & Monthly Trajectory Area Chart */}
-      <section aria-labelledby="analytics-heading" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <h2 id="analytics-heading" className="sr-only">Visual Analytics and Engagement Trends</h2>
-        <div className="lg:col-span-5 flex flex-col">
-          <LazyGenderDonutChart data={summary.volunteers.gender} className="h-full" />
-        </div>
-        <div className="lg:col-span-7 flex flex-col">
-          <LazyMonthlyTrendsChart trends={summary.monthlyTrends} className="h-full" />
-        </div>
-      </section>
-
-      {/* Operations Row: Upcoming Events/Meetings & Recent Verified Attendance */}
-      <section aria-labelledby="operations-heading" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <h2 id="operations-heading" className="sr-only">Upcoming and Recent Operations</h2>
-        <UpcomingEventsCard events={events} meetings={meetings} limit={5} />
-        <RecentAttendanceCard
-          records={MOCK_ATTENDANCE_RECORDS}
-          summaries={MOCK_ATTENDANCE_SUMMARIES}
-          limit={5}
+      {/* Visual analytics */}
+      <section aria-labelledby="analytics-heading" className="space-y-3">
+        <SectionHeader
+          id="analytics-heading"
+          eyebrow="Engagement"
+          title="Participation and composition"
+          description="Gender distribution of active volunteers alongside the monthly participation trajectory."
         />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div className="flex flex-col lg:col-span-5">
+            <LazyGenderDonutChart data={summary.volunteers.gender} className="h-full" />
+          </div>
+          <div className="flex flex-col lg:col-span-7">
+            <LazyMonthlyTrendsChart
+              trends={summary.monthlyTrends}
+              className="h-full"
+            />
+          </div>
+        </div>
       </section>
 
-      {/* Project Distribution Section (All 9 SDG Project Wings) */}
-      <section aria-labelledby="projects-heading">
-        <h2 id="projects-heading" className="sr-only">Project Wings Capacity</h2>
+      {/* Operations */}
+      <section aria-labelledby="operations-heading" className="space-y-3">
+        <SectionHeader
+          id="operations-heading"
+          eyebrow="Operations"
+          title="What is happening next"
+          description="Scheduled drives and meetings beside the most recent verified attendance sessions."
+        />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <UpcomingEventsCard events={events} meetings={meetings} limit={5} />
+          <RecentAttendanceCard
+            records={attendanceRecords}
+            summaries={attendanceSummaries}
+            limit={5}
+          />
+        </div>
+      </section>
+
+      {/* Project distribution */}
+      <section aria-labelledby="projects-heading" className="space-y-3">
+        <SectionHeader
+          id="projects-heading"
+          eyebrow="Programmes"
+          title="Project capacity"
+          description="All nine SDG-aligned project wings, their registers, and logged service hours."
+        />
         <ProjectDistributionCard
           projects={projects}
           summaries={summary.projectSummaries}
         />
       </section>
 
-      {/* Quick Office Shortcuts & Security Audit Activity */}
-      <section aria-labelledby="audit-heading" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <h2 id="audit-heading" className="sr-only">Governance and Shortcuts</h2>
-        <div className="lg:col-span-7 flex flex-col">
-          <QuickActionsCard />
-        </div>
-        <div className="lg:col-span-5 flex flex-col">
-          <RecentAuditCard logs={auditLogs} limit={5} />
+      {/* Governance + shortcuts */}
+      <section aria-labelledby="audit-heading" className="space-y-3">
+        <SectionHeader
+          id="audit-heading"
+          eyebrow="Governance"
+          title="Shortcuts and accountability"
+          description="Direct access to core workflows alongside the immutable audit trail."
+        />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div className="flex flex-col lg:col-span-7">
+            <QuickActionsCard />
+          </div>
+          <div className="flex flex-col lg:col-span-5">
+            <RecentAuditCard logs={auditLogs} limit={5} />
+          </div>
         </div>
       </section>
     </div>
