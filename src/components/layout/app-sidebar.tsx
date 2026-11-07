@@ -7,6 +7,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -25,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MAIN_NAV_ITEMS } from "@/lib/navigation";
+import { NAV_SECTIONS } from "@/lib/navigation";
 import {
   ChevronsUpDown,
   LogOut,
@@ -34,8 +35,10 @@ import {
   User,
   PanelLeftClose,
   PanelLeftOpen,
+  Command,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /** Display-only identity for the signed-in office member. */
 export interface SidebarActor {
@@ -54,26 +57,34 @@ export function AppSidebar({ actor }: { actor: SidebarActor }) {
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-border bg-surface-container-lowest text-foreground transition-all duration-200 ease-in-out"
+      className={cn(
+        "border-r border-border/70 bg-transparent text-foreground",
+        // The sidebar itself is a glass panel: translucent, never white-flat.
+        "[&_[data-slot=sidebar-inner]]:bg-sidebar/70 [&_[data-slot=sidebar-inner]]:backdrop-blur-2xl",
+        "[&_[data-slot=sidebar-inner]]:supports-[not(backdrop-filter:blur(1px))]:bg-sidebar",
+      )}
     >
-      {/* 1. Header with Brand & Collapse Trigger */}
-      <SidebarHeader className="border-b border-border/60 p-3">
+      {/* Brand */}
+      <SidebarHeader className="px-3 pt-3 pb-2">
         <div className="flex items-center justify-between gap-2">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2.5 overflow-hidden rounded-md p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-w-0 items-center gap-2.5 rounded-lg p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {/* NSS Logo Emblem */}
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold text-xs shadow-xs">
-              NSS
+            <div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-primary text-[0.625rem] font-semibold tracking-wide text-primary-foreground shadow-[0_1px_2px_oklch(0.25_0.03_265/20%)]">
+              <span className="relative z-10">NSS</span>
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent"
+              />
             </div>
 
             {!isCollapsed && (
-              <div className="flex flex-col min-w-0 text-left">
-                <span className="truncate text-headline-sm font-semibold tracking-tight text-foreground leading-tight">
+              <div className="flex min-w-0 flex-col text-left leading-tight">
+                <span className="truncate text-[0.8125rem] font-semibold tracking-[-0.01em] text-foreground">
                   NSS Central
                 </span>
-                <span className="truncate text-[11px] text-muted-foreground font-normal leading-tight">
+                <span className="truncate text-[0.6875rem] font-normal text-muted-foreground">
                   KIIT University Unit
                 </span>
               </div>
@@ -85,70 +96,87 @@ export function AppSidebar({ actor }: { actor: SidebarActor }) {
               variant="ghost"
               size="icon-xs"
               onClick={toggleSidebar}
-              className="text-muted-foreground hover:text-foreground shrink-0"
+              className="shrink-0 rounded-md text-muted-foreground hover:bg-surface-container-high/60 hover:text-foreground"
               title="Collapse sidebar (Ctrl+B)"
               aria-label="Collapse sidebar"
             >
-              <PanelLeftClose className="size-4" />
+              <PanelLeftClose className="size-3.5" />
             </Button>
           )}
         </div>
-
-        {/* Operational Workspace Status Strip */}
-        {!isCollapsed && (
-          <div className="mt-2 flex items-center justify-between rounded-md bg-surface-container-low px-2 py-1 text-label-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5 truncate">
-              <span className="size-1.5 shrink-0 rounded-full bg-primary animate-pulse" />
-              <span className="truncate">Internal Workspace</span>
-            </div>
-            <span className="font-mono text-[10px] text-muted-foreground/80">v1.0</span>
-          </div>
-        )}
       </SidebarHeader>
 
-      {/* 2. Main Navigation List */}
-      <SidebarContent className="px-2 py-3 space-y-1 overflow-y-auto">
-        <SidebarMenu>
-          {MAIN_NAV_ITEMS.map((item) => {
-            const isActive =
-              item.href === "/dashboard"
-                ? pathname === "/dashboard" || pathname === "/"
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+      {/* Navigation */}
+      <SidebarContent className="no-scrollbar px-2 pb-2">
+        {NAV_SECTIONS.map((section, sectionIndex) => (
+          <SidebarGroup
+            key={section.title ?? sectionIndex}
+            className="p-0 pt-2 first:pt-0"
+          >
+            {section.title ? (
+              <p className="px-2.5 pb-1 text-[0.625rem] font-semibold tracking-[0.09em] text-muted-foreground/70 uppercase group-data-[collapsible=icon]:hidden">
+                {section.title}
+              </p>
+            ) : null}
 
-            const Icon = item.icon;
+            <SidebarMenu className="gap-0.5">
+              {section.items.map((item) => {
+                const isActive =
+                  item.href === "/dashboard"
+                    ? pathname === "/dashboard" || pathname === "/"
+                    : pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`);
 
-            return (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  render={<Link href={item.href} />}
-                  isActive={isActive}
-                  tooltip={item.title}
-                  className={`relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-label-md transition-colors ${
-                    isActive
-                      ? "bg-primary/10 text-primary font-medium dark:bg-primary/15"
-                      : "text-muted-foreground hover:bg-surface-container hover:text-foreground"
-                  }`}
-                >
-                  <Icon className={`size-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                  {!isCollapsed && (
-                    <span className="truncate flex-1 text-left">{item.title}</span>
-                  )}
-                  {!isCollapsed && item.badge && (
-                    <Badge
-                      variant={item.badgeVariant ?? "secondary"}
-                      className="ml-auto text-[10px] h-4 px-1.5 font-normal shrink-0"
+                const Icon = item.icon;
+
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      render={<Link href={item.href} />}
+                      isActive={isActive}
+                      tooltip={item.title}
+                      className={cn(
+                        "relative flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-[0.8125rem] transition-[background-color,color] duration-200 ease-[var(--ease-out-quart)]",
+                        isActive
+                          ? "bg-primary/[0.075] font-medium text-primary hover:bg-primary/[0.10] hover:text-primary"
+                          : "text-muted-foreground hover:bg-surface-container-high/55 hover:text-foreground",
+                      )}
                     >
-                      {item.badge}
-                    </Badge>
-                  )}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
+                      {isActive && !isCollapsed && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-primary"
+                        />
+                      )}
+                      <Icon
+                        className={cn(
+                          "size-4 shrink-0 transition-colors duration-200",
+                          isActive ? "text-primary" : "text-muted-foreground/80",
+                        )}
+                      />
+                      {!isCollapsed && (
+                        <span className="min-w-0 flex-1 truncate text-left">
+                          {item.title}
+                        </span>
+                      )}
+                      {!isCollapsed && item.badge && (
+                        <Badge
+                          variant={item.badgeVariant ?? "secondary"}
+                          className="ml-auto h-[1.05rem] shrink-0 rounded px-1.5 text-[0.625rem] font-medium"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
-      {/* 3. Footer with User Profile Placeholder */}
+      {/* Account */}
       <SidebarFooter className="border-t border-border/60 p-2">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -157,57 +185,57 @@ export function AppSidebar({ actor }: { actor: SidebarActor }) {
                 render={
                   <SidebarMenuButton
                     size="lg"
-                    className="w-full data-[state=open]:bg-surface-container flex items-center gap-2.5 p-1.5 rounded-lg text-left"
+                    className="h-11 w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-colors data-[state=open]:bg-surface-container-high/60"
                     aria-label="User account and office options"
                   />
                 }
               >
                 <div className="relative shrink-0">
-                  <Avatar className="size-8 rounded-lg border border-border">
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                  <Avatar className="size-8 rounded-[10px]">
+                    <AvatarFallback className="bg-primary/10 text-[0.6875rem] font-semibold text-primary">
                       {actor.initials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-success ring-2 ring-surface-container-lowest" />
+                  <span className="absolute -right-0.5 -bottom-0.5 size-2 rounded-full bg-success ring-2 ring-sidebar" />
                 </div>
 
                 {!isCollapsed && (
-                  <div className="grid flex-1 text-left leading-tight truncate">
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate font-semibold text-xs text-foreground">
-                        {actor.name}
-                      </span>
-                      <Badge variant="accent" className="max-w-24 truncate text-[9px] h-3.5 px-1 py-0 uppercase">
-                        {actor.roleLabel}
-                      </Badge>
-                    </div>
-                    <span className="truncate text-[10px] text-muted-foreground">
-                      {actor.email}
+                  <div className="grid min-w-0 flex-1 text-left leading-tight">
+                    <span className="truncate text-[0.75rem] font-semibold text-foreground">
+                      {actor.name}
+                    </span>
+                    <span className="truncate text-[0.6875rem] text-muted-foreground">
+                      {actor.roleLabel}
                     </span>
                   </div>
                 )}
 
-                {!isCollapsed && <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />}
+                {!isCollapsed && (
+                  <ChevronsUpDown className="ml-auto size-3.5 shrink-0 text-muted-foreground/70" />
+                )}
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
-                className="w-56 rounded-lg p-1 shadow-md"
+                className="w-60 rounded-xl p-1 shadow-[var(--elevation-3)]"
                 side={isMobile ? "bottom" : "right"}
                 align="end"
                 sideOffset={8}
               >
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="p-2 font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <div className="flex items-center justify-between">
-                        <p className="truncate text-xs font-semibold leading-none text-foreground">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-[0.75rem] leading-none font-semibold text-foreground">
                           {actor.name}
                         </p>
-                        <Badge variant="accent" className="max-w-28 truncate text-[9px]">
+                        <Badge
+                          variant="outline"
+                          className="max-w-28 truncate rounded px-1.5 text-[0.5625rem] tracking-wide uppercase"
+                        >
                           {actor.roleLabel}
                         </Badge>
                       </div>
-                      <p className="truncate text-[11px] leading-none text-muted-foreground">
+                      <p className="truncate text-[0.6875rem] leading-none text-muted-foreground">
                         {actor.email}
                       </p>
                     </div>
@@ -215,21 +243,21 @@ export function AppSidebar({ actor }: { actor: SidebarActor }) {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="cursor-pointer gap-2 text-[0.8125rem]"
                   onClick={() => router.push("/settings")}
                 >
                   <User className="size-4 text-muted-foreground" />
                   <span>Office Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="cursor-pointer gap-2 text-[0.8125rem]"
                   onClick={() => router.push("/team")}
                 >
                   <ShieldAlert className="size-4 text-muted-foreground" />
                   <span>Permissions &amp; Roster</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="cursor-pointer gap-2 text-[0.8125rem]"
                   onClick={() => router.push("/settings")}
                 >
                   <Settings className="size-4 text-muted-foreground" />
@@ -239,7 +267,7 @@ export function AppSidebar({ actor }: { actor: SidebarActor }) {
                 <form action="/auth/signout" method="post">
                   <button
                     type="submit"
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10 focus-visible:bg-destructive/10"
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[0.8125rem] text-destructive outline-none transition-colors hover:bg-destructive/10 focus-visible:bg-destructive/10"
                   >
                     <LogOut className="size-4" />
                     <span>Sign out</span>
@@ -250,24 +278,34 @@ export function AppSidebar({ actor }: { actor: SidebarActor }) {
           </SidebarMenuItem>
         </SidebarMenu>
 
-        {/* Expand trigger when collapsed on desktop */}
+        {!isCollapsed && (
+          <p className="flex items-center justify-between px-2 pt-1 text-[0.625rem] text-muted-foreground/70">
+            <span className="inline-flex items-center gap-1">
+              <span className="size-1.5 rounded-full bg-success/80" />
+              Internal workspace
+            </span>
+            <span className="inline-flex items-center gap-1 font-mono">
+              <Command className="size-2.5" />K
+            </span>
+          </p>
+        )}
+
         {!isMobile && isCollapsed && (
-          <div className="pt-1 flex justify-center">
+          <div className="flex justify-center pt-1">
             <Button
               variant="ghost"
               size="icon-xs"
               onClick={toggleSidebar}
-              className="text-muted-foreground hover:text-foreground size-7"
+              className="size-7 text-muted-foreground hover:text-foreground"
               title="Expand sidebar (Ctrl+B)"
               aria-label="Expand sidebar"
             >
-              <PanelLeftOpen className="size-4" />
+              <PanelLeftOpen className="size-3.5" />
             </Button>
           </div>
         )}
       </SidebarFooter>
 
-      {/* Resize / rail guide */}
       <SidebarRail />
     </Sidebar>
   );

@@ -24,16 +24,18 @@ export function IstClock() {
   const time = React.useSyncExternalStore(
     subscribeToClock,
     () => formatISTTime(),
-    () => null
+    () => null,
   );
 
   return (
     <div
-      className="hidden lg:flex items-center gap-1.5 rounded-full bg-surface-container-low px-2.5 py-1 text-label-sm text-muted-foreground border border-border/40 select-none"
+      className="hidden select-none items-center gap-1.5 rounded-full border border-border/50 bg-surface-container-low/60 px-2.5 py-1 text-[0.6875rem] font-medium text-muted-foreground lg:flex"
       title="Standard Institute Operation Timezone (IST)"
     >
-      <span className="size-1.5 rounded-full bg-primary animate-pulse" />
-      <span className="truncate">Asia/Kolkata (IST) {time ?? ""}</span>
+      <span className="size-1.5 rounded-full bg-success/90" />
+      <span className="tnum truncate">
+        {time ?? "—"} <span className="text-muted-foreground/60">IST</span>
+      </span>
     </div>
   );
 }

@@ -51,18 +51,22 @@ export function CommandMenu() {
       <Button
         variant="outline"
         onClick={() => setOpen(true)}
-        className="relative h-9 w-full max-w-sm justify-start rounded-lg bg-surface-container-low text-xs text-muted-foreground hover:bg-surface-container hover:text-foreground sm:w-64 md:w-80 lg:w-96"
+        className="relative h-9 w-full max-w-sm justify-start rounded-full border-border/60 bg-surface-container-low/60 pl-3 text-[0.75rem] text-muted-foreground shadow-none transition-colors hover:border-border hover:bg-surface-container-low hover:text-foreground sm:w-56 md:w-72 lg:w-80"
         aria-label="Search records, events, or navigate (Press Ctrl+K)"
       >
-        <Search className="mr-2 size-4 shrink-0 text-muted-foreground/80" />
-        <span className="truncate">Search records, events, rosters…</span>
-        <kbd className="pointer-events-none absolute right-2 top-2 hidden h-5 select-none items-center gap-1 rounded border border-border bg-surface-container-high px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
-          <span className="text-xs">⌘</span>K
+        <Search className="mr-2 size-3.5 shrink-0 text-muted-foreground/70" />
+        <span className="truncate">Search or jump to…</span>
+        <kbd className="pointer-events-none absolute right-1.5 top-1.5 hidden h-6 select-none items-center gap-0.5 rounded-full border border-border/60 bg-card px-2 font-mono text-[0.625rem] font-medium text-muted-foreground sm:flex">
+          <span className="text-[0.6875rem]">⌘</span>K
         </kbd>
       </Button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Type a command or search workspace..." />
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        className="border border-border/70 bg-popover/95 shadow-[var(--elevation-3)] backdrop-blur-2xl sm:max-w-lg"
+      >
+        <CommandInput placeholder="Search records, pages, or run a command…" />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
 
@@ -72,14 +76,21 @@ export function CommandMenu() {
               return (
                 <CommandItem
                   key={item.href}
-                  value={item.title}
+                  value={`${item.title} ${item.description ?? ""} ${(item.keywords ?? []).join(" ")}`}
                   onSelect={() => runCommand(() => router.push(item.href))}
-                  className="cursor-pointer gap-2"
+                  className="cursor-pointer gap-2.5 rounded-lg px-2.5 py-2"
                 >
                   <Icon className="size-4 text-muted-foreground" />
-                  <span>{item.title}</span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate text-[0.8125rem]">{item.title}</span>
+                    {item.description ? (
+                      <span className="truncate text-[0.6875rem] text-muted-foreground">
+                        {item.description}
+                      </span>
+                    ) : null}
+                  </span>
                   {item.badge && (
-                    <span className="ml-auto text-[10px] text-muted-foreground font-mono">
+                    <span className="ml-auto font-mono text-[0.625rem] text-muted-foreground">
                       {item.badge}
                     </span>
                   )}

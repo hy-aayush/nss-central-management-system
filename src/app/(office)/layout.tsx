@@ -7,10 +7,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { SyntheticDataNotice } from "@/components/shared/synthetic-data-notice";
 import { requireOfficeAccess } from "@/lib/auth/actor";
-import {
-  initialsFromName,
-  primaryRoleLabel,
-} from "@/lib/auth/display";
+import { initialsFromName, primaryRoleLabel } from "@/lib/auth/display";
 
 /**
  * Private pages must never be prerendered or served as a static shell: the
@@ -22,13 +19,13 @@ export const instant = false;
 
 function ShellSkeleton() {
   return (
-    <div className="h-14 md:h-16 w-full border-b border-border/80 bg-background/50 px-4 md:px-6 animate-pulse" />
+    <div className="h-14 w-full animate-pulse border-b border-border/60 bg-background/50 px-4 md:h-16 md:px-6" />
   );
 }
 
 function SidebarSkeleton() {
   return (
-    <div className="hidden md:flex w-64 border-r border-border bg-surface-container-lowest animate-pulse" />
+    <div className="hidden w-64 animate-pulse border-r border-border/60 bg-sidebar/50 md:flex" />
   );
 }
 
@@ -58,31 +55,31 @@ export default async function OfficeLayout({
       {/* Keyboard Accessibility Skip Link */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
       >
         Skip to main content
       </a>
 
-      <div className="relative flex min-h-screen w-full bg-background overflow-x-hidden">
+      <div className="relative flex min-h-screen w-full overflow-x-hidden bg-transparent">
         {/* Collapsible Desktop / Tablet Sidebar */}
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar actor={actor} />
         </Suspense>
 
         {/* Content Area with Sticky Topbar */}
-        <SidebarInset className="flex flex-col flex-1 min-w-0 bg-background">
+        <SidebarInset className="flex min-w-0 flex-1 flex-col bg-transparent">
           <Suspense fallback={<ShellSkeleton />}>
             <Topbar actor={actor} />
           </Suspense>
 
-          {/* Page Content Slot */}
+          {/* Page Content Slot — fluid gutters, generous comfortable measure */}
           <main
             id="main-content"
             tabIndex={-1}
-            className="flex-1 min-w-0 px-4 py-4 md:px-6 md:py-6 lg:px-8 max-w-7xl w-full mx-auto pb-20 md:pb-8 outline-none"
+            className="mx-auto w-full max-w-[86rem] flex-1 px-4 pt-5 pb-28 outline-none sm:px-5 md:px-7 md:pt-6 md:pb-8 lg:px-9 lg:pt-8"
           >
             {/* Synthetic-data disclosure (SRS rule 20) — shown on every office screen */}
-            <SyntheticDataNotice className="mb-6" />
+            <SyntheticDataNotice className="mb-5" />
             {children}
           </main>
 

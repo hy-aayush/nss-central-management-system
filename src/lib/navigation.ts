@@ -20,7 +20,10 @@ export interface NavItem {
   icon: LucideIcon;
   badge?: string;
   badgeVariant?: "default" | "secondary" | "accent" | "success" | "warning" | "destructive" | "info" | "outline";
+  /** Keyword shown in the command menu and used for search matching. */
   description?: string;
+  /** Extra terms that should match this destination in the command menu. */
+  keywords?: string[];
 }
 
 export interface NavSection {
@@ -28,95 +31,138 @@ export interface NavSection {
   items: NavItem[];
 }
 
-export const MAIN_NAV_ITEMS: NavItem[] = [
+/**
+ * Navigation is grouped by mental model rather than by data table: what you
+ * look at first, the records you maintain, the operations you run, the
+ * insight you derive, and the administration of the workspace.
+ */
+export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Overview",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    description: "Executive summaries & live operational metrics",
+    items: [
+      {
+        title: "Dashboard",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+        description: "Executive summaries & live operational metrics",
+        keywords: ["home", "overview", "metrics", "kpi"],
+      },
+    ],
   },
   {
-    title: "Volunteers",
-    href: "/volunteers",
-    icon: Users,
-    badge: "950",
-    badgeVariant: "accent",
-    description: "Volunteer records, domains, and participation history",
+    title: "Records",
+    items: [
+      {
+        title: "Volunteers",
+        href: "/volunteers",
+        icon: Users,
+        badge: "950",
+        badgeVariant: "outline",
+        description: "Volunteer records, domains, and participation history",
+        keywords: ["roster", "students", "directory"],
+      },
+      {
+        title: "Projects",
+        href: "/projects",
+        icon: FolderKanban,
+        badge: "9",
+        badgeVariant: "outline",
+        description: "Assigned projects and creative domains",
+        keywords: ["wings", "sdg", "programmes"],
+      },
+      {
+        title: "Events",
+        href: "/events",
+        icon: Calendar,
+        description: "Central and project event lifecycles",
+        keywords: ["drives", "sessions", "schedule"],
+      },
+      {
+        title: "Meetings",
+        href: "/meetings",
+        icon: CalendarCheck,
+        description: "Project, central, and builders meetings with MOM",
+        keywords: ["minutes", "mom", "governance"],
+      },
+    ],
   },
   {
-    title: "Projects",
-    href: "/projects",
-    icon: FolderKanban,
-    badge: "9",
-    badgeVariant: "outline",
-    description: "Assigned projects and creative domains",
+    title: "Operations",
+    items: [
+      {
+        title: "Attendance",
+        href: "/attendance",
+        icon: UserCheck,
+        description: "Marking sessions, corrections, and exceptions",
+        keywords: ["present", "absent", "roll call"],
+      },
+      {
+        title: "Hours",
+        href: "/hours",
+        icon: Clock,
+        description: "Event approval, tags, manual hours, and recompute",
+        keywords: ["service", "credits", "approval"],
+      },
+      {
+        title: "Requests",
+        href: "/requests",
+        icon: Inbox,
+        badge: "3",
+        badgeVariant: "warning",
+        description: "Two-man rule suspension, archival, and delete requests",
+        keywords: ["approvals", "queue", "two-man"],
+      },
+    ],
   },
   {
-    title: "Events",
-    href: "/events",
-    icon: Calendar,
-    description: "Central and project event lifecycles",
+    title: "Insight",
+    items: [
+      {
+        title: "Analytics",
+        href: "/analytics",
+        icon: BarChart3,
+        description: "Turnout rates, hours distribution, and trends",
+        keywords: ["charts", "reports", "trends"],
+      },
+      {
+        title: "Audit Logs",
+        href: "/audit",
+        icon: ScrollText,
+        badge: "Live",
+        badgeVariant: "outline",
+        description: "Immutable application-level audit history",
+        keywords: ["security", "trail", "history"],
+      },
+    ],
   },
   {
-    title: "Meetings",
-    href: "/meetings",
-    icon: CalendarCheck,
-    description: "Project, central, and builders meetings with MOM",
-  },
-  {
-    title: "Attendance",
-    href: "/attendance",
-    icon: UserCheck,
-    description: "Marking sessions, corrections, and exceptions",
-  },
-  {
-    title: "Hours",
-    href: "/hours",
-    icon: Clock,
-    description: "Event approval, tags, manual hours, and recompute",
-  },
-  {
-    title: "Analytics",
-    href: "/analytics",
-    icon: BarChart3,
-    description: "Turnout rates, hours distribution, and trends",
-  },
-  {
-    title: "Requests",
-    href: "/requests",
-    icon: Inbox,
-    badge: "3",
-    badgeVariant: "warning",
-    description: "Two-man rule volunteer suspension, archival, and delete requests",
-  },
-  {
-    title: "Audit Logs",
-    href: "/audit",
-    icon: ScrollText,
-    badge: "Live",
-    badgeVariant: "outline",
-    description: "Immutable application-level audit history",
-  },
-  {
-    title: "Team & Access",
-    href: "/team",
-    icon: ShieldCheck,
-    description: "Roster approvals and administrative assignments",
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: SlidersHorizontal,
-    description: "Office configurations and personal preferences",
+    title: "Administration",
+    items: [
+      {
+        title: "Team & Access",
+        href: "/team",
+        icon: ShieldCheck,
+        description: "Roster approvals and administrative assignments",
+        keywords: ["permissions", "roles", "staff"],
+      },
+      {
+        title: "Settings",
+        href: "/settings",
+        icon: SlidersHorizontal,
+        description: "Office configurations and personal preferences",
+        keywords: ["preferences", "config", "theme"],
+      },
+    ],
   },
 ];
 
-export const OFFICE_NAV_CONFIG: NavSection[] = [
-  {
-    title: "Workspace",
-    items: MAIN_NAV_ITEMS,
-  },
-];
+/** Flat list kept for breadcrumbs, search and any legacy consumer. */
+export const MAIN_NAV_ITEMS: NavItem[] = NAV_SECTIONS.flatMap(
+  (section) => section.items,
+);
+
+/** Legacy export retained for existing imports. */
+export const OFFICE_NAV_CONFIG: NavSection[] = NAV_SECTIONS;
 
 export interface BreadcrumbSegment {
   label: string;
@@ -129,7 +175,7 @@ export interface BreadcrumbSegment {
  */
 export function getBreadcrumbs(pathname: string): BreadcrumbSegment[] {
   const segments = pathname.split("/").filter(Boolean);
-  
+
   if (segments.length === 0) {
     return [{ label: "Workspace", href: "/dashboard", isCurrent: true }];
   }
@@ -144,8 +190,11 @@ export function getBreadcrumbs(pathname: string): BreadcrumbSegment[] {
     const isCurrent = index === segments.length - 1;
 
     // Match known navigation labels (handle /audit vs /audit-logs)
-    const matchedItem = MAIN_NAV_ITEMS.find((item) => item.href === currentPath) ??
-      (currentPath === "/audit-logs" ? MAIN_NAV_ITEMS.find((item) => item.href === "/audit") : undefined);
+    const matchedItem =
+      MAIN_NAV_ITEMS.find((item) => item.href === currentPath) ??
+      (currentPath === "/audit-logs"
+        ? MAIN_NAV_ITEMS.find((item) => item.href === "/audit")
+        : undefined);
     const label = matchedItem ? matchedItem.title : formatSegmentLabel(seg);
 
     breadcrumbs.push({
@@ -159,7 +208,6 @@ export function getBreadcrumbs(pathname: string): BreadcrumbSegment[] {
 }
 
 function formatSegmentLabel(str: string): string {
-  // Decode URL and format kebab-case or dynamic params
   const decoded = decodeURIComponent(str);
   if (decoded.startsWith("[") && decoded.endsWith("]")) {
     return decoded.slice(1, -1);

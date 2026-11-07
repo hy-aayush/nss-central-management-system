@@ -69,12 +69,20 @@ export function NotificationPopover() {
         )}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-80 p-0 shadow-lg">
-        <div className="flex items-center justify-between p-3 pb-2 border-b">
+      <DropdownMenuContent
+        align="end"
+        className="w-[21rem] overflow-hidden rounded-xl border-border/70 p-0 shadow-[var(--elevation-3)]"
+      >
+        <div className="flex items-center justify-between border-b border-border/60 px-3 py-2.5">
           <div className="flex items-center gap-1.5">
-            <span className="text-label-md font-semibold text-foreground">Notifications</span>
+            <span className="text-[0.8125rem] font-semibold text-foreground">
+              Notifications
+            </span>
             {unreadCount > 0 && (
-              <Badge variant="destructive" className="h-4 px-1.5 text-[10px]">
+              <Badge
+                variant="outline"
+                className="h-[1.05rem] rounded px-1.5 text-[0.625rem] text-primary"
+              >
                 {unreadCount} new
               </Badge>
             )}
@@ -84,31 +92,34 @@ export function NotificationPopover() {
               variant="ghost"
               size="xs"
               onClick={markAllRead}
-              className="text-[11px] text-muted-foreground hover:text-foreground h-6 px-1.5"
+              className="h-6 gap-1 px-1.5 text-[0.6875rem] text-muted-foreground hover:text-foreground"
             >
-              <CheckCheck className="size-3 mr-1" />
+              <CheckCheck className="size-3" />
               Mark all read
             </Button>
           )}
         </div>
 
-        <div className="max-h-72 overflow-y-auto divide-y divide-border/60">
+        <div className="max-h-72 divide-y divide-border/50 overflow-y-auto">
           {notifications.map((notif) => (
             <DropdownMenuItem
               key={notif.id}
-              className={`flex flex-col items-start gap-1 p-3 cursor-pointer text-left ${
-                !notif.read ? "bg-primary/5" : ""
+              className={`flex cursor-pointer flex-col items-start gap-1.5 p-3 text-left transition-colors ${
+                !notif.read ? "bg-primary/[0.035]" : ""
               }`}
             >
               <div className="flex w-full items-start justify-between gap-2">
-                <span className="text-xs font-medium leading-snug text-foreground flex-1">
+                <span className="flex-1 text-[0.75rem] leading-snug font-medium text-foreground">
                   {notif.title}
                 </span>
                 {!notif.read && (
-                  <span className="size-1.5 shrink-0 rounded-full bg-primary mt-1" />
+                  <span
+                    aria-label="Unread"
+                    className="mt-1 size-1.5 shrink-0 rounded-full bg-primary"
+                  />
                 )}
               </div>
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1 text-[0.625rem] text-muted-foreground">
                 <Clock className="size-3" />
                 <span>{notif.time}</span>
               </div>
@@ -116,8 +127,8 @@ export function NotificationPopover() {
           ))}
         </div>
 
-        <div className="p-2 border-t text-center bg-surface-container-low">
-          <span className="text-[11px] text-muted-foreground">
+        <div className="border-t border-border/60 bg-surface-container-low/50 px-3 py-2 text-center">
+          <span className="text-[0.625rem] tracking-wide text-muted-foreground uppercase">
             Immutable application notifications
           </span>
         </div>
