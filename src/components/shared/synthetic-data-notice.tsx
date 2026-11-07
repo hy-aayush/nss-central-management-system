@@ -1,6 +1,5 @@
 import { FlaskConical } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,25 +14,25 @@ export function SyntheticDataNotice({ className }: { className?: string }) {
     <div
       role="note"
       className={cn(
-        "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs",
-        className
+        "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-warning/20 bg-warning-container/30 px-3 py-1.5 text-[0.6875rem] text-on-warning-container",
+        className,
       )}
     >
-      <div className="flex items-center gap-2">
-        <FlaskConical className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
-        <span>
-          <strong className="font-semibold">Demonstration Mode:</strong> All
-          volunteer data, attendance figures, project rosters, and audit entries
-          are synthetic test fixtures. No production records or student personal
-          data are stored.
-        </span>
-      </div>
-      <Badge
-        variant="outline"
-        className="border-amber-500/40 text-[10px] uppercase tracking-wider shrink-0 bg-amber-500/15"
-      >
-        Synthetic Sandbox
-      </Badge>
+      <FlaskConical
+        className="size-3.5 shrink-0 text-warning"
+        aria-hidden="true"
+      />
+      <span className="font-medium">Demonstration mode</span>
+      <span aria-hidden="true" className="text-warning/40">
+        ·
+      </span>
+      <span className="text-on-warning-container/80">
+        Volunteer records, attendance, rosters and audit entries are synthetic
+        fixtures. No production or personal data is stored.
+      </span>
+      <span className="ml-auto hidden text-[0.5625rem] font-medium tracking-[0.08em] uppercase opacity-70 sm:inline">
+        Synthetic sandbox
+      </span>
     </div>
   );
 }

@@ -99,11 +99,11 @@ export function DataTable<TData extends RowData>({
   return (
     <div className={cn("space-y-3", className)}>
       {/* Table Toolbar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2 flex-1 max-w-sm">
+      <div className="flex flex-col items-stretch justify-between gap-2.5 sm:flex-row sm:items-center">
+        <div className="flex max-w-sm flex-1 items-center gap-2">
           {searchKey && (
             <div className="relative w-full">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground/70" />
               <Input
                 placeholder={searchPlaceholder}
                 value={
@@ -112,7 +112,7 @@ export function DataTable<TData extends RowData>({
                 onChange={(event) =>
                   table.getColumn(searchKey)?.setFilterValue(event.target.value)
                 }
-                className="pl-8 h-9 text-xs bg-surface-container-low"
+                className="h-9 rounded-full border-border/60 bg-surface-container-low/60 pl-9 text-[0.75rem] shadow-none"
               />
             </div>
           )}
@@ -126,7 +126,7 @@ export function DataTable<TData extends RowData>({
 
       {/* Batch Actions Bar (SRS line 1425-1440) */}
       {selectedCount > 0 && batchActions && (
-        <div className="flex items-center justify-between px-4 py-2 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary animate-fade-in">
+        <div className="flex animate-fade items-center justify-between rounded-lg border border-primary/20 bg-primary/[0.07] px-4 py-2 text-[0.75rem] text-primary">
           <span className="font-medium">
             {selectedCount} {selectedCount === 1 ? "record" : "records"} selected
           </span>
@@ -145,7 +145,7 @@ export function DataTable<TData extends RowData>({
       )}
 
       {/* Main Table Container */}
-      <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/85 shadow-[var(--elevation-1)] backdrop-blur-[2px]">
         {isLoading ? (
           <LoadingState variant="table" count={pageSize} />
         ) : table.getRowModel().rows?.length === 0 ? (
@@ -170,13 +170,16 @@ export function DataTable<TData extends RowData>({
         ) : (
           <div className="relative w-full overflow-x-auto">
             <Table>
-              <TableHeader className="bg-muted/40">
+              <TableHeader className="bg-surface-container-low/60">
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                  <TableRow
+                    key={headerGroup.id}
+                    className="border-border/60 hover:bg-transparent"
+                  >
                     {headerGroup.headers.map((header) => (
                       <TableHead
                         key={header.id}
-                        className="text-xs font-semibold uppercase tracking-wider text-muted-foreground h-9 px-3"
+                        className="h-9 px-3 text-[0.625rem] font-semibold tracking-[0.075em] text-muted-foreground uppercase"
                       >
                         {header.isPlaceholder
                           ? null
@@ -196,12 +199,16 @@ export function DataTable<TData extends RowData>({
                     data-state={row.getIsSelected() && "selected"}
                     onClick={() => onRowClick?.(row.original)}
                     className={cn(
-                      "transition-colors",
-                      onRowClick && "cursor-pointer hover:bg-muted/50"
+                      "border-border/50 transition-colors",
+                      onRowClick && "cursor-pointer hover:bg-surface-container-low/50",
+                      row.getIsSelected() && "bg-primary/[0.05]"
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="text-xs px-3 py-2.5">
+                      <TableCell
+                        key={cell.id}
+                        className="px-3 py-2.5 text-[0.75rem]"
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -218,7 +225,7 @@ export function DataTable<TData extends RowData>({
 
       {/* Pagination Footer */}
       {!isLoading && table.getPageCount() > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 text-xs text-muted-foreground">
+        <div className="flex flex-col items-center justify-between gap-3 px-1 text-[0.6875rem] text-muted-foreground sm:flex-row">
           <div className="text-center sm:text-left">
             Showing{" "}
             <span className="font-medium text-foreground">
@@ -263,7 +270,7 @@ export function DataTable<TData extends RowData>({
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <span className="px-2 text-xs font-mono font-medium text-foreground">
+            <span className="tnum px-2 text-[0.6875rem] font-medium text-foreground">
               {table.state.pagination.pageIndex + 1} / {table.getPageCount()}
             </span>
 
