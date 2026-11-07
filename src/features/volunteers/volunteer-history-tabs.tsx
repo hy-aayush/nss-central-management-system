@@ -84,7 +84,7 @@ export function VolunteerHistoryTabs({
                 <Card className="border border-border/70 bg-card/75">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <CheckCircle2 className="h-4 w-4 text-success" />
                       Completed &amp; Verified Event Drives
                     </CardTitle>
                     <CardDescription className="text-xs">
@@ -135,7 +135,7 @@ export function VolunteerHistoryTabs({
                 <Card className="border border-border/70 bg-card/75">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-purple-500" />
+                      <Clock className="h-4 w-4 text-primary" />
                       Upcoming &amp; Scheduled Rosters
                     </CardTitle>
                     <CardDescription className="text-xs">
@@ -228,7 +228,7 @@ export function VolunteerHistoryTabs({
                       </div>
 
                       <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono text-success bg-success-container/60 px-2 py-0.5 rounded">
                           <CheckCircle2 className="h-3 w-3" />
                           Present
                         </span>
@@ -278,7 +278,7 @@ export function VolunteerHistoryTabs({
 
                 <div className="p-3 rounded-lg border border-border/60 bg-muted/20">
                   <span className="text-muted-foreground">Pending Review</span>
-                  <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">
+                  <div className="text-xl font-bold font-mono text-warning mt-0.5">
                     0 hrs
                   </div>
                   <span className="text-[11px] text-muted-foreground">All submitted sessions reviewed</span>

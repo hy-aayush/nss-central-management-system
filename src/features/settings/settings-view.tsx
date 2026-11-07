@@ -12,18 +12,18 @@ export function SettingsView() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-      <TabsList className="bg-muted/40 p-1 border border-border/60">
-        <TabsTrigger value="overview" className="gap-1.5 text-label-xs">
+      <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-border/60 bg-card/70 p-1 backdrop-blur-sm">
+        <TabsTrigger value="overview" className="gap-1.5 text-[0.6875rem]">
           <Server className="size-3.5" />
-          <span>System Environment &amp; Free-Tier Guards</span>
+          <span>Environment &amp; guards</span>
         </TabsTrigger>
-        <TabsTrigger value="guardrails" className="gap-1.5 text-label-xs">
+        <TabsTrigger value="guardrails" className="gap-1.5 text-[0.6875rem]">
           <Sliders className="size-3.5" />
-          <span>Soft Rules &amp; Policies (S-01 to S-09)</span>
+          <span>Soft rules (S-01–S-09)</span>
         </TabsTrigger>
-        <TabsTrigger value="emergency" className="gap-1.5 text-label-xs">
-          <ShieldAlert className="size-3.5 text-amber-600 dark:text-amber-400" />
-          <span>Emergency Controls &amp; Circuit Breakers</span>
+        <TabsTrigger value="emergency" className="gap-1.5 text-[0.6875rem]">
+          <ShieldAlert className="size-3.5" />
+          <span>Emergency controls</span>
         </TabsTrigger>
       </TabsList>
 

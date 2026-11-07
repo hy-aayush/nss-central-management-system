@@ -198,10 +198,10 @@ export function AnalyticsProjectComparison({ projects }: AnalyticsProjectCompari
                         <span
                           className={
                             turnout >= 90
-                              ? "text-emerald-600 dark:text-emerald-400"
+                              ? "text-success"
                               : turnout >= 80
                               ? "text-primary"
-                              : "text-amber-600 dark:text-amber-400"
+                              : "text-warning"
                           }
                         >
                           {turnout.toFixed(1)}%
@@ -212,10 +212,10 @@ export function AnalyticsProjectComparison({ projects }: AnalyticsProjectCompari
                         <div
                           className={`h-full rounded-full ${
                             turnout >= 90
-                              ? "bg-emerald-500"
+                              ? "bg-success"
                               : turnout >= 80
                               ? "bg-primary"
-                              : "bg-amber-500"
+                              : "bg-warning"
                           }`}
                           style={{ width: `${Math.min(100, turnout)}%` }}
                         />

@@ -37,9 +37,9 @@ export function AuditDetailDialog({ open, onOpenChange, entry }: AuditDetailDial
               variant="outline"
               className={
                 isDenied
-                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-300"
+                  ? "bg-error-container/60 text-error border-error/30"
                   : isEmergency
-                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-300 font-semibold"
+                  ? "bg-warning-container/60 text-warning border-warning/30 font-semibold"
                   : "bg-primary/10 text-primary border-primary/20"
               }
             >
@@ -50,8 +50,8 @@ export function AuditDetailDialog({ open, onOpenChange, entry }: AuditDetailDial
               variant="outline"
               className={
                 isDenied
-                  ? "bg-rose-500/10 text-rose-600 border-rose-300"
-                  : "bg-emerald-500/10 text-emerald-600 border-emerald-300"
+                  ? "bg-error-container/60 text-error border-error/30"
+                  : "bg-success-container/60 text-success border-success/30"
               }
             >
               {entry.outcome}
@@ -150,9 +150,9 @@ export function AuditDetailDialog({ open, onOpenChange, entry }: AuditDetailDial
 
           {/* Emergency Pack Notice */}
           {isEmergency && (
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-300/40 text-amber-800 dark:text-amber-200 text-label-xs space-y-1">
+            <div className="p-3 rounded-lg bg-warning-container/60 border border-warning/30 text-warning text-label-xs space-y-1">
               <div className="flex items-center gap-1.5 font-semibold">
-                <ShieldAlert className="size-3.5 text-amber-600 dark:text-amber-400" />
+                <ShieldAlert className="size-3.5 text-warning" />
                 <span>Emergency Scope Governance (SRS §4.9)</span>
               </div>
               <p className="leading-relaxed">

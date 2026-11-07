@@ -177,10 +177,10 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
                             variant="outline"
                             className={`text-[10px] font-medium ${
                               p.source === "FCFS"
-                                ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-200"
+                                ? "bg-primary/10 text-primary border-primary/25"
                                 : p.source === "AUTO"
-                                ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200"
-                                : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200"
+                                ? "bg-info-container/60 text-info border-info/30"
+                                : "bg-warning-container/60 text-warning border-warning/30"
                             }`}
                           >
                             {p.source === "FCFS" ? "FCFS Roster" : p.source === "AUTO" ? "Host Auto-Add" : "Walk-in"}
@@ -189,17 +189,17 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
 
                         <TableCell className="py-3">
                           {p.status === "PRESENT" ? (
-                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 text-[11px]">
+                            <Badge variant="outline" className="bg-success-container/60 text-success border-success/30 text-[11px]">
                               <CheckCircle2 className="size-3 mr-1" />
                               Present
                             </Badge>
                           ) : p.status === "EXCUSED" ? (
-                            <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 text-[11px]">
+                            <Badge variant="outline" className="bg-warning-container/60 text-warning border-warning/30 text-[11px]">
                               <Clock className="size-3 mr-1" />
                               Excused
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-800 text-[11px]">
+                            <Badge variant="outline" className="bg-error-container/60 text-error border-error/30 text-[11px]">
                               <XCircle className="size-3 mr-1" />
                               Absent
                             </Badge>
@@ -266,8 +266,8 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
                           variant="outline"
                           className={
                             slot.approval === "APPROVED"
-                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200"
+                              ? "bg-success-container/60 text-success border-success/30"
+                              : "bg-warning-container/60 text-warning border-warning/30"
                           }
                         >
                           {slot.approval}
@@ -299,24 +299,24 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
             </Card>
 
             <Card className="p-4 bg-card border-border">
-              <p className="text-label-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <p className="text-label-xs uppercase tracking-wider text-success">
                 Present
               </p>
-              <p className="text-headline-md font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+              <p className="text-headline-md font-bold text-success mt-1">
                 {presentCount}
               </p>
             </Card>
 
             <Card className="p-4 bg-card border-border">
-              <p className="text-label-xs uppercase tracking-wider text-rose-600 dark:text-rose-400">Absent</p>
-              <p className="text-headline-md font-bold text-rose-600 dark:text-rose-400 mt-1">
+              <p className="text-label-xs uppercase tracking-wider text-error">Absent</p>
+              <p className="text-headline-md font-bold text-error mt-1">
                 {absentCount}
               </p>
             </Card>
 
             <Card className="p-4 bg-card border-border">
-              <p className="text-label-xs uppercase tracking-wider text-amber-600 dark:text-amber-400">Excused</p>
-              <p className="text-headline-md font-bold text-amber-600 dark:text-amber-400 mt-1">
+              <p className="text-label-xs uppercase tracking-wider text-warning">Excused</p>
+              <p className="text-headline-md font-bold text-warning mt-1">
                 {excusedCount}
               </p>
             </Card>

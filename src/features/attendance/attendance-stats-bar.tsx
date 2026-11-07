@@ -1,6 +1,7 @@
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Users, CheckCircle2, XCircle, Clock, Lock, Unlock } from "lucide-react";
+
+import { MetricStrip } from "@/components/shared/metric-strip";
+import { Badge } from "@/components/ui/badge";
 
 interface AttendanceStatsBarProps {
   total: number;
@@ -17,97 +18,71 @@ export function AttendanceStatsBar({
   excused,
   isLocked,
 }: AttendanceStatsBarProps) {
-  const turnoutPercent = total > 0 ? ((present / total) * 100).toFixed(1) : "0.0";
+  const turnoutPercent =
+    total > 0 ? ((present / total) * 100).toFixed(1) : "0.0";
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
-      <Card className="p-4 bg-card/60 backdrop-blur-sm border-border">
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Users className="size-4.5" />
-          </div>
-          <div>
-            <p className="text-label-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Total Roster
-            </p>
-            <p className="text-headline-md font-semibold text-foreground tracking-tight">{total}</p>
-          </div>
+    <MetricStrip
+      columns={5}
+      items={[
+        {
+          label: "Total roster",
+          value: total,
+          hint: "Eligible for this session",
+          icon: Users,
+        },
+        {
+          label: "Present",
+          value: present,
+          hint: "Verified in attendance",
+          icon: CheckCircle2,
+          tone: "success",
+        },
+        {
+          label: "Absent",
+          value: absent,
+          hint: "Not marked present",
+          icon: XCircle,
+          tone: "danger",
+        },
+        {
+          label: "Excused",
+          value: excused,
+          hint: "Approved exceptions",
+          icon: Clock,
+          tone: "warning",
+        },
+        {
+          label: "Turnout",
+          value: `${turnoutPercent}%`,
+          hint: "Present over eligible",
+          tone: "primary",
+        },
+      ]}
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          <span>
+            Roster locks at midnight IST on the day after the session.
+          </span>
+          {isLocked ? (
+            <Badge
+              variant="outline"
+              className="h-5 shrink-0 gap-1 rounded border-warning/30 bg-warning-container/60 px-1.5 text-[0.5625rem] text-on-warning-container"
+            >
+              <Lock className="size-2.5" />
+              Locked
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="h-5 shrink-0 gap-1 rounded border-success/30 bg-success-container/60 px-1.5 text-[0.5625rem] text-on-success-container"
+            >
+              <Unlock className="size-2.5" />
+              Open
+            </Badge>
+          )}
         </div>
-      </Card>
-
-      <Card className="p-4 bg-card/60 backdrop-blur-sm border-border">
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="size-4.5" />
-          </div>
-          <div>
-            <p className="text-label-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Present
-            </p>
-            <p className="text-headline-md font-semibold text-emerald-600 dark:text-emerald-400 tracking-tight">
-              {present}
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-4 bg-card/60 backdrop-blur-sm border-border">
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <XCircle className="size-4.5" />
-          </div>
-          <div>
-            <p className="text-label-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Absent
-            </p>
-            <p className="text-headline-md font-semibold text-rose-600 dark:text-rose-400 tracking-tight">
-              {absent}
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-4 bg-card/60 backdrop-blur-sm border-border">
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <Clock className="size-4.5" />
-          </div>
-          <div>
-            <p className="text-label-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Excused
-            </p>
-            <p className="text-headline-md font-semibold text-amber-600 dark:text-amber-400 tracking-tight">
-              {excused}
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-4 bg-card/60 backdrop-blur-sm border-border col-span-2 md:col-span-1">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <p className="text-label-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Turnout Rate
-            </p>
-            <p className="text-headline-md font-bold text-primary tracking-tight">
-              {turnoutPercent}%
-            </p>
-          </div>
-          <div>
-            {isLocked ? (
-              <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 text-[10px]">
-                <Lock className="size-2.5 mr-1" />
-                Locked
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 text-[10px]">
-                <Unlock className="size-2.5 mr-1" />
-                Open
-              </Badge>
-            )}
-          </div>
-        </div>
-      </Card>
-    </div>
+      }
+    />
   );
 }

@@ -67,7 +67,7 @@ export function AttendanceCorrectionDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-headline-sm">
-            <ShieldAlert className="size-5 text-amber-500" />
+            <ShieldAlert className="size-5 text-warning" />
             Attendance Correction Flow
           </DialogTitle>
           <DialogDescription className="text-body-sm text-muted-foreground">

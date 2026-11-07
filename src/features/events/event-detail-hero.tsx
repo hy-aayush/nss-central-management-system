@@ -99,8 +99,8 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
                 variant="outline"
                 className={`px-2 py-0.5 text-label-xs font-semibold border ${
                   isCentral
-                    ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                    : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                    ? "bg-info-container/60 text-info border-info/30"
+                    : "bg-success-container/60 text-success border-success/30"
                 }`}
               >
                 {isCentral ? <Globe2 className="size-3 mr-1 inline" /> : <Building2 className="size-3 mr-1 inline" />}
@@ -116,7 +116,7 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
               )}
 
               {isLocked && (
-                <Badge variant="outline" className="text-label-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800">
+                <Badge variant="outline" className="text-label-xs bg-warning-container/60 text-warning border-warning/30">
                   <Lock className="size-3 mr-1 inline" />
                   Attendance Locked
                 </Badge>
@@ -180,7 +180,7 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setLockDialogOpen(true)}
-                className="text-label-xs text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 hover:bg-amber-500/10"
+                className="text-label-xs text-warning border-warning/30 hover:bg-warning-container/60"
               >
                 <Lock className="size-3.5 mr-1.5" />
                 Lock Attendance

@@ -268,7 +268,7 @@ export function AttendanceRosterTable({
                   variant="outline"
                   size="sm"
                   onClick={() => setBulkPresentDialogOpen(true)}
-                  className="h-9.5 px-2.5 text-label-xs text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-500/10"
+                  className="h-9.5 px-2.5 text-label-xs text-success border-success/30 hover:bg-success-container/60"
                 >
                   Mark All Present
                 </Button>
@@ -276,7 +276,7 @@ export function AttendanceRosterTable({
                   variant="outline"
                   size="sm"
                   onClick={() => setBulkAbsentDialogOpen(true)}
-                  className="h-9.5 px-2.5 text-label-xs text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-800 hover:bg-rose-500/10"
+                  className="h-9.5 px-2.5 text-label-xs text-error border-error/30 hover:bg-error-container/60"
                 >
                   Mark Rest Absent
                 </Button>
@@ -287,7 +287,7 @@ export function AttendanceRosterTable({
 
         {/* Locked warning banner */}
         {isLocked && (
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-300 dark:border-amber-800/40 text-label-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3">
+          <div className="p-3 rounded-xl bg-warning-container/60 border border-warning/30 text-label-xs text-warning flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Lock className="size-4 shrink-0" />
               <span>
@@ -303,7 +303,7 @@ export function AttendanceRosterTable({
                   description: "Attendance marking re-enabled for session staff.",
                 });
               }}
-              className="h-7 text-[11px] shrink-0 border-amber-400 text-amber-800 dark:text-amber-300"
+              className="h-7 text-[11px] shrink-0 border-warning/30 text-warning"
             >
               Unlock Register
             </Button>
@@ -361,10 +361,10 @@ export function AttendanceRosterTable({
                           variant="outline"
                           className={`text-[10px] font-medium ${
                             p.source === "FCFS"
-                              ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-200"
+                              ? "bg-primary/10 text-primary border-primary/25"
                               : p.source === "AUTO"
-                              ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200"
+                              ? "bg-info-container/60 text-info border-info/30"
+                              : "bg-warning-container/60 text-warning border-warning/30"
                           }`}
                         >
                           {p.source === "FCFS" ? "FCFS Roster" : p.source === "AUTO" ? "Host Auto" : "Walk-in"}
@@ -373,17 +373,17 @@ export function AttendanceRosterTable({
 
                       <TableCell className="text-center">
                         {p.status === "PRESENT" ? (
-                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 text-[11px]">
+                          <Badge variant="outline" className="bg-success-container/60 text-success border-success/30 text-[11px]">
                             <CheckCircle2 className="size-3 mr-1" />
                             Present
                           </Badge>
                         ) : p.status === "EXCUSED" ? (
-                          <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 text-[11px]">
+                          <Badge variant="outline" className="bg-warning-container/60 text-warning border-warning/30 text-[11px]">
                             <Clock className="size-3 mr-1" />
                             Excused
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-800 text-[11px]">
+                          <Badge variant="outline" className="bg-error-container/60 text-error border-error/30 text-[11px]">
                             <XCircle className="size-3 mr-1" />
                             Absent
                           </Badge>
@@ -399,8 +399,8 @@ export function AttendanceRosterTable({
                             onClick={() => handleMarkStatus(p, "PRESENT")}
                             className={`h-7 px-2.5 text-[11px] font-semibold transition-all ${
                               p.status === "PRESENT"
-                                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                                : "hover:border-emerald-400 hover:text-emerald-600 text-muted-foreground"
+                                ? "bg-success hover:bg-success text-white"
+                                : "hover:border-success/30 hover:text-success text-muted-foreground"
                             }`}
                             title="Mark Present"
                           >
@@ -413,8 +413,8 @@ export function AttendanceRosterTable({
                             onClick={() => handleMarkStatus(p, "ABSENT")}
                             className={`h-7 px-2.5 text-[11px] font-semibold transition-all ${
                               p.status === "ABSENT"
-                                ? "bg-rose-600 hover:bg-rose-700 text-white"
-                                : "hover:border-rose-400 hover:text-rose-600 text-muted-foreground"
+                                ? "bg-error hover:bg-error text-white"
+                                : "hover:border-error/30 hover:text-error text-muted-foreground"
                             }`}
                             title="Mark Absent"
                           >
@@ -427,8 +427,8 @@ export function AttendanceRosterTable({
                             onClick={() => handleMarkStatus(p, "EXCUSED")}
                             className={`h-7 px-2.5 text-[11px] font-semibold transition-all ${
                               p.status === "EXCUSED"
-                                ? "bg-amber-600 hover:bg-amber-700 text-white"
-                                : "hover:border-amber-400 hover:text-amber-600 text-muted-foreground"
+                                ? "bg-warning hover:bg-warning text-white"
+                                : "hover:border-warning/30 hover:text-warning text-muted-foreground"
                             }`}
                             title="Mark Excused"
                           >

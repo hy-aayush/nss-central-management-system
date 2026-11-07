@@ -52,10 +52,10 @@ export function AttendanceHistoryPanel({ corrections }: AttendanceHistoryPanelPr
                       variant="outline"
                       className={`px-1.5 py-0 h-4.5 text-[10px] font-semibold ${
                         item.newStatus === "PRESENT"
-                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300"
+                          ? "bg-success-container/60 text-success border-success/30"
                           : item.newStatus === "EXCUSED"
-                          ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-300"
-                          : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-300"
+                          ? "bg-warning-container/60 text-warning border-warning/30"
+                          : "bg-error-container/60 text-error border-error/30"
                       }`}
                     >
                       {item.newStatus}

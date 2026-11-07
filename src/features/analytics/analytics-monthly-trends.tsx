@@ -56,7 +56,7 @@ export function AnalyticsMonthlyTrends({ trends }: AnalyticsMonthlyTrendsProps) 
                   variant="outline"
                   className={`text-[10px] px-1.5 py-0 h-4.5 font-mono font-semibold ${
                     (point.attendanceRate ?? 0) >= 90
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300/40"
+                      ? "bg-success-container/60 text-success border-success/30"
                       : "bg-primary/10 text-primary border-primary/20"
                   }`}
                 >
@@ -112,7 +112,7 @@ export function AnalyticsMonthlyTrends({ trends }: AnalyticsMonthlyTrendsProps) 
       </div>
 
       <div className="p-3 rounded-lg bg-muted/20 border border-border/50 text-label-xs text-muted-foreground flex items-center gap-2">
-        <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <CheckCircle2 className="size-3.5 text-success shrink-0" />
         <span>
           August 2026 recorded the highest community drive volume with 1,150 hours delivered and 92.4% verified volunteer attendance.
         </span>

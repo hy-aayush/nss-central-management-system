@@ -27,33 +27,81 @@ export function AnalyticsView({ summary }: AnalyticsViewProps) {
   const [dateRange, setDateRange] = useState("ay-2026-27");
   const [activeTab, setActiveTab] = useState("projects");
 
+  /**
+   * Honest, bounded client-side export: the exact rows the screen is showing,
+   * not a pretend server report. Replace with the server export endpoint when
+   * the reporting service lands (SRS §13.3).
+   */
   const handleExport = () => {
-    toast.success("Institutional Analytics Report Exported", {
-      description: "Generated synthetic analytics summary CSV (bounded export per SRS §13.3).",
+    const header = [
+      "Project",
+      "Volunteers",
+      "Active volunteers",
+      "Events",
+      "Meetings",
+      "Hours completed",
+      "Attendance rate",
+    ];
+    const rows = summary.projectSummaries.map((project) => [
+      project.projectName,
+      project.volunteersCount,
+      project.activeVolunteersCount,
+      project.eventsCount,
+      project.meetingsCount,
+      project.hoursCompleted,
+      project.attendanceRate ?? "",
+    ]);
+    const csv = [header, ...rows]
+      .map((row) =>
+        row
+          .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
+          .join(","),
+      )
+      .join("\n");
+
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `nss-projects-${dateRange}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast.success("Project summary exported", {
+      description: `${rows.length} rows · synthetic data only · bounded export`,
     });
   };
 
   return (
     <div className="space-y-6">
       {/* Top Filter & Export Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-card border border-border shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Calendar className="size-4.5" />
-          </div>
-          <div className="space-y-0.5">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground block">
-              Reporting Time Horizon (IST)
+      <div className="flex flex-col justify-between gap-3 rounded-xl border border-border/70 bg-card/70 p-3 backdrop-blur-sm sm:flex-row sm:items-center">
+        <div className="flex items-center gap-2.5">
+          <Calendar
+            className="size-3.5 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[0.625rem] font-medium tracking-[0.075em] text-muted-foreground uppercase">
+              Period
             </span>
-            <Select value={dateRange} onValueChange={(val) => { if (val) setDateRange(val); }}>
-              <SelectTrigger className="w-56 h-8.5 bg-background border-border text-label-sm font-medium">
-                <SelectValue placeholder="Select period..." />
+            <Select
+              value={dateRange}
+              onValueChange={(val) => {
+                if (val) setDateRange(val);
+              }}
+            >
+              <SelectTrigger className="h-8 w-52 border-border/60 bg-surface-container-low/50 text-[0.75rem] font-medium shadow-none">
+                <SelectValue placeholder="Select period…" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ay-2026-27">Academic Year 2026-27 (Full)</SelectItem>
-                <SelectItem value="q1-2026">Q1 (July - September 2026)</SelectItem>
-                <SelectItem value="q2-2026">Q2 (October - December 2026)</SelectItem>
-                <SelectItem value="last-30-days">Last 30 Days (Rolling)</SelectItem>
+                <SelectItem value="ay-2026-27">
+                  Academic year 2026–27 (full)
+                </SelectItem>
+                <SelectItem value="q1-2026">Q1 · Jul – Sep 2026</SelectItem>
+                <SelectItem value="q2-2026">Q2 · Oct – Dec 2026</SelectItem>
+                <SelectItem value="last-30-days">Last 30 days</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -63,10 +111,10 @@ export function AnalyticsView({ summary }: AnalyticsViewProps) {
           variant="outline"
           size="sm"
           onClick={handleExport}
-          className="h-8.5 text-label-xs self-start sm:self-auto gap-1.5"
+          className="h-8 shrink-0 gap-1.5 self-start sm:self-auto"
         >
-          <Download className="size-3.5 text-primary" />
-          Export Bounded Summary (CSV)
+          <Download className="size-3.5" />
+          Export project summary
         </Button>
       </div>
 
@@ -78,18 +126,18 @@ export function AnalyticsView({ summary }: AnalyticsViewProps) {
 
       {/* Interactive Tabs Section */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-muted/40 p-1 border border-border/60">
-          <TabsTrigger value="projects" className="gap-1.5 text-label-xs">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-border/60 bg-card/70 p-1 backdrop-blur-sm">
+          <TabsTrigger value="projects" className="gap-1.5 text-[0.6875rem]">
             <Building2 className="size-3.5" />
-            <span>Project Comparisons ({summary.projectSummaries.length})</span>
+            <span>Projects ({summary.projectSummaries.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="trends" className="gap-1.5 text-label-xs">
+          <TabsTrigger value="trends" className="gap-1.5 text-[0.6875rem]">
             <TrendingUp className="size-3.5" />
-            <span>Monthly Trends</span>
+            <span>Monthly trends</span>
           </TabsTrigger>
-          <TabsTrigger value="domains" className="gap-1.5 text-label-xs">
+          <TabsTrigger value="domains" className="gap-1.5 text-[0.6875rem]">
             <Sparkles className="size-3.5" />
-            <span>Creative Domains ({summary.domainSummaries.length})</span>
+            <span>Domains ({summary.domainSummaries.length})</span>
           </TabsTrigger>
         </TabsList>
 

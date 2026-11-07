@@ -35,7 +35,7 @@ export function SettingsEmergencyCard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
         <div>
           <h3 className="text-headline-sm font-semibold text-foreground flex items-center gap-2">
-            <ShieldAlert className="size-4.5 text-amber-600 dark:text-amber-400" />
+            <ShieldAlert className="size-4.5 text-warning" />
             Emergency Mode &amp; Circuit Breakers
           </h3>
           <p className="text-body-sm text-muted-foreground">
@@ -45,15 +45,15 @@ export function SettingsEmergencyCard() {
 
         <Badge
           variant="outline"
-          className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-300 text-label-xs self-start sm:self-auto font-semibold"
+          className="bg-warning-container/60 text-warning border-warning/30 text-label-xs self-start sm:self-auto font-semibold"
         >
           UI Simulation Only
         </Badge>
       </div>
 
       {/* Prominent Disclaimer Banner */}
-      <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-300 text-amber-900 dark:text-amber-200 text-body-sm space-y-2">
-        <div className="flex items-center gap-2 font-semibold text-amber-800 dark:text-amber-300">
+      <div className="p-4 rounded-xl bg-warning-container/60 border border-warning/30 text-warning text-body-sm space-y-2">
+        <div className="flex items-center gap-2 font-semibold text-warning">
           <AlertTriangle className="size-4.5 shrink-0" />
           <span>Part 1 Architecture Notice: Operational Circuit Breakers</span>
         </div>
@@ -74,8 +74,8 @@ export function SettingsEmergencyCard() {
               variant="outline"
               className={`text-[10px] px-1.5 py-0 h-4.5 font-semibold ${
                 killSwitchActive
-                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-300"
-                  : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300"
+                  ? "bg-error-container/60 text-error border-error/30"
+                  : "bg-success-container/60 text-success border-success/30"
               }`}
             >
               {killSwitchActive ? "CIRCUIT TRIPPED" : "NORMAL"}
@@ -126,7 +126,7 @@ export function SettingsEmergencyCard() {
             }
             className="w-full text-label-xs h-8.5 gap-1.5"
           >
-            <ShieldAlert className="size-3.5 text-amber-600 dark:text-amber-400" />
+            <ShieldAlert className="size-3.5 text-warning" />
             <span>Inspect Active Emergency Packs (2 active)</span>
           </Button>
         </div>

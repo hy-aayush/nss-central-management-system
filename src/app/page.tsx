@@ -1,386 +1,358 @@
+import Link from "next/link";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Info,
+  Layers,
+  LayoutGrid,
+  Palette,
+  ShieldCheck,
+  Sparkles,
+  Type,
+  XCircle,
+  AlertTriangle,
+} from "lucide-react";
+
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import Link from "next/link";
-
+import { GlassPanel } from "@/components/ui/glass";
+import { Separator } from "@/components/ui/separator";
 import { requireOfficeAccess } from "@/lib/auth/actor";
-import {
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Info,
-  ShieldCheck,
-  Sparkles,
-  Layers,
-  Palette,
-  Type,
-  LayoutGrid,
-  ArrowRight,
-} from "lucide-react";
 
 /** The root page reads the session; it is never prerendered. */
 export const instant = false;
+
+const TYPE_SPECIMENS = [
+  { token: "text-display", label: "32–40 / fluid", sample: "National Service Scheme", className: "text-display" },
+  { token: "text-headline-lg", label: "21–26 / fluid", sample: "Volunteer and project operations", className: "text-headline-lg" },
+  { token: "text-headline-md", label: "16–18 / fluid", sample: "Central event attendance records", className: "text-headline-md" },
+  { token: "text-body-lg", label: "15 / 1.55", sample: "Manage volunteer profiles, historical participation, and service records.", className: "text-body-lg" },
+  { token: "text-body-md", label: "13 / 1.5", sample: "Standard table density and descriptive content across the office portal.", className: "text-body-md" },
+  { token: "text-body-sm", label: "13 / 1.45", sample: "Helper text and secondary descriptions.", className: "text-body-sm" },
+  { token: "text-label-sm", label: "11 / tracked", sample: "Interactive labels and filter headers", className: "text-label-sm uppercase tracking-[0.06em]" },
+  { token: "text-code-sm", label: "12 mono", sample: "0x4F9B7A_AUDIT_TRANSACTION_ID", className: "text-code-sm text-muted-foreground" },
+];
 
 export default async function DesignSystemPage() {
   // The design reference is internal too (SRS 18.5): only office users see it.
   await requireOfficeAccess();
 
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased selection:bg-primary/15 selection:text-primary">
-      {/* Restrained Glass Header */}
-      <header className="sticky top-0 z-40 w-full glass-surface border-b">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-space-lg">
-          <div className="flex items-center gap-space-sm">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
-              <ShieldCheck className="size-5" />
+    <div className="min-h-screen bg-background text-foreground antialiased">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-2xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 lg:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-[10px] bg-primary text-primary-foreground">
+              <ShieldCheck className="size-4.5" />
             </div>
-            <div>
-              <div className="flex items-center gap-space-xs">
-                <span className="text-headline-sm font-semibold tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="truncate text-[0.8125rem] font-semibold tracking-[-0.01em]">
                   NSS Central Management System
                 </span>
-                <Badge variant="accent" className="font-mono text-[10px]">
-                  DESIGN FOUNDATION
+                <Badge
+                  variant="outline"
+                  className="hidden rounded px-1.5 text-[0.5625rem] tracking-[0.08em] uppercase sm:inline-flex"
+                >
+                  Design system v2
                 </Badge>
               </div>
-              <p className="text-label-sm text-muted-foreground">
-                Internal Office Interface • Asia/Kolkata (IST)
+              <p className="text-[0.6875rem] text-muted-foreground">
+                Liquid glass · internal office interface
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-space-sm">
-            <Link href="/dashboard">
-              <Button size="sm" className="gap-1.5 hidden sm:inline-flex">
-                <span>Open Office Shell</span>
+
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard" className="hidden sm:block">
+              <Button size="sm" className="gap-1.5">
+                Open office shell
                 <ArrowRight className="size-3.5" />
               </Button>
             </Link>
-            <span className="hidden items-center gap-1.5 rounded-full bg-surface-container px-2.5 py-1 text-label-sm text-muted-foreground sm:inline-flex">
-              <span className="size-1.5 rounded-full bg-success animate-pulse" />
-              <span>WCAG AAA / AA Accessible</span>
-            </span>
             <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-space-lg py-space-xl space-y-space-2xl">
-        {/* Foundation Hero Intro */}
-        <section className="space-y-space-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="gap-1.5 py-1">
-              <Sparkles className="size-3 text-primary" />
-              <span>Design System Token Architecture</span>
-            </Badge>
-            <Link href="/dashboard">
-              <Badge variant="accent" className="cursor-pointer hover:opacity-85 py-1">
-                Go to Office Shell (/dashboard) →
-              </Badge>
-            </Link>
-          </div>
-          <h1 className="text-display tracking-tight text-foreground">
-            Foundation & Visual Tokens
+      <main className="mx-auto max-w-6xl space-y-14 px-5 py-10 lg:px-8 lg:py-14">
+        {/* Intro */}
+        <section className="space-y-4">
+          <p className="text-eyebrow">Foundation</p>
+          <h1 className="text-display max-w-2xl text-foreground">
+            Minimal liquid glass, built for daily operational work.
           </h1>
-          <p className="text-body-lg text-muted-foreground max-w-3xl">
-            Strict, high-density design tokens crafted for internal office operations.
-            Featuring neutral surfaces, a single authoritative indigo accent, clear status colours,
-            restrained glassmorphism, accessible focus rings, and strict reduced-motion adherence.
+          <p className="max-w-2xl text-body-lg leading-relaxed text-muted-foreground">
+            A restrained material system for an internal academic product: quiet
+            surfaces, one accent, fluid typography, and motion that only exists
+            to explain a change of state. Glass is reserved for things that
+            float above the page.
           </p>
-          <div className="pt-2">
-            <Link href="/dashboard">
-              <Button className="gap-2">
-                <span>Enter Office Management Shell</span>
-                <ArrowRight className="size-4" />
-              </Button>
-            </Link>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Badge variant="outline" className="gap-1.5 rounded px-2 py-1 text-[0.625rem]">
+              <Sparkles className="size-3 text-primary" />
+              WCAG AA contrast
+            </Badge>
+            <Badge variant="outline" className="gap-1.5 rounded px-2 py-1 text-[0.625rem]">
+              prefers-reduced-motion honoured
+            </Badge>
+            <Badge variant="outline" className="gap-1.5 rounded px-2 py-1 text-[0.625rem]">
+              light and dark parity
+            </Badge>
           </div>
         </section>
 
-        {/* 1. Single Accent Colour & Surfaces */}
-        <section className="space-y-space-md">
-          <div className="flex items-center gap-space-xs">
-            <Palette className="size-5 text-primary" />
-            <h2 className="text-headline-md font-semibold">1. Single Accent Colour & Neutral Surfaces</h2>
+        {/* Glass layers */}
+        <section className="space-y-5">
+          <SectionLabel icon={Layers} title="Glass layers" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <GlassPanel tone="quiet" padding="lg" className="space-y-2">
+              <p className="text-eyebrow">Level 1 · quiet</p>
+              <p className="text-headline-sm text-foreground">Content surface</p>
+              <p className="text-body-sm text-muted-foreground">
+                Barely tinted, 10px blur. Cards in the normal page flow. Reading
+                surfaces stay opaque enough to hold long text.
+              </p>
+              <code className="text-code-sm block pt-2 text-muted-foreground/70">
+                .glass-quiet
+              </code>
+            </GlassPanel>
+
+            <GlassPanel tone="panel" padding="lg" className="space-y-2">
+              <p className="text-eyebrow">Level 2 · panel</p>
+              <p className="text-headline-sm text-foreground">Floating panel</p>
+              <p className="text-body-sm text-muted-foreground">
+                22px blur with a soft top sheen. Sidebar, sticky toolbars, and
+                dashboard widgets that sit above the canvas.
+              </p>
+              <code className="text-code-sm block pt-2 text-muted-foreground/70">
+                .glass-panel
+              </code>
+            </GlassPanel>
+
+            <GlassPanel tone="overlay" padding="lg" className="space-y-2">
+              <p className="text-eyebrow">Level 3 · overlay</p>
+              <p className="text-headline-sm text-foreground">Transient layer</p>
+              <p className="text-body-sm text-muted-foreground">
+                Highest opacity and blur. Dialogs, command menu, popovers — where
+                legibility must never depend on what is behind.
+              </p>
+              <code className="text-code-sm block pt-2 text-muted-foreground/70">
+                .glass-overlay
+              </code>
+            </GlassPanel>
+          </div>
+          <p className="text-[0.6875rem] text-muted-foreground">
+            Every layer falls back to a solid card surface when{" "}
+            <code className="text-code-sm">backdrop-filter</code> is
+            unavailable. Glass is never the only thing making text readable.
+          </p>
+        </section>
+
+        {/* Typography */}
+        <section className="space-y-5">
+          <SectionLabel icon={Type} title="Fluid typography" />
+          <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/80">
+            {TYPE_SPECIMENS.map((row, index) => (
+              <div
+                key={row.token}
+                className="flex flex-col gap-2 border-b border-border/50 p-4 last:border-0 md:flex-row md:items-baseline md:gap-6"
+              >
+                <div className="flex w-52 shrink-0 flex-col gap-0.5">
+                  <code className="text-code-sm text-foreground">{row.token}</code>
+                  <span className="text-[0.625rem] text-muted-foreground">
+                    {row.label}
+                  </span>
+                </div>
+                <span className={`${row.className} min-w-0 text-foreground`}>
+                  {row.sample}
+                </span>
+                {index === TYPE_SPECIMENS.length - 1 ? null : (
+                  <span className="hidden" aria-hidden="true" />
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-[0.6875rem] text-muted-foreground">
+            Headline sizes use <code className="text-code-sm">clamp()</code> so
+            the scale breathes with the viewport instead of snapping at
+            breakpoints. Body copy stays at a fixed, comfortable measure.
+          </p>
+        </section>
+
+        {/* Palette */}
+        <section className="space-y-5">
+          <SectionLabel icon={Palette} title="One accent, four statuses" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <SwatchCard
+              label="Primary"
+              value="--primary"
+              description="Studio blue, AA on white and dark canvases"
+              className="bg-primary text-primary-foreground"
+            />
+            <SwatchCard
+              label="Success"
+              value="--success"
+              description="Present, active, approved"
+              className="bg-success text-success-foreground"
+            />
+            <SwatchCard
+              label="Warning"
+              value="--warning"
+              description="Pending, excused, review required"
+              className="bg-warning text-warning-foreground"
+            />
+            <SwatchCard
+              label="Destructive"
+              value="--destructive"
+              description="Absent, suspended, cancelled"
+              className="bg-destructive text-destructive-foreground"
+            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
-            {/* Primary Accent Card */}
-            <Card className="glass-card shadow-xs">
-              <CardHeader className="pb-space-xs">
-                <CardTitle className="text-headline-sm flex items-center justify-between">
-                  <span>Primary Accent</span>
-                  <span className="size-3 rounded-full bg-primary" />
-                </CardTitle>
-                <CardDescription>Authoritative Deep Indigo</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-space-xs">
-                <div className="h-12 w-full rounded-md bg-primary flex items-center justify-center text-primary-foreground font-medium text-body-sm shadow-inner">
-                  Primary Solid (WCAG AAA)
-                </div>
-                <div className="h-10 w-full rounded-md bg-primary-container flex items-center justify-center text-on-primary-container font-medium text-label-sm">
-                  Container Subtle
-                </div>
-                <div className="flex justify-between text-label-sm text-muted-foreground pt-1">
-                  <span>Token</span>
-                  <code className="text-code-sm">--primary</code>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Surface Hierarchy Lowest */}
-            <Card className="bg-surface-container-lowest shadow-xs border">
-              <CardHeader className="pb-space-xs">
-                <CardTitle className="text-headline-sm">Surface Lowest</CardTitle>
-                <CardDescription>Primary card and dialog canvas</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-space-xs">
-                <div className="p-space-sm rounded-md bg-surface-container-low border text-body-sm text-foreground">
-                  Recessed area: container-low
-                </div>
-                <div className="flex justify-between text-label-sm text-muted-foreground pt-2">
-                  <span>Token</span>
-                  <code className="text-code-sm">--surface-lowest</code>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Surface Container Mid */}
-            <Card className="bg-surface-container shadow-xs border">
-              <CardHeader className="pb-space-xs">
-                <CardTitle className="text-headline-sm">Surface Container</CardTitle>
-                <CardDescription>Sectional grouping & tables</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-space-xs">
-                <div className="p-space-sm rounded-md bg-surface-container-high border text-body-sm text-foreground">
-                  Elevated row / header
-                </div>
-                <div className="flex justify-between text-label-sm text-muted-foreground pt-2">
-                  <span>Token</span>
-                  <code className="text-code-sm">--surface-container</code>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Restrained Glass Card */}
-            <Card className="glass-card shadow-xs">
-              <CardHeader className="pb-space-xs">
-                <CardTitle className="text-headline-sm">Restrained Glass</CardTitle>
-                <CardDescription>Subtle 12px blur + 82% alpha</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-space-xs">
-                <div className="glass-surface p-space-sm rounded-md border text-body-sm text-foreground text-center">
-                  Floating element backdrop
-                </div>
-                <div className="flex justify-between text-label-sm text-muted-foreground pt-2">
-                  <span>Utility</span>
-                  <code className="text-code-sm">glass-card</code>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <ToneRow icon={CheckCircle2} label="Active" tone="success" badge="PRESENT" />
+            <ToneRow icon={AlertTriangle} label="Pending" tone="warning" badge="EXCUSED" />
+            <ToneRow icon={XCircle} label="Terminated" tone="danger" badge="ABSENT" />
+            <ToneRow icon={Info} label="Informational" tone="info" badge="SCHEDULED" />
           </div>
         </section>
 
-        {/* 2. Clear Status Colours */}
-        <section className="space-y-space-md">
-          <div className="flex items-center gap-space-xs">
-            <Layers className="size-5 text-primary" />
-            <h2 className="text-headline-md font-semibold">2. Operational Status Colours</h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
-            {/* Success */}
-            <div className="rounded-xl border bg-card p-space-md shadow-xs space-y-space-sm">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-label-md font-semibold text-success">
-                  <CheckCircle2 className="size-4" />
-                  <span>Success / Active</span>
-                </span>
-                <Badge variant="success">PRESENT</Badge>
-              </div>
-              <p className="text-body-sm text-muted-foreground">
-                Approved volunteer hours, verified status, active memberships.
-              </p>
-              <div className="rounded-md bg-success/10 border border-success/20 p-2 text-label-sm text-success font-medium">
-                High-contrast contrast ratio &gt; 5.0:1
+        {/* Components */}
+        <section className="space-y-5">
+          <SectionLabel icon={LayoutGrid} title="Controls" />
+          <GlassPanel tone="quiet" padding="lg" className="space-y-6">
+            <div className="space-y-2.5">
+              <p className="text-label-sm text-muted-foreground">Buttons</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button>Primary action</Button>
+                <Button variant="secondary">Secondary</Button>
+                <Button variant="outline">Outline</Button>
+                <Button variant="ghost">Ghost</Button>
+                <Button variant="destructive">Destructive</Button>
+                <Button size="sm">Small</Button>
+                <Button size="xs" variant="outline">
+                  Extra small
+                </Button>
+                <Button disabled>Disabled</Button>
               </div>
             </div>
-
-            {/* Warning */}
-            <div className="rounded-xl border bg-card p-space-md shadow-xs space-y-space-sm">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-label-md font-semibold text-warning-foreground dark:text-warning">
-                  <AlertTriangle className="size-4 text-warning" />
-                  <span>Warning / Pending</span>
-                </span>
-                <Badge variant="warning">EXCUSED</Badge>
-              </div>
-              <p className="text-body-sm text-muted-foreground">
-                Draft events, pending approvals, attendance corrections.
-              </p>
-              <div className="rounded-md bg-warning/10 border border-warning/20 p-2 text-label-sm text-warning-foreground dark:text-warning font-medium">
-                Amber status for review required
-              </div>
-            </div>
-
-            {/* Error / Destructive */}
-            <div className="rounded-xl border bg-card p-space-md shadow-xs space-y-space-sm">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-label-md font-semibold text-destructive">
-                  <XCircle className="size-4" />
-                  <span>Error / Terminated</span>
-                </span>
-                <Badge variant="destructive">ABSENT</Badge>
-              </div>
-              <p className="text-body-sm text-muted-foreground">
-                Suspended volunteers, cancelled events, audit violations.
-              </p>
-              <div className="rounded-md bg-destructive/10 border border-destructive/20 p-2 text-label-sm text-destructive font-medium">
-                Crimson alert for destructive states
-              </div>
-            </div>
-
-            {/* Info */}
-            <div className="rounded-xl border bg-card p-space-md shadow-xs space-y-space-sm">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-label-md font-semibold text-info">
-                  <Info className="size-4" />
-                  <span>Informational</span>
-                </span>
-                <Badge variant="info">SCHEDULED</Badge>
-              </div>
-              <p className="text-body-sm text-muted-foreground">
-                Domains, central meetings, office notes, informational logs.
-              </p>
-              <div className="rounded-md bg-info/10 border border-info/20 p-2 text-label-sm text-info font-medium">
-                Azure slate for non-urgent context
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. Typography Hierarchy */}
-        <section className="space-y-space-md">
-          <div className="flex items-center gap-space-xs">
-            <Type className="size-5 text-primary" />
-            <h2 className="text-headline-md font-semibold">3. Typography Scale (Inter & JetBrains Mono)</h2>
-          </div>
-
-          <Card className="shadow-xs overflow-hidden">
-            <div className="divide-y text-body-sm">
-              <div className="p-space-md flex flex-col md:flex-row md:items-baseline justify-between gap-space-xs">
-                <span className="text-code-sm text-muted-foreground w-40 shrink-0">text-display (32/40)</span>
-                <span className="text-display text-foreground">National Service Scheme</span>
-                <span className="text-label-sm text-muted-foreground">Inter 600 • -0.025em</span>
-              </div>
-              <div className="p-space-md flex flex-col md:flex-row md:items-baseline justify-between gap-space-xs">
-                <span className="text-code-sm text-muted-foreground w-40 shrink-0">text-headline-lg (24/32)</span>
-                <span className="text-headline-lg text-foreground">Volunteers &amp; Project Operations</span>
-                <span className="text-label-sm text-muted-foreground">Inter 600 • -0.02em</span>
-              </div>
-              <div className="p-space-md flex flex-col md:flex-row md:items-baseline justify-between gap-space-xs">
-                <span className="text-code-sm text-muted-foreground w-40 shrink-0">text-headline-md (18/24)</span>
-                <span className="text-headline-md text-foreground">Central Event Attendance Records</span>
-                <span className="text-label-sm text-muted-foreground">Inter 600 • -0.015em</span>
-              </div>
-              <div className="p-space-md flex flex-col md:flex-row md:items-baseline justify-between gap-space-xs">
-                <span className="text-code-sm text-muted-foreground w-40 shrink-0">text-headline-sm (15/20)</span>
-                <span className="text-headline-sm text-foreground">Coordinator Access Authorization</span>
-                <span className="text-label-sm text-muted-foreground">Inter 600 • -0.01em</span>
-              </div>
-              <div className="p-space-md flex flex-col md:flex-row md:items-baseline justify-between gap-space-xs">
-                <span className="text-code-sm text-muted-foreground w-40 shrink-0">text-body-lg (15/22)</span>
-                <span className="text-body-lg text-foreground">Manage volunteer profiles, historical participation, and service records.</span>
-                <span className="text-label-sm text-muted-foreground">Inter 400 • -0.005em</span>
-              </div>
-              <div className="p-space-md flex flex-col md:flex-row md:items-baseline justify-between gap-space-xs">
-                <span className="text-code-sm text-muted-foreground w-40 shrink-0">text-body-md (13/18)</span>
-                <span className="text-body-md text-foreground">Standard table row density and descriptive content throughout the office portal.</span>
-                <span className="text-label-sm text-muted-foreground">Inter 400 • 0em</span>
-              </div>
-              <div className="p-space-md flex flex-col md:flex-row md:items-baseline justify-between gap-space-xs">
-                <span className="text-code-sm text-muted-foreground w-40 shrink-0">text-label-md (13/18)</span>
-                <span className="text-label-md text-foreground">Interactive Labels &amp; Filter Headers</span>
-                <span className="text-label-sm text-muted-foreground">Inter 500 • -0.005em</span>
-              </div>
-              <div className="p-space-md flex flex-col md:flex-row md:items-baseline justify-between gap-space-xs">
-                <span className="text-code-sm text-muted-foreground w-40 shrink-0">text-code-sm (12/16)</span>
-                <span className="text-code-sm text-muted-foreground">0x4F9B7A_AUDIT_TRANSACTION_ID</span>
-                <span className="text-label-sm text-muted-foreground">JetBrains Mono 400</span>
-              </div>
-            </div>
-          </Card>
-        </section>
-
-        {/* 4. Interactive Components & Focus Rings */}
-        <section className="space-y-space-md">
-          <div className="flex items-center gap-space-xs">
-            <LayoutGrid className="size-5 text-primary" />
-            <h2 className="text-headline-md font-semibold">4. Base-Nova Components &amp; Keyboard Focus</h2>
-          </div>
-
-          <Card className="p-space-lg space-y-space-lg shadow-xs">
-            {/* Buttons */}
-            <div className="space-y-space-xs">
-              <span className="text-label-md font-semibold text-foreground">Button Hierarchy &amp; Focus Visible States</span>
-              <p className="text-body-sm text-muted-foreground">
-                Press Tab to test visible focus rings (<code className="text-code-sm">focus-visible:ring-ring</code>).
-              </p>
-              <div className="flex flex-wrap items-center gap-space-sm pt-space-xs">
-                <Button variant="default">Primary Action</Button>
-                <Button variant="secondary">Secondary Action</Button>
-                <Button variant="outline">Outline Action</Button>
-                <Button variant="ghost">Ghost Action</Button>
-                <Button variant="destructive">Destructive Action</Button>
-                <Button variant="default" size="sm">Small</Button>
-                <Button variant="outline" size="xs">Extra Small</Button>
-                <Button disabled variant="default">Disabled</Button>
-              </div>
-            </div>
-
-            {/* Badges */}
-            <div className="space-y-space-xs pt-space-sm border-t">
-              <span className="text-label-md font-semibold text-foreground">Operational Status Badges</span>
-              <div className="flex flex-wrap items-center gap-space-xs pt-space-xs">
-                <Badge variant="default">Default</Badge>
+            <Separator />
+            <div className="space-y-2.5">
+              <p className="text-label-sm text-muted-foreground">Status badges</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge>Default</Badge>
                 <Badge variant="secondary">Secondary</Badge>
                 <Badge variant="outline">Outline</Badge>
-                <Badge variant="accent">Accent Container</Badge>
-                <Badge variant="success">Active (Success)</Badge>
-                <Badge variant="warning">Pending (Warning)</Badge>
-                <Badge variant="destructive">Suspended (Destructive)</Badge>
-                <Badge variant="info">Domain (Info)</Badge>
+                <Badge variant="accent">Accent</Badge>
+                <Badge variant="success">Active</Badge>
+                <Badge variant="warning">Pending</Badge>
+                <Badge variant="destructive">Suspended</Badge>
+                <Badge variant="info">Scheduled</Badge>
               </div>
             </div>
-
-            {/* Spacing & Radii Grid */}
-            <div className="space-y-space-xs pt-space-sm border-t">
-              <span className="text-label-md font-semibold text-foreground">Corner Radii Scale</span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-space-xs pt-space-xs text-center">
-                <div className="rounded-xs border bg-surface-container-low p-space-sm text-label-sm">xs (4px)</div>
-                <div className="rounded-sm border bg-surface-container-low p-space-sm text-label-sm">sm (6px)</div>
-                <div className="rounded-md border bg-surface-container-low p-space-sm text-label-sm">md (8px)</div>
-                <div className="rounded-lg border bg-surface-container-low p-space-sm text-label-sm">lg (10px)</div>
-                <div className="rounded-xl border bg-surface-container-low p-space-sm text-label-sm">xl (12px)</div>
-                <div className="rounded-2xl border bg-surface-container-low p-space-sm text-label-sm">2xl (16px)</div>
-                <div className="rounded-full border bg-surface-container-low p-space-sm text-label-sm">full (pill)</div>
+            <Separator />
+            <div className="space-y-2.5">
+              <p className="text-label-sm text-muted-foreground">
+                Radii — nothing above 18px
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {["xs 4", "sm 6", "md 8", "lg 10", "xl 12", "2xl 16", "3xl 18"].map(
+                  (radius) => (
+                    <div
+                      key={radius}
+                      className="flex size-16 items-center justify-center border border-border/70 bg-surface-container-low/60 text-code-sm text-muted-foreground"
+                      style={{
+                        borderRadius: `var(--radius-${radius.split(" ")[0]})`,
+                      }}
+                    >
+                      {radius.split(" ")[0]}
+                    </div>
+                  ),
+                )}
               </div>
             </div>
-          </Card>
+          </GlassPanel>
         </section>
 
-        {/* Footer info */}
-        <footer className="pt-space-md border-t flex flex-col sm:flex-row items-center justify-between text-label-sm text-muted-foreground gap-space-xs">
-          <span>NSS Central Management System • Baseline Phase</span>
-          <span>Next.js App Router • Tailwind CSS v4 • Base-Nova</span>
+        <footer className="flex flex-col justify-between gap-2 border-t border-border/60 pt-6 text-[0.6875rem] text-muted-foreground sm:flex-row">
+          <span>NSS Central Management System · design foundation v2</span>
+          <span>Next.js App Router · Tailwind CSS v4 · Base UI</span>
         </footer>
       </main>
+    </div>
+  );
+}
+
+function SectionLabel({
+  icon: Icon,
+  title,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+      <h2 className="text-headline-sm text-foreground">{title}</h2>
+    </div>
+  );
+}
+
+function SwatchCard({
+  label,
+  value,
+  description,
+  className,
+}: {
+  label: string;
+  value: string;
+  description: string;
+  className: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border/70 bg-card/80">
+      <div className={`flex h-16 items-end p-3 text-[0.6875rem] font-medium ${className}`}>
+        {label}
+      </div>
+      <div className="space-y-0.5 border-t border-border/60 p-3">
+        <code className="text-code-sm block text-foreground">{value}</code>
+        <p className="text-[0.625rem] leading-snug text-muted-foreground">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const TONE_CLASS = {
+  success: "border-success/25 bg-success-container/40 text-on-success-container",
+  warning: "border-warning/25 bg-warning-container/40 text-on-warning-container",
+  danger: "border-destructive/25 bg-error-container/40 text-on-error-container",
+  info: "border-info/25 bg-info-container/40 text-on-info-container",
+} as const;
+
+function ToneRow({
+  icon: Icon,
+  label,
+  tone,
+  badge,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  tone: keyof typeof TONE_CLASS;
+  badge: string;
+}) {
+  return (
+    <div className={`flex items-center justify-between gap-2 rounded-xl border p-3 ${TONE_CLASS[tone]}`}>
+      <span className="flex items-center gap-2 text-[0.75rem] font-medium">
+        <Icon className="size-3.5" aria-hidden="true" />
+        {label}
+      </span>
+      <span className="rounded bg-card/60 px-1.5 py-0.5 font-mono text-[0.5625rem] tracking-wide">
+        {badge}
+      </span>
     </div>
   );
 }

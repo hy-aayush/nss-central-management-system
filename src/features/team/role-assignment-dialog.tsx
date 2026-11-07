@@ -271,8 +271,8 @@ export function RoleAssignmentDialog({
 
           {/* Sensitive confirmation warning */}
           {requiresConfirmation && (
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-300 text-amber-800 dark:text-amber-200 text-label-xs space-y-1.5 animate-in fade-in-50">
-              <div className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-300">
+            <div className="p-3.5 rounded-xl bg-warning-container/60 border border-warning/30 text-warning text-label-xs space-y-1.5 animate-in fade-in-50">
+              <div className="flex items-center gap-1.5 font-semibold text-warning">
                 <AlertTriangle className="size-4 shrink-0" />
                 <span>Sensitive Administrative Post Escalation</span>
               </div>

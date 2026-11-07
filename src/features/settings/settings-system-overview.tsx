@@ -15,7 +15,7 @@ export function SettingsSystemOverview() {
             Infrastructure Environment: <span className="font-semibold text-foreground">Supabase Free Tier (Postgres 15 + Auth)</span> • Region: <span className="font-mono text-foreground">ap-south-1 (Mumbai)</span>
           </span>
         </div>
-        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300 font-semibold text-[10px]">
+        <Badge variant="outline" className="bg-success-container/60 text-success border-success/30 font-semibold text-[10px]">
           Operational (Simulated)
         </Badge>
       </div>
@@ -64,19 +64,19 @@ export function SettingsSystemOverview() {
                 <span className="text-headline-md font-bold font-mono text-foreground">
                   Active
                 </span>
-                <span className="text-label-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="text-label-xs text-success font-medium">
                   WAL Bypassed
                 </span>
               </div>
             </div>
-            <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="size-8 rounded-lg bg-success-container/60 text-success flex items-center justify-center">
               <Cpu className="size-4" />
             </div>
           </div>
 
           <div className="space-y-1">
             <div className="w-full bg-muted/60 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-emerald-500 h-full rounded-full" style={{ width: "100%" }} />
+              <div className="bg-success h-full rounded-full" style={{ width: "100%" }} />
             </div>
             <span className="text-[10px] text-muted-foreground block text-right">
               Zero Write-Ahead-Log overhead

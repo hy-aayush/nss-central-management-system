@@ -230,8 +230,8 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
             }}
             className={`h-7 px-2.5 text-label-xs gap-1.5 ${
               onlyEmergency
-                ? "bg-amber-600 hover:bg-amber-700 text-white border-amber-600"
-                : "text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                ? "bg-warning hover:bg-warning text-white border-warning/30"
+                : "text-warning border-warning/30 hover:bg-warning-container/60"
             }`}
           >
             <ShieldAlert className="size-3.5" />
@@ -342,7 +342,7 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
                             variant="outline"
                             className={`px-1.5 py-0 h-4.5 text-[10px] font-mono ${
                               isEmergency
-                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-300 font-semibold"
+                                ? "bg-warning-container/60 text-warning border-warning/30 font-semibold"
                                 : "bg-primary/10 text-primary border-primary/20"
                             }`}
                           >
@@ -378,8 +378,8 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
                         variant="outline"
                         className={`px-1.5 py-0 h-4.5 text-[10px] font-semibold ${
                           isDenied
-                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-300"
-                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300"
+                            ? "bg-error-container/60 text-error border-error/30"
+                            : "bg-success-container/60 text-success border-success/30"
                         }`}
                       >
                         {entry.outcome}

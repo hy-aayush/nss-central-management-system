@@ -97,21 +97,21 @@ export function TeamRosterTable({
         );
       case "TECH_TEAM":
         return (
-          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300 font-semibold gap-1">
+          <Badge variant="outline" className="bg-success-container/60 text-success border-success/30 font-semibold gap-1">
             <Wrench className="size-3" />
             <span>Tech {entry.techKind || "Team"} (T-{entry.techKind === "MENTOR" ? 4 : 3})</span>
           </Badge>
         );
       case "PROJECT_REPRESENTATIVE":
         return (
-          <Badge variant="outline" className="bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-300 gap-1">
+          <Badge variant="outline" className="bg-info-container/60 text-info border-info/30 gap-1">
             <Building2 className="size-3" />
             <span>PR: {entry.projectScope?.[0] || entry.volunteer.project} (T-2)</span>
           </Badge>
         );
       case "BUILDER":
         return (
-          <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-300 gap-1">
+          <Badge variant="outline" className="bg-warning-container/60 text-warning border-warning/30 gap-1">
             <Sparkles className="size-3" />
             <span>Builder: {entry.builderKind || "POC"} (T-1)</span>
           </Badge>
@@ -288,8 +288,8 @@ export function TeamRosterTable({
                         variant="outline"
                         className={`px-1.5 py-0 h-4.5 text-[10px] font-semibold ${
                           isActive
-                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300"
-                            : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-300"
+                            ? "bg-success-container/60 text-success border-success/30"
+                            : "bg-error-container/60 text-error border-error/30"
                         }`}
                       >
                         {status}
@@ -315,8 +315,8 @@ export function TeamRosterTable({
                           onClick={() => setSuspensionTarget(entry)}
                           className={`size-7 p-0 ${
                             isActive
-                              ? "text-muted-foreground hover:text-rose-600"
-                              : "text-muted-foreground hover:text-emerald-600"
+                              ? "text-muted-foreground hover:text-error"
+                              : "text-muted-foreground hover:text-success"
                           }`}
                           title={isActive ? "Suspend staff access" : "Reinstate access"}
                         >

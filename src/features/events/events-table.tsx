@@ -328,10 +328,10 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                         <div className="flex items-center gap-2 text-label-xs text-muted-foreground">
                           <Badge
                             variant="outline"
-                            className={`px-1.5 py-0 h-4.5 text-[10px] font-medium border ${
+                            className={`h-[1.125rem] border px-1.5 py-0 text-[0.625rem] font-medium ${
                               isCentral
-                                ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                                : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                                ? "border-primary/20 bg-primary/[0.07] text-primary"
+                                : "border-info/20 bg-info-container/60 text-on-info-container"
                             }`}
                           >
                             {isCentral ? (
@@ -427,15 +427,15 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
             const primaryWing = event.projectName ?? (event.projects[0]?.projectName || "All Wings");
 
             return (
-              <Card key={event.id} className="p-4 bg-card border-border space-y-3">
+              <Card key={event.id} className="space-y-3 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1">
                     <Badge
                       variant="outline"
-                      className={`text-[10px] px-1.5 py-0 h-4.5 font-medium border ${
+                      className={`h-[1.125rem] border px-1.5 py-0 text-[0.625rem] font-medium ${
                         isCentral
-                          ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200"
-                          : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200"
+                          ? "border-primary/20 bg-primary/[0.07] text-primary"
+                          : "border-info/20 bg-info-container/60 text-on-info-container"
                       }`}
                     >
                       {isCentral ? "Central Drive" : primaryWing}
@@ -450,7 +450,7 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                   <StatusBadge status={event.status} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-label-xs text-muted-foreground bg-muted/30 p-2.5 rounded-lg">
+                <div className="grid grid-cols-2 gap-2 rounded-lg border border-border/50 bg-surface-container-low/50 p-2.5 text-label-xs text-muted-foreground">
                   <div>
                     <span className="text-muted-foreground/70 block">Date &amp; Time</span>
                     <span className="text-foreground font-medium">

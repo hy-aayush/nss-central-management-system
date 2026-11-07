@@ -134,7 +134,7 @@ function CentralEventForm() {
         {/* Core Information */}
         <Card className="p-6 bg-card border-border space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-border">
-            <Globe2 className="size-4.5 text-blue-500" />
+            <Globe2 className="size-4.5 text-info" />
             <h3 className="text-headline-sm font-semibold text-foreground">1. Core Information</h3>
           </div>
 
@@ -220,7 +220,7 @@ function CentralEventForm() {
         {/* Schedule & Hours */}
         <Card className="p-6 bg-card border-border space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-border">
-            <Clock className="size-4.5 text-amber-500" />
+            <Clock className="size-4.5 text-warning" />
             <h3 className="text-headline-sm font-semibold text-foreground">2. Schedule &amp; Hours (IST)</h3>
           </div>
 
@@ -427,7 +427,7 @@ function CentralEventForm() {
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-200 dark:border-amber-900/40 text-label-xs text-amber-800 dark:text-amber-300 space-y-1">
+            <div className="p-3 rounded-lg bg-warning-container/60 border border-warning/30 text-label-xs text-warning space-y-1">
               <div className="flex items-center gap-1.5 font-semibold">
                 <ShieldAlert className="size-4 shrink-0" />
                 <span>Simulation Environment Notice</span>
@@ -525,7 +525,7 @@ function ProjectEventForm() {
         {/* Core Information */}
         <Card className="p-6 bg-card border-border space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-border">
-            <Building2 className="size-4.5 text-emerald-500" />
+            <Building2 className="size-4.5 text-success" />
             <h3 className="text-headline-sm font-semibold text-foreground">1. Wing &amp; Core Details</h3>
           </div>
 
@@ -634,7 +634,7 @@ function ProjectEventForm() {
         {/* Schedule & Hours */}
         <Card className="p-6 bg-card border-border space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-border">
-            <Clock className="size-4.5 text-amber-500" />
+            <Clock className="size-4.5 text-warning" />
             <h3 className="text-headline-sm font-semibold text-foreground">2. Schedule &amp; Credit (IST)</h3>
           </div>
 
@@ -842,7 +842,7 @@ function ProjectEventForm() {
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-200 dark:border-amber-900/40 text-label-xs text-amber-800 dark:text-amber-300 space-y-1">
+            <div className="p-3 rounded-lg bg-warning-container/60 border border-warning/30 text-label-xs text-warning space-y-1">
               <div className="flex items-center gap-1.5 font-semibold">
                 <ShieldAlert className="size-4 shrink-0" />
                 <span>Simulation Notice</span>

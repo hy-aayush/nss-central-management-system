@@ -484,7 +484,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       </TableCell>
 
                       {/* Turnout Rate */}
-                      <TableCell className="text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      <TableCell className="tnum text-right text-[0.75rem] font-medium text-foreground">
                         {vol.attendanceRateEvents ?? 0}%
                       </TableCell>
 
@@ -570,7 +570,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       Hours: <strong className="text-foreground">{vol.allocatedHours} hrs</strong>
                     </span>
                     <span>
-                      Turnout: <strong className="text-emerald-600 dark:text-emerald-400">{vol.attendanceRateEvents ?? 0}%</strong>
+                      Turnout: <strong className="text-foreground">{vol.attendanceRateEvents ?? 0}%</strong>
                     </span>
                     <span className="flex items-center gap-0.5 text-primary text-[11px] font-sans font-medium">
                       Details

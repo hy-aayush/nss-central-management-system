@@ -35,7 +35,7 @@ export function VolunteerDetailCards({ volunteer }: VolunteerDetailCardsProps) {
           <Card className="border border-border/70 bg-card/75">
             <CardContent className="p-4 space-y-1">
               <span className="text-xs text-muted-foreground">Events Turnout</span>
-              <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+              <div className="text-2xl font-bold font-mono text-success">
                 {volunteer.attendanceRateEvents ?? 0}%
               </div>
               <p className="text-[11px] text-muted-foreground">
@@ -64,7 +64,7 @@ export function VolunteerDetailCards({ volunteer }: VolunteerDetailCardsProps) {
               </div>
               <p className="text-[11px] text-muted-foreground">
                 {stats.eventsMissedFcfs > 0 ? (
-                  <span className="text-amber-600 dark:text-amber-400 font-medium">
+                  <span className="text-warning font-medium">
                     {stats.eventsMissedFcfs} missed FCFS
                   </span>
                 ) : (
@@ -77,8 +77,8 @@ export function VolunteerDetailCards({ volunteer }: VolunteerDetailCardsProps) {
 
         {/* FCFS Missed slot warning banner if applicable */}
         {stats.eventsMissedFcfs >= 2 && (
-          <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div className="p-3 rounded-lg border border-warning/30 bg-warning-container/60 text-warning text-xs flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
             <span>
               <strong>FCFS Reliability Notice:</strong> Volunteer has missed {stats.eventsMissedFcfs} finalized FCFS event slots. Per Section 8.3, reaching 3 missed slots incurs an automated 30-day FCFS signup lockout.
             </span>

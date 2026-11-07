@@ -140,7 +140,7 @@ export function VolunteerProfileHeader({ volunteer }: VolunteerProfileHeaderProp
             <Building className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>Hostel: <strong className="text-foreground">{volunteer.hostel}</strong></span>
             <span>•</span>
-            <Droplet className="h-3 w-3 text-rose-500 shrink-0" />
+            <Droplet className="h-3 w-3 text-error shrink-0" />
             <span>{volunteer.bloodGroup}</span>
           </div>
         </div>

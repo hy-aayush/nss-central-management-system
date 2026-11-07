@@ -141,7 +141,7 @@ export function ProjectDetailTabs({
                         {vol.allocatedHours} hrs
                       </TableCell>
 
-                      <TableCell className="text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      <TableCell className="text-right font-mono text-xs font-bold text-success">
                         {vol.attendanceRateEvents ?? 0}%
                       </TableCell>
 
@@ -396,7 +396,7 @@ export function ProjectDetailTabs({
                   </div>
                   <div className="flex items-center justify-between text-muted-foreground">
                     <span>Turnout Reliability:</span>
-                    <strong className="font-mono text-emerald-600 dark:text-emerald-400">
+                    <strong className="font-mono text-success">
                       {summary?.attendanceRate ? `${summary.attendanceRate}%` : "91.2%"}
                     </strong>
                   </div>

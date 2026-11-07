@@ -1,6 +1,5 @@
 import * as React from "react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Camera, Video, Palette, PenTool, ArrowRight } from "lucide-react";
@@ -11,7 +10,10 @@ interface DomainRosterSectionProps {
   domains: DomainSummary[];
 }
 
-const DOMAIN_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const DOMAIN_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
   PHOTOGRAPHY: Camera,
   VIDEO_EDITING: Video,
   GRAPHIC_DESIGNING: Palette,
@@ -20,69 +22,74 @@ const DOMAIN_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 
 export function DomainRosterSection({ domains }: DomainRosterSectionProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Palette className="h-4 w-4 text-primary" />
-            Creative Domain Wings
-          </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            4 specialized creative domains providing media coverage, design assets, and content across all 9 projects
-          </p>
-        </div>
+    <div className="space-y-3">
+      <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+        <p className="max-w-2xl text-[0.75rem] leading-relaxed text-muted-foreground">
+          Four creative specialisations supply media coverage, design assets,
+          and written content across all nine projects. Domain membership is
+          additive to a volunteer&apos;s project wing.
+        </p>
         <Link
           href="/volunteers"
           className={buttonVariants({
             variant: "ghost",
             size: "sm",
-            className: "h-8 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground",
+            className: "shrink-0 gap-1 self-start text-muted-foreground hover:text-foreground sm:self-auto",
           })}
         >
-          View All Specialists
-          <ArrowRight className="h-3 w-3" />
+          All specialists
+          <ArrowRight className="size-3" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
         {domains.map((dom) => {
           const Icon = DOMAIN_ICONS[dom.domain] || Palette;
-          const leadName = dom.leads[0]?.name ?? "Designated Lead";
+          const leadName = dom.leads[0]?.name ?? "Designated lead";
 
           return (
-            <Card
+            <div
               key={dom.domain}
-              className="border border-border/70 bg-card/75 backdrop-blur-sm shadow-sm flex flex-col justify-between"
+              className="flex flex-col justify-between rounded-2xl border border-border/70 bg-card/85 p-4 shadow-[var(--elevation-1)] transition-[box-shadow,border-color] duration-300 hover:border-border hover:shadow-[var(--elevation-2)]"
             >
-              <CardHeader className="pb-3">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <Badge variant="outline" className="font-mono text-[10px]">
-                    {dom.activeCount} Members
+                  <span className="flex size-8 items-center justify-center rounded-lg border border-border/60 bg-surface-container-low/60 text-muted-foreground">
+                    <Icon className="size-4" aria-hidden="true" />
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className="h-4 rounded px-1.5 font-mono text-[0.5625rem]"
+                  >
+                    {dom.activeCount} members
                   </Badge>
                 </div>
-                <CardTitle className="text-sm font-semibold text-foreground pt-2">
-                  {DOMAIN_LABELS[dom.domain] ?? dom.domain}
-                </CardTitle>
-                <CardDescription className="text-xs line-clamp-2">
-                  {dom.description}
-                </CardDescription>
-              </CardHeader>
 
-              <CardContent className="pt-0 border-t border-border/40 mt-3 pt-3 flex items-center justify-between text-xs text-muted-foreground">
-                <span className="truncate max-w-[140px]">
-                  Lead: <strong className="text-foreground">{leadName}</strong>
+                <div className="space-y-1">
+                  <h3 className="text-[0.8125rem] font-medium text-foreground">
+                    {DOMAIN_LABELS[dom.domain] ?? dom.domain}
+                  </h3>
+                  <p className="line-clamp-2 text-[0.6875rem] leading-relaxed text-muted-foreground">
+                    {dom.description}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5 text-[0.625rem] text-muted-foreground">
+                <span className="max-w-[9rem] truncate">
+                  Lead:{" "}
+                  <span className="font-medium text-foreground/90">
+                    {leadName}
+                  </span>
                 </span>
                 <Link
                   href={`/volunteers?domain=${dom.domain}`}
-                  className="text-primary hover:underline font-medium text-[11px]"
+                  className="shrink-0 font-medium text-primary transition-colors hover:text-primary/80"
                 >
-                  Roster &rarr;
+                  Roster
                 </Link>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           );
         })}
       </div>

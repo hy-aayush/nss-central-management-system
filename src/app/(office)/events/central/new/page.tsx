@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, Globe2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
-import { PageHeader } from "@/components/layout/page-header";
+import { PageEyebrow, PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EventForm } from "@/features/events/event-form";
@@ -25,14 +25,12 @@ export default async function NewCentralEventPage() {
 
       <PageHeader
         badge={
-          <div className="flex items-center gap-1.5 text-label-sm text-blue-600 dark:text-blue-400 font-medium">
-            <Globe2 className="size-3.5" />
-            <span className="uppercase tracking-wider">Central Organization Event</span>
-            <span className="text-muted-foreground/60">•</span>
-            <span className="text-muted-foreground font-normal">All-Wing Quota Scheduler</span>
-          </div>
+          <PageEyebrow
+            label="Central unit event"
+            meta="Cross-wing quota scheduler"
+          />
         }
-        title="Schedule Central Event"
+        title="Schedule central event"
         description="Configure university-wide NSS drives, blood donation camps, or orientation sessions with cross-wing slot distribution."
       />
 

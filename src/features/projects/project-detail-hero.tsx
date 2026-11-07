@@ -119,10 +119,10 @@ export function ProjectDetailHero({ project, summary }: ProjectDetailHeroProps) 
 
           <div className="p-3 rounded-lg border border-border/40 bg-muted/10 space-y-0.5">
             <span className="text-muted-foreground text-[11px] flex items-center gap-1">
-              <Award className="h-3 w-3 text-emerald-500" />
+              <Award className="h-3 w-3 text-success" />
               Turnout Rate
             </span>
-            <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+            <div className="text-xl font-bold font-mono text-success">
               {summary?.attendanceRate ? `${summary.attendanceRate}%` : "91.2%"}
             </div>
           </div>
