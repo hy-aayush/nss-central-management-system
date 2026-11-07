@@ -41,3 +41,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/docs/MANUAL_SETUP_BEFORE_PHASE_4.md

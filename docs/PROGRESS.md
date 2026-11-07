@@ -1,5 +1,138 @@
 # Database Foundation Progress
 
+## UI elevation pass — Minimal Liquid Glass v2 (7 Nov 2026)
+
+**Scope:** presentation and interaction layer only. No route, form, auth,
+authorization, database, API or data-structure change. All existing modules,
+workflows, roles and mock datasets behave exactly as before.
+
+**Brief:** transform the portal into a premium, minimal, fluid experience
+(liquid glass used intentionally, editorial typography, restrained motion,
+honest states, faster repeat navigation) without the generic AI-generated look.
+
+### What changed
+
+| Area | Work |
+|---|---|
+| Tokens | `globals.css` rewritten: OKLCH surfaces in both themes, single refined blue accent, muted teal/amber/red/azure status pairs, fluid type with `clamp()`, motion/easing/duration tokens, elevation scale, ambient canvas, selection, scrollbars, reduced-motion block. |
+| Glass system | Three graduated levels (`glass-quiet`/`glass-card`, `glass-panel`/`glass-surface`, `glass-overlay`) with one soft sheen on level 2 and a `@supports` solid fallback. React wrappers in `src/components/ui/glass.tsx`. |
+| Typography | `text-display`/`headline-lg`/`headline-md` are fluid; legacy utility names preserved; missing utilities used by earlier screens (`text-title-sm`, `text-title-md`, `text-display-sm`, `text-body-xs`, `text-label-xs`) are now defined instead of silently rendering unstyled. `text-eyebrow` added. |
+| Primitives | `Card`, `StatCard`, `Skeleton`, `DataTable`, `EmptyState`, `LoadingState`, `ErrorState`, `SyntheticDataNotice` restyled; new `SectionHeader`, `MetricStrip`, `ModulePlaceholder`. |
+| Shell | Sidebar regrouped into Overview / Records / Operations / Insight / Administration with a liquid active pill and left indicator; quiet-glass top bar with refined breadcrumbs; floating mobile dock using a shared `layoutId` spring and `useReducedMotion`; command menu and notification popover at glass level 3; office layout uses a fluid `max-w-[86rem]` gutters and an ambient canvas; `template.tsx` rises content in; explicit `loading.tsx` for the shell and dashboard. |
+| Dashboard | Rebuilt around a greeting hero with the next operation, a compact data-quality notice, `MetricStrip` KPIs, sectioned flow cards (upcoming, recent attendance, project distribution, quick actions, recent audit) and two tokenised charts. |
+| Modules | Volunteers, projects (grid + domain roster), events (table + detail tabs + forms), attendance (roster, history, corrections), analytics (KPIs, comparisons, trends, domains), team, audit logs (table + detail dialog), settings (tabs, system overview, emergency access), meetings/hours/requests placeholders, volunteer and project detail pages, login, access-denied and the root design-system page all brought onto the same system. |
+| Status colour | 287 hardcoded Tailwind palette classes across 19 feature files migrated to semantic tokens (`success`, `warning`, `error`, `info` + containers). KPI groups no longer use per-card colours. |
+| Motion | Duration/easing tokens; `lift`, `press`, `animate-rise`, `animate-fade`, `skeleton-sheen`, `stagger-*`; CSS-first, `motion/react` only for shared-layout and presence; all entrances ≤380ms; reduced motion honoured globally. |
+| Honesty | Undefined modules (meetings, hours, requests) now say they are not implemented instead of showing fake controls; the volunteer header's "Export Roster"/"Add Volunteer" links (which pointed at `/requests`) are relabelled "Roster requests"/"Request addition"; analytics export now generates the CSV it claims to export. |
+| Caching | `next.config.ts`: `optimizePackageImports` for `lucide-react`, `recharts`, `date-fns`, `@tanstack/react-table`, `motion`; `staleTimes.static = 300`, `dynamic` deliberately kept at 30s because office routes are gated. Dashboard snapshot cached server-side with `"use cache"` + `cacheLife("hours")`; the access gate is never cached. |
+| Docs | `UI_SPECS.md` rewritten as v2; `DECISIONS.md` D-032…D-035; this section; manual setup guide updated. |
+
+### Verification (this pass, actual results)
+
+| Command | Result |
+|---|---|
+| `npx tsc --noEmit` | exit 0 |
+| `npm run lint` | exit 0 (2 unused-import warnings found and fixed) |
+| `npm run build` | exit 0 — all office routes `ƒ` (dynamic), Cache Components + Partial Prefetching enabled |
+| Dev server (`next dev`, Turbopack) | ready; `/login` returns 200 |
+| Visual check of `/login` (light + dark, ~644px preview width) | renders correctly: editorial copy, glass card, disabled Google button with honest "not configured" explanation |
+| `rg "(text|bg|border)-(emerald|amber|rose|blue|purple|sky|green|red)-[0-9]{3}" src` | no matches |
+
+**Not verified in this pass:** signed-in office shell, dashboard and module
+screens were not rendered in a browser because the real Supabase project still
+has no office posts (see below); the two-column login layout above 1024px was
+not visually inspected in the preview panel.
+
+### Still required before this is a finished product
+
+1. Apply the migrations to the real Supabase project and run
+   `drizzle/manual/security.sql` (needs `ADMIN_DATABASE_URL`).
+2. Insert the bootstrap Coordinator/Tech post so a real Google sign-in passes
+   `/access-denied` and the office shell can be reviewed end to end.
+3. Replace mock data with the server queries in SRS order; the UI is ready for
+   it, but every list currently reads `src/lib/mock-data`.
+4. Build the unimplemented modules truthfully flagged on screen: meetings,
+   service hours (and CSV import), approval requests, exports beyond the
+   client-side analytics CSV, and emergency access.
+5. Run the Section 20 acceptance list (a11y sweep, keyboard-only pass,
+   responsive check on real devices, Lighthouse) once data is live.
+
+---
+
+## Documentation pass — manual setup guide + verified state before Phase 4 (21 Oct 2026)
+
+**Scope:** Inspect the repository and produce `docs/MANUAL_SETUP_BEFORE_PHASE_4.md`.
+Documentation only — no Phase 4/5 code, no schema applied to any Supabase
+project, no migrations generated or run, no application behaviour changed.
+
+**Why this pass exists:** Task 5 was marked complete, but "code complete" is not
+the same as "your Supabase project is configured." The application database
+tables do **not** exist in the real Supabase instance yet — the two migrations
+were applied only to a disposable local PostgreSQL container. This pass
+establishes, from the repository itself, exactly what is verified, what is
+implemented-but-untested against a real project, and what manual work remains.
+
+### What I inspected
+
+`package.json` (scripts + deps), `drizzle.config.ts`, `next.config.ts`,
+`.env.example`, `.gitignore`, `src/db/schema/*`, `drizzle/*` (migrations +
+journal + manual SQL), `src/lib/auth/*`, `src/lib/supabase/*`,
+`src/lib/platform/request-origin.ts`, `src/db/index.ts`, `src/db/seed/targets.ts`,
+`scripts/*`, `tests/*`, `docs/SRS.md`, and `git status`/`git log`. Environment
+variable names were extracted by grepping `process.env` across `src/`, `scripts/`,
+`tests/`, `drizzle.config.ts` and `next.config.ts` — none were invented.
+
+### Verified completed work (re-run in this pass, actual results)
+
+| Command | Result |
+|---|---|
+| `npx tsc --noEmit` | exit 0 |
+| `npm run lint` | exit 0 |
+| `npm run build` (no Supabase env) | exit 0 — all office routes `ƒ` dynamic |
+| `npm run test:db` (disposable Postgres 17-alpine, port 55432) | 9 files, **118 passed, 1 todo**, ~13s, exit 0 |
+| `npm run db:check` | "Everything's fine" — exit 0 |
+| `npm run db:generate` | "No schema changes, nothing to migrate" — no-op, nothing written |
+| Two migrations on disk | `drizzle/0000_moaning_ricochet.sql`, `drizzle/0001_tired_agent_zero.sql` (reviewed) |
+| Env hygiene | `.gitignore` ignores `.env*` and re-includes `!.env.example`; only `.env.example` is tracked; no real env file on disk |
+| Auth implementation | Google OAuth started in `src/lib/auth/actions.ts`; `getClaims()` verification in `src/app/auth/callback/route.ts`; domain/roll gate in `src/lib/auth/claims.ts`; DB gate in `src/lib/auth/gate.ts`; `requireOfficeAccess()` on layout, template, root page and all 18 private pages |
+
+### Established findings
+
+- **No application tables exist in Supabase.** States 1 (TS schema) and 2
+  (generated SQL) are done; states 3 (applied to Supabase) and 4 (verified in the
+  dashboard) are **not** done.
+- **No `app_user` role / RLS / `SYSTEM` row** in the real project —
+  `drizzle/manual/security.sql` has not been run there.
+- **No staff roster / office posts** exist, so even a successful Google sign-in
+  lands on `/access-denied` until the bootstrap rows are inserted.
+- Auth code was proven against a **local fake** Supabase (RS256 JWKS), not a real
+  Google/Supabase round-trip.
+- `CRON_SECRET` and `AGE_PUBLIC_KEY` are documented future requirements only —
+  **no current code reads them**; no `/api/cron/*` or backup path exists yet.
+- Bootstrap is a genuine chicken-and-egg: granting a post needs an existing
+  Coordinator/Tech, so the first roster rows must be inserted on the admin
+  connection (SRS bootstrap, §7.4 of the guide).
+
+### Outstanding manual work
+
+See `docs/MANUAL_SETUP_BEFORE_PHASE_4.md`. In order: populate local `.env`
+four required vars → obtain Supabase URL/anon key + both pooler URLs → enable the
+Google provider + redirect allow-list → review migration SQL → apply migrations
+and `security.sql` to **staging** → bootstrap the authorized roster → prove a real
+Google login end-to-end.
+
+### Next safe development task
+
+**Not Phase 4 yet.** Complete the manual checklist first (§12 of the guide), then
+run the schema-implementation phase: review + apply the two existing migrations to
+a staging Supabase database, apply `security.sql`, verify `app_user` is
+least-privilege, and bootstrap the first Coordinator row. Only after a real
+`kiit.ac.in` login is granted by the database gate is it safe to start Phase 4
+backend services. Do not weaken the access gate to make a test login pass — use
+synthetic data.
+
+---
+
 ## Task 5 — Supabase Google authentication and the office access gate (21 Oct 2026)
 
 **Scope:** Google sign-in via Supabase Auth, server-side identity verification

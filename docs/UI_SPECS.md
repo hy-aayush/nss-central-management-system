@@ -1,103 +1,219 @@
-# NSS Central Management System — UI & Design System Specification
+# NSS Central Management System — UI & Design System Specification (v2)
+
+> **Status:** authoritative for the UI layer as implemented in `src/app/globals.css`,
+> `src/components/ui/*`, `src/components/shared/*` and the office shell.
+> Business logic, routes, auth, and data structures are unchanged by this layer.
+
+---
 
 ## 1. Principles & Design Aesthetic
-- **Internal Office Aesthetic**: High-density, calm, authoritative, and uncluttered. Avoid consumer decorative gimmicks or oversized gradients.
-- **Single Accent Colour**: Authority Indigo (`#3525cd` / `oklch(0.42 0.22 268)` light, `oklch(0.70 0.18 268)` dark) used deliberately for primary interactive actions and active navigation items.
-- **Neutral Surface Hierarchy**: A layered background structure (`surface-container-lowest` for cards, `surface-container-low`, `surface-container`, `surface-container-high`) providing natural depth without heavy drop shadows.
-- **Restrained Glassmorphism**: High-blur (8–12px), high-saturation (180%), high-opacity (82%) glass effects applied selectively to sticky headers, dialogs, and floating toolbars with hairline borders (`oklch(from var(--border) l c h / 70%)`).
-- **Strict Accessibility**: All text combinations meet or exceed WCAG AA (4.5:1 for normal text) with primary actions achieving WCAG AAA (7.8:1+).
-- **Reduced Motion**: All animations and transitions automatically collapse to 0.01ms when `@media (prefers-reduced-motion: reduce)` is signaled by the user's OS.
+
+- **Minimal Liquid Glass.** Three graduated glass levels, used only where a
+  surface floats above content: navigation, the mobile dock, popovers, dialogs,
+  command menu, and selected toolbars. Tables, forms, and dense data stay on
+  opaque surfaces so numbers remain legible.
+- **Understated luxury, not visual extravagance.** One accent hue, muted status
+  colours, hairline borders, and low-opacity shadows. No neon, no glow, no
+  decorative blobs, no rainbow KPI cards.
+- **Editorial typography.** Fluid headings, tabular numerals for all counts, and
+  a clear three-step hierarchy (eyebrow → section title → content).
+- **Calm density.** Compact but breathable: 13px body, 12px metadata, 10–11px
+  uppercase eyebrow labels with wide tracking.
+- **Honest UI.** A control that is not implemented is labelled as such
+  (`ModulePlaceholder`) instead of looking interactive. No dead buttons.
+- **Accessibility first.** WCAG AA contrast for text in both themes, visible
+  focus rings, keyboard support in every overlay, and `prefers-reduced-motion`
+  support at the token level.
 
 ---
 
-## 2. Color Palette & Tokens (OKLCH)
+## 2. Colour System (OKLCH, single accent)
 
-### 2.1 Surfaces & Canvas
-| Token | Light Theme | Dark Theme | Purpose |
+### 2.1 Canvas & surfaces (light)
+
+| Token | Value | Purpose |
+|---|---|---|
+| `--background` | `oklch(0.979 0.003 265)` | Page canvas (`#F7F8FA`-equivalent) |
+| `--foreground` | `oklch(0.19 0.014 265)` | Primary text (charcoal) |
+| `--card` | `oklch(1 0 0)` | Opaque card surface |
+| `--surface-container-low` | `oklch(0.968 0.004 265)` | Recessed sections, ghost toolbars |
+| `--surface-container` | `oklch(0.951 0.006 265)` | Table headers, chips |
+| `--surface-container-high` | `oklch(0.933 0.008 265)` | Hover/selected rows |
+| `--muted-foreground` | `oklch(0.505 0.017 265)` | Secondary text (`#737985`-equivalent) |
+| `--border` | `oklch(0.908 0.005 265)` | Hairline dividers and outlines |
+
+Dark mode mirrors the same roles (`--background: oklch(0.145 0.010 265)`,
+`--foreground: oklch(0.962 0.004 265)`, raised surfaces step up in lightness).
+
+### 2.2 Accent
+
+| Token | Light | Dark | Notes |
 |---|---|---|---|
-| `--background` | `oklch(0.985 0.003 260)` | `oklch(0.12 0.012 260)` | Root canvas background |
-| `--foreground` | `oklch(0.18 0.015 260)` | `oklch(0.96 0.005 260)` | Primary text (13.8:1+ contrast) |
-| `--surface-container-lowest` | `oklch(1 0 0)` | `oklch(0.10 0.012 260)` | Lowest layer, white cards in light mode |
-| `--surface-container-low` | `oklch(0.965 0.005 260)` | `oklch(0.14 0.012 260)` | Recessed sections, secondary cards |
-| `--surface-container` | `oklch(0.945 0.008 260)` | `oklch(0.18 0.012 260)` | Table grouping, chip containers |
-| `--surface-container-high` | `oklch(0.925 0.010 260)` | `oklch(0.22 0.012 260)` | Hover backgrounds, elevated chips |
-| `--surface-container-highest` | `oklch(0.90 0.012 260)` | `oklch(0.26 0.012 260)` | Active selections, badge backing |
-| `--on-surface-variant` | `oklch(0.44 0.020 260)` | `oklch(0.70 0.015 260)` | Secondary labels and metadata (5:1+ contrast) |
+| `--primary` | `oklch(0.47 0.165 266)` | `oklch(0.735 0.125 266)` | Refined institutional blue; AA on white, white text AA on it |
+| `--primary-foreground` | `oklch(0.99 0 0)` | `oklch(0.16 0.02 266)` | Contrast pair |
+| `--primary-container` | `oklch(0.945 0.032 266)` | — | Quiet accent fills (icons, active pill) |
 
-### 2.2 Primary Accent Colour
-| Token | Light Theme | Dark Theme | Purpose |
+### 2.3 Status (muted, never saturated)
+
+| Status | Token | Container | Usage |
 |---|---|---|---|
-| `--primary` | `oklch(0.42 0.22 268)` | `oklch(0.70 0.18 268)` | Primary buttons, active indicators |
-| `--primary-foreground` | `oklch(0.99 0 0)` | `oklch(0.12 0.04 268)` | High contrast text on primary |
-| `--primary-container` | `oklch(0.94 0.04 268)` | `oklch(0.25 0.08 268)` | Accent chip / container background |
-| `--on-primary-container` | `oklch(0.28 0.18 268)` | `oklch(0.90 0.08 268)` | Accent chip text |
+| Success | `--success` teal `oklch(0.50 0.105 175)` | `--success-container` | Present, active, approved, published |
+| Warning | `--warning` amber `oklch(0.60 0.115 70)` | `--warning-container` | Excused, pending, review required |
+| Error | `--error` / `--destructive` `oklch(0.53 0.17 25)` | `--error-container` | Absent, cancelled, suspended |
+| Info | `--info` `oklch(0.50 0.115 245)` | `--info-container` | Scheduled, domain, informational |
 
-### 2.3 Operational Status Colours
-| Status | Light Token (`--{status}`) | Light Container | Dark Token (`--{status}`) | Dark Container | Usage |
-|---|---|---|---|---|---|
-| **Success** | `oklch(0.50 0.16 148)` | `oklch(0.95 0.04 148)` | `oklch(0.72 0.16 148)` | `oklch(0.22 0.06 148)` | Present, Active, Approved, Published |
-| **Warning** | `oklch(0.58 0.16 65)` | `oklch(0.95 0.05 65)` | `oklch(0.78 0.15 65)` | `oklch(0.25 0.06 65)` | Excused, Draft, Review Required |
-| **Error / Destructive** | `oklch(0.52 0.22 27)` | `oklch(0.95 0.04 27)` | `oklch(0.70 0.20 27)` | `oklch(0.24 0.07 27)` | Absent, Suspended, Cancelled, Audit Alert |
-| **Info** | `oklch(0.48 0.15 240)` | `oklch(0.95 0.04 240)` | `oklch(0.72 0.14 240)` | `oklch(0.22 0.05 240)` | Scheduled, Domain, Informational Note |
+**Rule:** status colour is always expressed through tokens
+(`text-success`, `bg-warning-container/60`, `border-error/30`). Hardcoded
+Tailwind palette classes (`text-emerald-600`, `bg-rose-500/10`, …) are not
+permitted in `src/`; the module screens were migrated in this pass.
+
+Charts use `--chart-1 … --chart-5` only.
 
 ---
 
-## 3. Typography Scale (Inter & JetBrains Mono)
-Optimized via `next/font` with zero layout shift and automatic self-hosting:
+## 3. Liquid Glass — three levels
 
-| Class | Font Size / Line Height | Tracking | Weight | Typical Usage |
+| Level | Utility | Blur / saturate | Background | Used for |
 |---|---|---|---|---|
-| `text-display` | `2rem` (32px) / `2.5rem` (40px) | `-0.025em` | 600 | Key page headline / landing titles |
-| `text-headline-lg` | `1.5rem` (24px) / `2rem` (32px) | `-0.02em` | 600 | Page titles (Volunteers, Events) |
-| `text-headline-md` | `1.125rem` (18px) / `1.5rem` (24px) | `-0.015em` | 600 | Section headers, card groups |
-| `text-headline-sm` | `0.9375rem` (15px) / `1.25rem` (20px) | `-0.01em` | 600 | Card titles, compact modal titles |
-| `text-body-lg` | `0.9375rem` (15px) / `1.375rem` (22px) | `-0.005em` | 400 | Introductory paragraphs |
-| `text-body-md` | `0.8125rem` (13px) / `1.125rem` (18px) | `0em` | 400 | Data table rows, general content |
-| `text-body-sm` | `0.75rem` (12px) / `1rem` (16px) | `0em` | 400 | Helper text, secondary descriptions |
-| `text-label-md` | `0.8125rem` (13px) / `1.125rem` (18px) | `-0.005em` | 500 | Form labels, button text, table headers |
-| `text-label-sm` | `0.6875rem` (11px) / `0.875rem` (14px) | `0.02em` | 500 | Badges, tags, timestamps |
-| `text-code-sm` | `0.75rem` (12px) / `1rem` (16px) | `0em` | 400 | Hashes, IDs, timestamps (JetBrains Mono) |
+| 1 — quiet | `glass-quiet`, `glass-card` | 10px / 130% | `--glass-1-bg` (68% white) | Dashboard flow cards, inline panels |
+| 2 — panel | `glass-panel`, `glass-surface` | 22px / 155% | `--glass-2-bg` (78% white) | Sidebar inner surface, top bar, floating widgets, mobile dock |
+| 3 — overlay | `glass-overlay` | 28px / 165% | `--glass-3-bg` (90% white) | Dialogs, dropdowns, command menu, notification popover |
+
+Details:
+- Every level has a hairline translucent border and a low-opacity shadow
+  (`--elevation-1/2/3`).
+- `glass-panel` adds one very soft top sheen (`--glass-sheen`) via `::before`
+  with `isolation: isolate`; it is the only decoration the system allows.
+- **Fallback:** `@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))`
+  replaces all glass with `--card` + `--border`. Nothing becomes unreadable.
+- Never stack more than two blurred layers, and never put glass behind long
+  tables or forms.
+
+React wrappers: `GlassPanel`, `GlassCard`, `GlassToolbar`, `GlassInset`
+(`src/components/ui/glass.tsx`).
 
 ---
 
-## 4. Spacing & Radii Scale
+## 4. Typography
 
-### 4.1 Spacing (4px Base Grid)
-- `space-xxs`: `0.125rem` (2px)
-- `space-xs`: `0.25rem` (4px)
-- `space-sm`: `0.5rem` (8px)
-- `space-md`: `0.75rem` (12px)
-- `space-lg`: `1rem` (16px)
-- `space-xl`: `1.5rem` (24px)
-- `space-2xl`: `2rem` (32px)
-- `gutter`: `1rem` (16px)
-- `margin`: `1.5rem` (24px)
-- `margin-mobile`: `1rem` (16px)
+Primary family: **Geist / Inter** via `next/font` (`--font-sans`), mono:
+**JetBrains Mono** (`--font-mono`).
 
-### 4.2 Radii
-- `rounded-xs`: `0.25rem` (4px)
-- `rounded-sm`: `0.375rem` (6px)
-- `rounded-md`: `0.5rem` (8px)
-- `rounded-lg`: `0.625rem` (10px)
-- `rounded-xl`: `0.75rem` (12px)
-- `rounded-2xl`: `1rem` (16px)
-- `rounded-full`: `9999px`
+| Utility | Size | Line height | Tracking | Weight | Use |
+|---|---|---|---|---|---|
+| `text-display` | `clamp(1.75rem, 1.32rem + 1.55vw, 2.5rem)` | 1.12 | −0.028em | 600 | Login hero, root showcase |
+| `text-headline-lg` | `clamp(1.3rem, 1.16rem + 0.55vw, 1.6rem)` | 1.22 | −0.021em | 600 | Section/page titles |
+| `text-headline-md` | `clamp(1rem, 0.96rem + 0.18vw, 1.125rem)` | 1.35 | −0.014em | 600 | Card and group titles |
+| `text-headline-sm` | `0.9375rem` | 1.3 | −0.01em | 600 | Compact card titles |
+| `text-body-lg` | `0.9375rem` | 1.55 | −0.004em | 400 | Intro paragraphs |
+| `text-body-md` | `0.8125rem` | 1.5 | 0 | 400 | Default body |
+| `text-body-sm` | `0.8125rem` | 1.45 | 0 | 400 | Secondary descriptions |
+| `text-label-md` | `0.8125rem` | 1.35 | −0.004em | 500 | Labels, buttons |
+| `text-label-sm` | `0.6875rem` | 1.2 | 0.04em | 500 | Badges, timestamps |
+| `text-eyebrow` | `0.6875rem` | 1.2 | 0.085em | 600 | Uppercase eyebrow above titles |
+| `text-code-sm` | `0.75rem` mono | 1.4 | 0 | 400 | Hashes, IDs, IST timestamps |
 
----
-
-## 5. Focus & Interaction States
-- **Focus Rings**:
-  - CSS rule: `outline: 2px solid var(--ring); outline-offset: 2px;`
-  - Tailwind utility: `focus-ring` or `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`
-  - High contrast on both dark and light surfaces. Never hidden or removed without equivalent high-visibility indicator.
-- **Glassmorphism**:
-  - `glass-surface`: `bg-[oklch(from_var(--background)_l_c_h_/_82%)] backdrop-blur-md border border-[oklch(from_var(--border)_l_c_h_/_70%)]`
-  - `glass-card`: `bg-[oklch(from_var(--card)_l_c_h_/_82%)] backdrop-blur-sm border border-[oklch(from_var(--border)_l_c_h_/_60%)]`
+Compatibility aliases are defined so legacy call sites never render unstyled:
+`text-title-sm`, `text-title-md`, `text-display-sm`, `text-body-xs`,
+`text-label-xs`. All numbers use `tnum` (tabular numerals).
 
 ---
 
-## 6. Theme Implementation Strategy
-- Implemented via `next-themes` with `attribute="class"`, `defaultTheme="system"`, and `enableSystem`.
-- `<html>` includes `suppressHydrationWarning`.
-- Zero theme flicker on initial paint via early injected script.
-- Client theme toggling avoids hydration cascading renders via React 19 `useSyncExternalStore`.
+## 5. Layout, spacing, radii
+
+- Office shell: `max-w-[86rem]`, fluid gutters
+  (`px-4 sm:px-6 lg:px-8`), `min-h-dvh`, ambient canvas behind content.
+- Spacing is a 4px grid: `space-xxs 2`, `xs 4`, `sm 8`, `md 12`, `lg 16`,
+  `xl 24`, `2xl 32`; `gutter` 16, `margin` 24.
+- Radii are restrained and capped at 18px:
+  `xs 4`, `sm 6`, `md 8`, `lg 10`, `xl 12`, `2xl 16`, `3xl 18`, `full 9999`.
+  Cards use `rounded-2xl`; inputs/buttons `rounded-lg`; chips `rounded-full`.
+- Breakpoints: Tailwind defaults (`sm 640`, `md 768`, `lg 1024`, `xl 1280`).
+  Sidebar is fixed from `lg`; below that, a floating glass dock (max 5 items)
+  plus a drawer covers the remaining routes.
+
+---
+
+## 6. Motion
+
+| Token | Value | Use |
+|---|---|---|
+| `--duration-fast` | 160ms | Hover, press, icon swap |
+| `--duration-base` | 240ms | Tabs, popovers, colour changes |
+| `--duration-slow` | 380ms | Page rise, sheet entrance |
+| `--ease-out-quart` | `cubic-bezier(0.25, 1, 0.5, 1)` | Default easing |
+| `--ease-out-expo` | `cubic-bezier(0.16, 1, 0.3, 1)` | Entrances |
+| `--ease-in-out-soft` | `cubic-bezier(0.65, 0, 0.35, 1)` | Reversible transitions |
+
+Utilities: `ease-brand`, `lift` (translateY −1px + shadow), `press`
+(scale 0.99), `animate-rise`, `animate-fade`, `stagger-1/2/3`,
+`skeleton-sheen`.
+
+`motion/react` is used only where CSS cannot express the behaviour:
+`layoutId` for the mobile dock active pill (spring), and `AnimatePresence`
+for overlays. Every such component calls `useReducedMotion()`.
+
+Global reduced-motion rule collapses all animation/transition durations to
+0.01ms and disables ambient keyframes.
+
+---
+
+## 7. Component inventory (design-system level)
+
+| Component | File | Role |
+|---|---|---|
+| `GlassPanel` / `GlassCard` / `GlassToolbar` / `GlassInset` | `ui/glass.tsx` | Glass surfaces at the three levels |
+| `Card` | `ui/card.tsx` | Opaque default card: `rounded-2xl`, `border-border/70`, `bg-card/85`, `elevation-1` |
+| `PageHeader` / `PageEyebrow` | `layout/page-header.tsx` | Eyebrow, title, description, actions slot, divider |
+| `SectionHeader` | `shared/section-header.tsx` | Section title + description + trailing action |
+| `MetricStrip` | `shared/metric-strip.tsx` | One surface, divided cells for KPI groups (replaces per-card colours) |
+| `StatCard` | `shared/stat-card.tsx` | Editorial label/number/delta, optional progress and accent rule |
+| `ModulePlaceholder` | `shared/module-placeholder.tsx` | Honest "not implemented yet" panel for meetings/hours/requests |
+| `EmptyState` / `LoadingState` / `ErrorState` | `shared/*` | Calm, icon-led states with a real next action |
+| `DataTable` | `shared/data-table.tsx` | TanStack table shell: toolbar, sticky header, row hover, pagination |
+| `SyntheticDataNotice` | `shared/synthetic-data-notice.tsx` | Persistent "synthetic data only" trust signal |
+| Sidebar / Topbar / MobileNav / CommandMenu / NotificationPopover | `layout/*` | Navigation shell (glass levels 2–3) |
+
+Composition rules:
+- A page starts with `PageHeader`, then `MetricStrip` (if it has counts), then
+  content cards built from `Card`/`GlassCard`.
+- KPI groups never use per-metric accent backgrounds; separation comes from
+  dividers and typography.
+- Tables sit on `Card`, not glass.
+
+---
+
+## 8. Focus, hover, and interaction states
+
+- Focus: `outline: 2px solid var(--ring); outline-offset: 2px` via
+  `focus-visible` utilities or the `focus-ring` utility. Never removed.
+- Hover: surface shift (`bg-surface-container-low`) or `lift`; no colour jumps.
+- Press: `press` (scale 0.99, 160ms).
+- Disabled: 50% opacity + `cursor-not-allowed`; an adjacent sentence explains
+  why when the reason is environmental (e.g. missing Supabase configuration).
+- Active nav: glass pill with a 2px left indicator; the mobile dock animates
+  the same pill between items with a shared `layoutId`.
+
+---
+
+## 9. Theme implementation
+
+- `next-themes` with `attribute="class"`, `defaultTheme="system"`,
+  `enableSystem`; `<html suppressHydrationWarning>`.
+- Early inline script prevents theme flash; toggling uses
+  `useSyncExternalStore` (no cascading renders).
+- Both themes are designed, not inverted: dark uses lower-chroma accent and
+  deeper glass backgrounds (`--glass-*-bg` are redefined in `.dark`).
+
+---
+
+## 10. Caching and perceived speed (UI contract)
+
+- Route-level `loading.tsx` skeletons exist for the office shell and dashboard,
+  so navigation paints structure immediately.
+- Client router cache: `staleTimes.dynamic = 30s` (deliberate: every office
+  route is access-gated) and `staleTimes.static = 300s`.
+- The dashboard's synthetic, request-independent snapshot is server-cached with
+  `use cache` + `cacheLife("hours")` (`src/lib/mock-data/cached.ts`).
+  Authorization stays outside the cache.
+- Motion never delays input: entrances are ≤380ms and interruptible.

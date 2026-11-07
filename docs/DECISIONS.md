@@ -517,3 +517,81 @@ untrusted URL input.
 deleted; POST without Origin → 403; GET → 405. `sanitizeReturnTo` covered by 5
 tests including `javascript:`, `//evil`, `data:` and control-character cases.
 
+---
+
+## D-032: Minimal Liquid Glass v2 — three graduated glass levels (7 Nov 2026)
+
+**Decision:** Replace the single, uniform `glass-surface`/`glass-card` treatment
+with three documented levels — `glass-quiet`/`glass-card` (10px blur, 68%
+white), `glass-panel`/`glass-surface` (22px blur, 78%, one top sheen), and
+`glass-overlay` (28px blur, 90%, dialogs/menus). Glass is limited to surfaces
+that genuinely float: sidebar inner shell, top bar, mobile dock, popovers,
+dialogs, command menu. Tables, forms, and dense data remain opaque.
+
+**Reason:** Uniform glassmorphism on every card reduces text contrast, blurs
+table numerals, and reads as decoration rather than hierarchy. Graduation by
+elevation keeps the "liquid" feel while preserving readability, and matches the
+brief's rule that glass must be intentional. A `@supports` fallback resolves
+every level to `--card` + `--border` where `backdrop-filter` is unavailable.
+
+**Status:** Implemented in `src/app/globals.css`; wrappers in
+`src/components/ui/glass.tsx`; documented in `docs/UI_SPECS.md` §3.
+
+---
+
+## D-033: Status colour is token-only; the single accent stays indigo-blue (7 Nov 2026)
+
+**Decision:** Keep one accent hue (refined institutional blue,
+`oklch(0.47 0.165 266)` light / `oklch(0.735 0.125 266)` dark) and express all
+state through `--success`, `--warning`, `--error`, `--info` plus their
+containers. KPI groups use `MetricStrip` (one surface, divided cells) instead of
+per-card coloured backgrounds. Every hardcoded Tailwind palette class in
+`src/features/**` was migrated to these tokens (287 occurrences, 19 files).
+
+**Reason:** Rainbow status cards and mixed palettes make an operational tool
+look generated rather than art-directed, and bypass dark-mode tuning. Tokens
+give AA contrast in both themes and make status meaning consistent across
+modules. The accent was softened from the earlier `#3525cd` so white text on
+primary clears AA at small sizes.
+
+**Status:** `rg "(text|bg|border)-(emerald|amber|rose|blue|purple|sky|green|red)-[0-9]{3}" src`
+returns nothing. Charts use `--chart-1…5` only.
+
+---
+
+## D-034: Fluid type utilities keep their legacy names (7 Nov 2026)
+
+**Decision:** `text-display`, `text-headline-lg`, `text-headline-md` become
+`clamp()`-based fluid sizes, but keep their existing utility names. Undefined
+utilities used by earlier screens (`text-title-sm`, `text-title-md`,
+`text-display-sm`, `text-body-xs`, `text-label-xs`) are now defined as
+compatibility aliases on the same scale.
+
+**Reason:** Renaming utilities would have touched every call site for no
+product benefit, and ~126 existing usages referenced utilities that silently
+rendered unstyled — a real visual bug hidden by Tailwind's tolerance of unknown
+classes. Aliases fix that without a risky mechanical rename.
+
+**Status:** All aliases defined in `globals.css`; `text-eyebrow` added for
+uppercase section labels.
+
+---
+
+## D-035: The dashboard's synthetic snapshot is server-cached, the access gate is not (7 Nov 2026)
+
+**Decision:** `getDashboardSnapshot()` in `src/lib/mock-data/cached.ts` is a
+`"use cache"` function with `cacheLife("hours")`. It returns only
+request-independent synthetic data (summary, metrics, events, meetings,
+projects, audit logs, attendance fixtures). `requireOfficeAccess()` runs in the
+page before the snapshot is read and is never cached. Client router cache stays
+at `staleTimes.dynamic = 30s`, with `static = 300s`.
+
+**Reason:** The brief asks for faster repeat navigations without weakening the
+access gate. Caching the pure data layer removes repeated aggregation work and
+is safe (no session or cookie input), while a longer *client* dynamic cache
+would let a revoked session keep rendering an already-fetched private segment.
+`optimizePackageImports` covers the bundle side (`lucide-react`, `recharts`,
+`date-fns`, `@tanstack/react-table`, `motion`).
+
+**Status:** `npm run build` exits 0; `/dashboard` remains `ƒ` (dynamic) and the
+auth checks are unchanged.
