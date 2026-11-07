@@ -1,103 +1,121 @@
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ArrowRight, FolderKanban } from "lucide-react";
 import type { Project } from "@/types/project";
 import type { ProjectAnalyticsSummary } from "@/types/analytics";
-import { PROJECT_COLOR_MAP } from "@/lib/constants";
 
 interface ProjectDistributionCardProps {
   projects: Project[];
   summaries?: ProjectAnalyticsSummary[];
 }
 
-export function ProjectDistributionCard({ projects, summaries }: ProjectDistributionCardProps) {
-  // Merge project details with their summary metrics if available
+export function ProjectDistributionCard({
+  projects,
+  summaries,
+}: ProjectDistributionCardProps) {
   const summaryMap = new Map(summaries?.map((s) => [s.projectName, s]) || []);
 
   return (
-    <Card className="border border-border/70 bg-card/75 backdrop-blur-sm">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <CardTitle className="text-title-sm font-semibold text-foreground flex items-center gap-1.5">
-              <FolderKanban className="size-4 text-primary" />
-              Project Operations &amp; Capacity
-            </CardTitle>
-            <CardDescription className="text-body-xs text-muted-foreground">
-              9 designated SDG initiatives with active volunteer registers and hours
-            </CardDescription>
-          </div>
-          <Link
-            href="/projects"
-            className="inline-flex items-center gap-1 text-body-xs font-medium text-primary hover:underline"
-          >
-            All 9 projects
-            <ArrowRight className="size-3" />
-          </Link>
+    <Card>
+      <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+        <div className="space-y-0.5">
+          <CardTitle className="flex items-center gap-2">
+            <FolderKanban
+              className="size-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+            Project operations and capacity
+          </CardTitle>
+          <CardDescription>
+            Nine SDG-aligned initiatives with active registers and service hours
+          </CardDescription>
         </div>
+        <Link
+          href="/projects"
+          className="group inline-flex shrink-0 items-center gap-1 text-[0.6875rem] font-medium text-muted-foreground transition-colors hover:text-primary"
+        >
+          All projects
+          <ArrowRight className="size-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+        </Link>
       </CardHeader>
+
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {projects.map((proj) => {
-            const sum = summaryMap.get(proj.name);
-            const colorMeta = PROJECT_COLOR_MAP[proj.name] || { light: "bg-primary/10 text-primary", border: "border-primary/20" };
-            const prs = proj.representatives.map((r) => r.name).join(", ") || "Vacant";
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+          {projects.map((project) => {
+            const summary = summaryMap.get(project.name);
+            const representatives =
+              project.representatives.map((r) => r.name).join(", ") || "Vacant";
 
             return (
               <Link
-                key={proj.id}
-                href={`/projects/${proj.slug}`}
-                className="group block p-3.5 rounded-lg border border-border/60 bg-surface/50 hover:bg-surface hover:border-border transition-all duration-150"
+                key={project.id}
+                href={`/projects/${project.slug}`}
+                className="group flex flex-col gap-2.5 rounded-xl border border-border/60 bg-surface-container-low/30 p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-300 ease-[var(--ease-out-quart)] hover:-translate-y-0.5 hover:border-border hover:bg-card hover:shadow-[var(--elevation-1)]"
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-body-sm text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
-                      <span className={`inline-block size-2 rounded-full ${colorMeta.light.split(" ")[0]}`} />
-                      {proj.name}
-                      <ArrowRight className="size-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
-                    </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 space-y-1">
+                    <p className="flex items-center gap-1.5 text-[0.8125rem] font-medium text-foreground transition-colors group-hover:text-primary">
+                      <span
+                        aria-hidden="true"
+                        className="size-1.5 shrink-0 rounded-full bg-primary/70"
+                      />
+                      <span className="truncate">{project.name}</span>
+                    </p>
                     <div className="flex flex-wrap gap-1">
-                      {proj.sdgs.map((sdg) => (
+                      {project.sdgs.slice(0, 3).map((sdg) => (
                         <span
                           key={sdg}
-                          className="inline-block text-[10px] font-mono px-1 py-0.2 rounded bg-muted text-muted-foreground font-medium"
+                          className="rounded bg-surface-container-high/70 px-1 py-px font-mono text-[0.5625rem] text-muted-foreground"
                         >
                           SDG {sdg}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <StatusBadge status={proj.status} type="volunteer" className="text-[10px]" />
+                  <StatusBadge
+                    status={project.status}
+                    type="volunteer"
+                    className="shrink-0 px-1.5 py-0 text-[0.5625rem]"
+                  />
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40 text-center">
+                <div className="grid grid-cols-3 gap-2 border-t border-border/40 pt-2">
                   <div>
-                    <span className="block text-body-xs text-muted-foreground">Volunteers</span>
-                    <span className="text-label-md font-mono font-bold text-foreground">
-                      {proj.activeVolunteersCount}
-                    </span>
+                    <p className="text-[0.5625rem] tracking-[0.06em] text-muted-foreground uppercase">
+                      Volunteers
+                    </p>
+                    <p className="tnum text-[0.8125rem] font-semibold text-foreground">
+                      {project.activeVolunteersCount}
+                    </p>
                   </div>
                   <div>
-                    <span className="block text-body-xs text-muted-foreground">Hours</span>
-                    <span className="text-label-md font-mono font-bold text-primary">
-                      {proj.totalHoursLogged}
-                    </span>
+                    <p className="text-[0.5625rem] tracking-[0.06em] text-muted-foreground uppercase">
+                      Hours
+                    </p>
+                    <p className="tnum text-[0.8125rem] font-semibold text-foreground">
+                      {project.totalHoursLogged}
+                    </p>
                   </div>
                   <div>
-                    <span className="block text-body-xs text-muted-foreground">Turnout</span>
-                    <span className="text-label-md font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                      {sum?.attendanceRate ? `${sum.attendanceRate}%` : "91%"}
-                    </span>
+                    <p className="text-[0.5625rem] tracking-[0.06em] text-muted-foreground uppercase">
+                      Turnout
+                    </p>
+                    <p className="tnum text-[0.8125rem] font-semibold text-foreground">
+                      {summary?.attendanceRate ? `${summary.attendanceRate}%` : "—"}
+                    </p>
                   </div>
                 </div>
 
-                <div className="mt-2.5 pt-2 border-t border-border/30 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span className="truncate max-w-[170px]">PRs: {prs}</span>
-                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-muted/70">
-                    ID #{proj.id}
-                  </span>
-                </div>
+                <p className="truncate text-[0.625rem] text-muted-foreground/80">
+                  PRs: {representatives}
+                </p>
               </Link>
             );
           })}

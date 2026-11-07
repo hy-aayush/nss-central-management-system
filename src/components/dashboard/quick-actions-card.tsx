@@ -1,6 +1,12 @@
 import * as React from "react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Users,
   FolderKanban,
@@ -15,108 +21,86 @@ import {
 
 const SHORTCUTS = [
   {
-    title: "Volunteer Directory",
-    description: "Search 384 student profiles & affiliations",
+    title: "Volunteer directory",
+    description: "Search profiles and affiliations",
     href: "/volunteers",
     icon: Users,
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-500/10 group-hover:bg-blue-500/20",
   },
   {
-    title: "Project Wings",
-    description: "View 9 projects, PR leads & SDG goals",
+    title: "Project wings",
+    description: "Projects, PR leads and SDG goals",
     href: "/projects",
     icon: FolderKanban,
-    color: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-500/10 group-hover:bg-emerald-500/20",
   },
   {
-    title: "Schedule Event",
-    description: "Create central or project volunteer drives",
+    title: "Schedule event",
+    description: "Create a central or project drive",
     href: "/events/central/new",
     icon: CalendarPlus,
-    color: "text-purple-600 dark:text-purple-400",
-    bg: "bg-purple-500/10 group-hover:bg-purple-500/20",
   },
   {
-    title: "Take Attendance",
-    description: "FCFS rosters & quick roll-call marking",
+    title: "Take attendance",
+    description: "FCFS rosters and quick roll call",
     href: "/attendance",
     icon: ClipboardCheck,
-    color: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-500/10 group-hover:bg-amber-500/20",
   },
   {
-    title: "Service Hours",
-    description: "Review & approve monthly hours ledgers",
+    title: "Service hours",
+    description: "Review and approve ledgers",
     href: "/hours",
     icon: Clock,
-    color: "text-sky-600 dark:text-sky-400",
-    bg: "bg-sky-500/10 group-hover:bg-sky-500/20",
   },
   {
-    title: "Internal Requests",
-    description: "Affiliations, role elevation & exemptions",
+    title: "Internal requests",
+    description: "Affiliations and role elevation",
     href: "/requests",
     icon: FileCheck2,
-    color: "text-indigo-600 dark:text-indigo-400",
-    bg: "bg-indigo-500/10 group-hover:bg-indigo-500/20",
   },
   {
-    title: "All Events & Calendar",
-    description: "Browse historical, active & scheduled drives",
+    title: "All events",
+    description: "Browse historic and active drives",
     href: "/events",
     icon: CalendarDays,
-    color: "text-pink-600 dark:text-pink-400",
-    bg: "bg-pink-500/10 group-hover:bg-pink-500/20",
   },
   {
-    title: "Audit Trail",
-    description: "Review compliance & sensitive records log",
+    title: "Audit trail",
+    description: "Compliance and sensitive actions",
     href: "/audit",
     icon: ShieldAlert,
-    color: "text-rose-600 dark:text-rose-400",
-    bg: "bg-rose-500/10 group-hover:bg-rose-500/20",
   },
 ];
 
 export function QuickActionsCard() {
   return (
-    <Card className="border border-border/70 bg-card/75 backdrop-blur-sm shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-foreground">
-          Office Shortcuts & Operations
-        </CardTitle>
-        <CardDescription className="text-xs text-muted-foreground">
-          Direct navigation to core NSS Central administrative management workflows
+    <Card className="h-full">
+      <CardHeader className="pb-2">
+        <CardTitle>Office shortcuts</CardTitle>
+        <CardDescription>
+          Direct access to the workflows that run the unit
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {SHORTCUTS.map((item) => {
             const Icon = item.icon;
             return (
               <Link
-                key={item.href}
+                key={`${item.href}-${item.title}`}
                 href={item.href}
-                className="group relative flex items-start gap-3 p-3 rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-border transition-all duration-150"
+                className="group flex items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-2 transition-colors duration-200 hover:border-border/70 hover:bg-surface-container-low/60"
               >
-                <div
-                  className={`p-2 rounded-md shrink-0 transition-colors ${item.bg} ${item.color}`}
-                >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
-                      {item.title}
-                    </span>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 shrink-0" />
-                  </div>
-                  <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 bg-surface-container-low/60 text-muted-foreground transition-colors group-hover:text-primary">
+                  <Icon className="size-3.5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[0.75rem] font-medium text-foreground transition-colors group-hover:text-primary">
+                    {item.title}
+                  </span>
+                  <span className="block truncate text-[0.625rem] text-muted-foreground">
                     {item.description}
-                  </p>
-                </div>
+                  </span>
+                </span>
+                <ArrowUpRight className="size-3 shrink-0 text-muted-foreground/40 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
               </Link>
             );
           })}

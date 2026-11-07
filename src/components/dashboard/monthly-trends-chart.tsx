@@ -10,7 +10,13 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { TrendingUp } from "lucide-react";
 import type { MonthlyTrendPoint } from "@/types/analytics";
 
@@ -20,20 +26,40 @@ interface MonthlyTrendsChartProps {
 }
 
 const emptySubscribe = () => () => {};
- 
-export function MonthlyTrendsChart({ trends, className }: MonthlyTrendsChartProps) {
-  const mounted = React.useSyncExternalStore(emptySubscribe, () => true, () => false);
+
+export function MonthlyTrendsChart({
+  trends,
+  className,
+}: MonthlyTrendsChartProps) {
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
   const formattedData = trends.map((t) => {
-    // Format YYYY-MM to Short Month name
     const parts = t.month.split("-");
     const monthNum = parseInt(parts[1] || "1", 10);
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const monthLabel = monthNames[monthNum - 1] || t.month;
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const year = parts[0] ?? "";
 
     return {
       rawMonth: t.month,
-      month: monthLabel,
+      month: monthNames[monthNum - 1] || t.month,
+      year,
       hours: t.hoursCompleted,
       turnoutRate: t.attendanceRate ?? 0,
       events: t.eventsCount,
@@ -43,72 +69,117 @@ export function MonthlyTrendsChart({ trends, className }: MonthlyTrendsChartProp
   });
 
   return (
-    <Card className={`border border-border/70 bg-card/75 backdrop-blur-sm ${className || ""}`}>
-      <CardHeader className="pb-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <div className="space-y-0.5">
-            <CardTitle className="text-title-sm font-semibold text-foreground flex items-center gap-1.5">
-              <TrendingUp className="size-4 text-primary" />
-              Service Hours &amp; Activity Trends
-            </CardTitle>
-            <CardDescription className="text-body-xs text-muted-foreground">
-              6-month service hours logged and event turnout trajectories
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-3 text-body-xs font-medium">
-            <div className="flex items-center gap-1.5">
-              <span className="size-2.5 rounded-full bg-primary" />
-              <span className="text-muted-foreground">Hours Logged</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-2.5 rounded-full bg-emerald-500" />
-              <span className="text-muted-foreground">Turnout %</span>
-            </div>
-          </div>
+    <Card className={className}>
+      <CardHeader className="flex flex-col gap-2 pb-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-0.5">
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp
+              className="size-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+            Service hours and turnout
+          </CardTitle>
+          <CardDescription>
+            Six-month trajectory of logged hours and verified participation
+          </CardDescription>
+        </div>
+        <div className="flex items-center gap-3 text-[0.625rem] font-medium text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="size-2 rounded-full bg-primary"
+            />
+            Hours
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="size-2 rounded-full bg-chart-2"
+            />
+            Turnout
+          </span>
         </div>
       </CardHeader>
+
       <CardContent>
         {mounted ? (
-          <div className="h-56 sm:h-64 w-full">
+          <div className="h-56 w-full sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart
+                data={formattedData}
+                margin={{ top: 8, right: 6, left: -24, bottom: 0 }}
+              >
                 <defs>
-                  <linearGradient id="hoursGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0.0} />
+                  <linearGradient
+                    id="hoursGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor="var(--color-primary)"
+                      stopOpacity={0.22}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor="var(--color-primary)"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.6} />
+                <CartesianGrid
+                  vertical={false}
+                  stroke="var(--color-border)"
+                  strokeOpacity={0.55}
+                />
                 <XAxis
                   dataKey="month"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                  tickMargin={8}
+                  tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                 />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                  width={52}
+                  tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                   domain={[0, "auto"]}
                 />
                 <Tooltip
+                  cursor={{
+                    stroke: "var(--color-border-strong)",
+                    strokeDasharray: "3 3",
+                  }}
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
-                      const data = payload[0].payload;
+                      const point = payload[0].payload;
                       return (
-                        <div className="bg-popover border border-border px-3 py-2 rounded-lg shadow-lg text-xs space-y-1">
-                          <p className="font-semibold text-foreground">{label} 2026</p>
-                          <div className="flex items-center justify-between gap-4 text-primary font-medium">
-                            <span>Hours Logged:</span>
-                            <span className="font-mono font-bold">{data.hours} hrs</span>
+                        <div className="space-y-1.5 rounded-lg border border-border/70 bg-popover px-3 py-2 text-[0.6875rem] shadow-[var(--elevation-2)]">
+                          <p className="font-medium text-foreground">
+                            {label} {point.year}
+                          </p>
+                          <div className="flex items-center justify-between gap-5">
+                            <span className="text-muted-foreground">Hours</span>
+                            <span className="tnum font-medium text-foreground">
+                              {point.hours}
+                            </span>
                           </div>
-                          <div className="flex items-center justify-between gap-4 text-emerald-600 dark:text-emerald-400 font-medium">
-                            <span>Turnout Rate:</span>
-                            <span className="font-mono font-bold">{data.turnoutRate}%</span>
+                          <div className="flex items-center justify-between gap-5">
+                            <span className="text-muted-foreground">Turnout</span>
+                            <span className="tnum font-medium text-foreground">
+                              {point.turnoutRate}%
+                            </span>
                           </div>
-                          <div className="flex items-center justify-between gap-4 text-muted-foreground">
-                            <span>Events / Meetings:</span>
-                            <span className="font-mono">{data.events} / {data.meetings}</span>
+                          <div className="flex items-center justify-between gap-5">
+                            <span className="text-muted-foreground">
+                              Events / meetings
+                            </span>
+                            <span className="tnum text-foreground">
+                              {point.events} / {point.meetings}
+                            </span>
                           </div>
                         </div>
                       );
@@ -123,13 +194,20 @@ export function MonthlyTrendsChart({ trends, className }: MonthlyTrendsChartProp
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#hoursGradient)"
+                  activeDot={{
+                    r: 3.5,
+                    strokeWidth: 2,
+                    stroke: "var(--card)",
+                  }}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-56 sm:h-64 flex items-center justify-center">
-            <span className="text-body-xs text-muted-foreground">Loading trend visualizations...</span>
+          <div className="flex h-56 items-center justify-center sm:h-64">
+            <span className="text-[0.75rem] text-muted-foreground">
+              Loading trends…
+            </span>
           </div>
         )}
       </CardContent>
