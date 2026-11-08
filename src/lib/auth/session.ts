@@ -7,6 +7,7 @@ import {
   type IdentityProblem,
   type VerifiedIdentity,
 } from "./claims";
+import { readDevSession } from "./dev-login";
 
 /**
  * The verified identity for the current request.
@@ -32,6 +33,14 @@ export type SessionState =
   | { status: "verified"; identity: VerifiedIdentity };
 
 export const getSession = cache(async (): Promise<SessionState> => {
+  // TEMPORARY: development sign-in for the seeded test roster. Disabled in
+  // production, and access below is still resolved from the database.
+  const devIdentity = await readDevSession();
+
+  if (devIdentity) {
+    return { status: "verified", identity: devIdentity };
+  }
+
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {

@@ -15,6 +15,13 @@
       "when": 1792563220328,
       "tag": "0001_tired_agent_zero",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794126005813,
+      "tag": "0002_violet_makkari",
+      "breakpoints": true
     }
   ]
 }

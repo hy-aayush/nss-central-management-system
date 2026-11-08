@@ -8,8 +8,9 @@
  * - names start with `Synthetic` and end with a number;
  * - roll numbers come from the reserved `999xxxx` block and are *not* taken
  *   from the KIIT range used by real students (24xxxxxx / 23xxxxxx);
- * - `phone`, `hostel`, `blood_group` and `city_state` are left NULL: there is
- *   no reason to invent contact details at all;
+ * - `phone`, `hostel` and `city_state` are left NULL: there is no reason to
+ *   invent contact details at all. `project_id` and `blood_group` are
+ *   compulsory columns, so every fixture picks a project and a blood group;
  * - the notes column carries the marker below so a reviewer can find every
  *   fixture row with one query.
  *
@@ -31,7 +32,16 @@ export interface SyntheticVolunteerFixture {
   readonly gender: "MALE" | "FEMALE" | "OTHER";
   readonly batchYear: number;
   readonly status: "ACTIVE" | "SUSPENDED" | "ARCHIVED";
-  readonly projectId: number | null;
+  readonly projectId: number;
+  readonly bloodGroup:
+    | "A+"
+    | "A-"
+    | "B+"
+    | "B-"
+    | "AB+"
+    | "AB-"
+    | "O+"
+    | "O-";
   readonly notes: string;
 }
 
@@ -53,6 +63,7 @@ export const SYNTHETIC_VOLUNTEERS = [
     batchYear: 2024,
     status: "ACTIVE",
     projectId: 1,
+    bloodGroup: "A+",
     notes: fixtureNote,
   },
   {
@@ -62,6 +73,7 @@ export const SYNTHETIC_VOLUNTEERS = [
     batchYear: 2024,
     status: "ACTIVE",
     projectId: 2,
+    bloodGroup: "B+",
     notes: fixtureNote,
   },
   {
@@ -71,6 +83,7 @@ export const SYNTHETIC_VOLUNTEERS = [
     batchYear: 2024,
     status: "ACTIVE",
     projectId: 3,
+    bloodGroup: "O+",
     notes: fixtureNote,
   },
   {
@@ -80,6 +93,7 @@ export const SYNTHETIC_VOLUNTEERS = [
     batchYear: 2025,
     status: "ACTIVE",
     projectId: 4,
+    bloodGroup: "AB+",
     notes: fixtureNote,
   },
   {
@@ -89,6 +103,7 @@ export const SYNTHETIC_VOLUNTEERS = [
     batchYear: 2025,
     status: "ACTIVE",
     projectId: 5,
+    bloodGroup: "A-",
     notes: fixtureNote,
   },
   {
@@ -97,7 +112,8 @@ export const SYNTHETIC_VOLUNTEERS = [
     gender: "FEMALE",
     batchYear: 2025,
     status: "SUSPENDED",
-    projectId: null,
+    projectId: 6,
+    bloodGroup: "B-",
     notes: fixtureNote,
   },
 ] as const satisfies readonly SyntheticVolunteerFixture[];

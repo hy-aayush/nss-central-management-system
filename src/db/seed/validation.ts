@@ -48,7 +48,8 @@ const syntheticVolunteerSchema = z.object({
   gender: z.enum(["MALE", "FEMALE", "OTHER"]),
   batchYear: z.number().int().min(2000).max(2100),
   status: z.enum(["ACTIVE", "SUSPENDED", "ARCHIVED"]),
-  projectId: z.number().int().min(1).max(9).nullable(),
+  projectId: z.number().int().min(1).max(9),
+  bloodGroup: z.enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]),
   notes: z.string().max(1000),
 });
 

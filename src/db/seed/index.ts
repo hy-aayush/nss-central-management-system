@@ -1,15 +1,18 @@
 /**
  * Idempotent seed operations.
  *
- * Two separate concerns, deliberately kept apart:
+ * Three separate concerns, deliberately kept apart:
  * - `seedProjectReferenceData` writes the fixed SRS Appendix A.1 rows. Every
  *   environment needs them.
  * - `seedSyntheticFixtures` writes optional fake volunteers/domains for
  *   development and tests. It only runs when explicitly requested.
+ * - `seedOfficeRoster` writes the test coordinator + tech-team roster. It is
+ *   environment-specific test data and is opt-in (for example `--roster` on the
+ *   seed CLI, or a dedicated script).
  *
- * Both are idempotent: inserts use `on conflict do nothing`, so running them
- * twice never duplicates a row and never overwrites data a person edited in the
- * UI. Existing rows are reported, not updated (SRS Appendix A.5).
+ * All three are idempotent: inserts use `on conflict do nothing`, so running
+ * them twice never duplicates a row and never overwrites data a person edited
+ * in the UI. Existing rows are reported, not updated (SRS Appendix A.5).
  *
  * Seed functions take a `Database` handle so the CLI can use the admin
  * connection and tests can use a scratch database, without importing the
@@ -31,6 +34,12 @@ import {
   SYNTHETIC_VOLUNTEERS,
 } from "./fixtures";
 import { findFixtureIssues, findProjectSeedIssues, type SeedIssue } from "./validation";
+import { planOfficeRosterSeed, seedOfficeRoster } from "./office-roster";
+
+// Re-export the roster seed so the CLI and other scripts can call it
+// without importing the private office-roster module directly.
+export { planOfficeRosterSeed, seedOfficeRoster } from "./office-roster";
+export type { OfficeRosterSeedReport } from "./office-roster";
 
 /** Thrown before any write when seed data fails validation. */
 export class SeedValidationError extends Error {
@@ -71,6 +80,12 @@ export interface FixtureSeedReport {
   domainsInserted: number;
   domainsSkipped: number;
 }
+
+/**
+ * A read-only rollout plan for the test roster: which roster volunteers
+ * already exist in the database.
+ */
+export type OfficeRosterSeedPlan = ReturnType<typeof planOfficeRosterSeed>;
 
 function toProjectRow(project: SeedProject) {
   return {
@@ -238,6 +253,7 @@ export async function seedSyntheticFixtures(
         batchYear: fixture.batchYear,
         status: fixture.status,
         projectId: fixture.projectId,
+        bloodGroup: fixture.bloodGroup,
         notes: fixture.notes,
       })),
     )
@@ -294,3 +310,51 @@ export async function countSyntheticFixtures(
 }
 
 export { EXPECTED_PROJECT_COUNT, SEED_PROJECTS, SYNTHETIC_ROLL_PREFIX };
+
+/**
+ * The three opt-in seed steps the CLI and scripts can request.
+ *
+ * - `project` — always run first; every other seed needs the fixed projects.
+ * - `fixtures` — optional synthetic volunteers/domains; default-only when
+ *   explicitly requested.
+ * - `roster` — test coordinator + tech-team roster; never part of a default
+ *   fresh-environment seed.
+ */
+export const SEED_STEPS = ["project", "fixtures", "roster"] as const;
+
+export type SeedStep = (typeof SEED_STEPS)[number];
+
+/** Resolve a named seed step to its apply + plan pair. Unknown steps throw. */
+export function getSeedStep(name: string): {
+  label: string;
+  apply: (db: Database) => Promise<unknown>;
+  plan: (db: Database) => Promise<unknown>;
+} {
+  switch (name) {
+    case "project": {
+      return {
+        label: "Fixed project reference data (Appendix A.1)",
+        apply: seedProjectReferenceData,
+        plan: planProjectSeed,
+      };
+    }
+    case "fixtures": {
+      return {
+        label: "Optional synthetic fixtures (development/tests)",
+        apply: seedSyntheticFixtures,
+        plan: countSyntheticFixtures,
+      };
+    }
+    case "roster": {
+      return {
+        label: "Test coordinator + tech-team roster (dev/QA only)",
+        apply: seedOfficeRoster,
+        plan: planOfficeRosterSeed,
+      };
+    }
+    default: {
+      throw new Error(`Unknown seed step: ${name}. Available: ${SEED_STEPS.join(", ")}`);
+    }
+  }
+}
+

@@ -61,8 +61,11 @@ export const volunteers = pgTable(
     /** Optional hostel name, max 60 characters. */
     hostel: text("hostel"),
 
-    /** Optional; one of the eight values in the `blood_group` enum. */
-    bloodGroup: bloodGroupEnum("blood_group"),
+    /**
+     * Compulsory: the unit keeps a blood group on file for every volunteer.
+     * One of the eight values in the `blood_group` enum.
+     */
+    bloodGroup: bloodGroupEnum("blood_group").notNull(),
 
     /** Optional free-text place, for example `Ranchi, Jharkhand`. */
     cityState: text("city_state"),
@@ -74,13 +77,13 @@ export const volunteers = pgTable(
     status: volunteerStatusEnum("status").notNull().default("ACTIVE"),
 
     /**
-     * Nullable because office staff may not belong to a project. A missing
-     * project for a regular volunteer is a data-quality issue, not a DB error.
+     * Compulsory: every volunteer, office staff included, belongs to one of the
+     * nine projects, so a volunteer row can never be project-less.
      * `restrict` matches SRS 8.8: projects are never deleted.
      */
-    projectId: smallint("project_id").references(() => projects.id, {
-      onDelete: "restrict",
-    }),
+    projectId: smallint("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "restrict" }),
 
     /**
      * IST calendar day of joining. The SRS specifies `DEFAULT current_date`.

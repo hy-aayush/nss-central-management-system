@@ -1,15 +1,18 @@
 /**
- * Seed CLI — fixed project reference data, plus optional synthetic fixtures.
+ * Seed CLI — fixed project reference data, plus optional synthetic fixtures
+ * and an opt-in test roster.
  *
  * SRS Appendix A.1 and A.7. This script is never run automatically: it is not
  * part of `dev`, `build`, `start` or a postinstall hook, and it refuses a
  * production target (see `src/db/seed/targets.ts`).
  *
  * Usage:
- *   npm run db:seed                              # dry run against ADMIN_DATABASE_URL
- *   npm run db:seed -- --apply                   # write the nine fixed projects
- *   npm run db:seed -- --apply --fixtures        # also write synthetic dev/test rows
- *   npm run db:seed -- --url postgresql://...    # explicit local database
+ *   npm run db:seed                                # dry run against ADMIN_DATABASE_URL
+ *   npm run db:seed -- --apply                     # write the nine fixed projects
+ *   npm run db:seed -- --apply --fixtures          # also write synthetic dev/test rows
+ *   npm run db:seed -- --apply --roster            # also write the test roster (every office role)
+ *   npm run db:seed -- --apply --fixtures --roster # write projects, fixtures and roster together
+ *   npm run db:seed -- --url postgresql://...      # explicit local database
  *
  * Behaviour:
  * - Default is a dry run that writes nothing.
@@ -17,6 +20,10 @@
  *   so the command is safe to run repeatedly (SRS Appendix A.5).
  * - `--fixtures` adds clearly synthetic volunteers from `src/db/seed/fixtures.ts`.
  *   It requires the project rows to exist first.
+ * - `--roster` adds the test roster from `src/db/seed/office-roster-data.ts`:
+ *   9 coordinators, tech team (3rd and 4th year), a project representative and
+ *   builders. It is environment-specific test data and is not part of a
+ *   default fresh-environment seed.
  * - Output never includes a password or a personal field value.
  */
 
@@ -25,7 +32,9 @@ import {
   EXPECTED_PROJECT_COUNT,
   SeedValidationError,
   countSyntheticFixtures,
+  planOfficeRosterSeed,
   planProjectSeed,
+  seedOfficeRoster,
   seedProjectReferenceData,
   seedSyntheticFixtures,
 } from "../src/db/seed";
@@ -33,6 +42,9 @@ import {
   SYNTHETIC_VOLUNTEER_DOMAINS,
   SYNTHETIC_VOLUNTEERS,
 } from "../src/db/seed/fixtures";
+import {
+  OFFICE_ROSTER,
+} from "../src/db/seed/office-roster-data";
 import {
   assertSeedTargetAllowed,
   formatSeedTarget,
@@ -48,6 +60,9 @@ Options:
   --apply      Write rows. Without it the command is a read-only dry run.
   --fixtures   Also insert the synthetic development/test volunteers.
                Requires the fixed projects to exist (run without --fixtures first).
+  --roster     Also insert the test roster: coordinators, tech team (3rd and
+               4th year), project representative and builders. Requires the
+               fixed projects to exist (run without --roster first).
   --url <url>  Database to use instead of ADMIN_DATABASE_URL.
   --help       Show this message.
 
@@ -62,11 +77,12 @@ interface SeedCliOptions {
   apply: boolean;
   fixtures: boolean;
   help: boolean;
+  roster: boolean;
   url?: string;
 }
 
 function parseArgs(argv: readonly string[]): SeedCliOptions {
-  const options: SeedCliOptions = { apply: false, fixtures: false, help: false };
+  const options: SeedCliOptions = { apply: false, fixtures: false, help: false, roster: false };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -77,6 +93,9 @@ function parseArgs(argv: readonly string[]): SeedCliOptions {
         break;
       case "--fixtures":
         options.fixtures = true;
+        break;
+      case "--roster":
+        options.roster = true;
         break;
       case "--help":
       case "-h":
@@ -155,6 +174,17 @@ async function main(): Promise<void> {
         );
       }
 
+      if (options.roster) {
+        const rosterPlan = await planOfficeRosterSeed(db);
+        console.log(
+          `Roster: ${rosterPlan.present.length}/${OFFICE_ROSTER.length} volunteers present; ${rosterPlan.missing.length} would be inserted.`,
+        );
+      } else {
+        console.log(
+          "Roster: not requested (add --roster for the test coordinator + tech-team roster).",
+        );
+      }
+
       console.log("Dry run complete.");
       return;
     }
@@ -174,6 +204,13 @@ async function main(): Promise<void> {
       const fixtureReport = await seedSyntheticFixtures(db);
       console.log(
         `Fixtures: ${fixtureReport.volunteersInserted} volunteers inserted, ${fixtureReport.volunteersSkipped} already present; ${fixtureReport.domainsInserted} domain rows inserted, ${fixtureReport.domainsSkipped} already present.`,
+      );
+    }
+
+    if (options.roster) {
+      const rosterReport = await seedOfficeRoster(db);
+      console.log(
+        `Roster: ${rosterReport.volunteersInserted} volunteers inserted, ${rosterReport.volunteersRefreshed} already present; ${rosterReport.assignmentsInserted} office posts inserted, ${rosterReport.assignmentsSkipped} already present, ${rosterReport.assignmentsEnded} previous roles ended.`,
       );
     }
 

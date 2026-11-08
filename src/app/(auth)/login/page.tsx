@@ -2,8 +2,10 @@ import { ClipboardCheck, ScrollText, ShieldCheck, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { signInWithGoogle } from "@/lib/auth/actions";
+import { Input } from "@/components/ui/input";
+import { signInWithDevCredentials, signInWithGoogle } from "@/lib/auth/actions";
 import { loadOfficeAccess } from "@/lib/auth/actor";
+import { devLoginAccounts } from "@/lib/auth/dev-login";
 import { sanitizeReturnTo } from "@/lib/auth/return-to";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -33,6 +35,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   start: "Sign-in could not be started. Please try again.",
   callback: "Sign-in could not be completed. Please try again.",
   session: "Your session could not be verified. Please sign in again.",
+  dev: "Those test credentials did not match a seeded test account.",
 };
 
 const CAPABILITIES = [
@@ -65,6 +68,12 @@ export default async function LoginPage({
   const next = sanitizeReturnTo(params.next);
   const errorCode = typeof params.error === "string" ? params.error : null;
   const configured = isSupabaseConfigured();
+
+  // TEMPORARY: one example account per office role, for the dev sign-in form.
+  // `devLoginAccounts()` is empty in production and when dev login is disabled.
+  const devExamples = [
+    ...new Map(devLoginAccounts().map((account) => [account.label, account])).values(),
+  ];
 
   if (configured) {
     // A valid office member who reaches /login goes straight on. A signed-in
@@ -204,6 +213,67 @@ export default async function LoginPage({
                 ? "You must already hold an active office post. Access is re-checked on every request, and a signed-in account without a post is signed out."
                 : "Google sign-in is not configured in this build yet. An administrator must set the Supabase environment variables before sign-in can work."}
             </p>
+
+            {devExamples.length > 0 ? (
+              <div className="mt-5 rounded-xl border border-dashed border-border/70 bg-surface-container-low/40 p-4">
+                <p className="text-[0.625rem] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+                  Temporary test sign-in
+                </p>
+                <p className="mt-1 text-[0.6875rem] leading-relaxed text-muted-foreground">
+                  Development only. Username is the roll number; the password
+                  depends on the role. Remove these accounts, and this form,
+                  before production.
+                </p>
+
+                <form action={signInWithDevCredentials} className="mt-3 space-y-2">
+                  <input type="hidden" name="next" value={next} />
+                  <label className="block space-y-1">
+                    <span className="text-[0.6875rem] font-medium text-foreground">
+                      Username (roll number)
+                    </span>
+                    <Input
+                      name="username"
+                      autoComplete="username"
+                      placeholder="2328051"
+                      required
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    <span className="text-[0.6875rem] font-medium text-foreground">
+                      Password
+                    </span>
+                    <Input
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                    />
+                  </label>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    size="lg"
+                    className="w-full justify-center"
+                  >
+                    Sign in with test account
+                  </Button>
+                </form>
+
+                <dl className="mt-3 space-y-1 text-[0.625rem] leading-relaxed text-muted-foreground">
+                  {devExamples.map((account) => (
+                    <div
+                      key={account.label}
+                      className="flex flex-wrap items-baseline justify-between gap-x-2"
+                    >
+                      <dt className="text-foreground">{account.label}</dt>
+                      <dd className="font-mono">
+                        {account.username} · {account.password}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : null}
 
             <div className="mt-5 border-t border-border/60 pt-4">
               <p className="text-[0.6875rem] leading-relaxed text-muted-foreground">

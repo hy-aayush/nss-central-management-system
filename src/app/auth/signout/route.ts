@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { DEV_SESSION_COOKIE } from "@/lib/auth/dev-login";
 import { createSupabaseRouteClient } from "@/lib/supabase/route";
 
 /**
@@ -37,6 +38,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     await client.supabase.auth.signOut();
     client.apply(response);
   }
+
+  // TEMPORARY: end a development test session as well, so another role can be
+  // picked from the sign-in page without clearing cookies by hand.
+  response.cookies.delete(DEV_SESSION_COOKIE);
 
   response.headers.set("Clear-Site-Data", '"cache"');
   response.headers.set(

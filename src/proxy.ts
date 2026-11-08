@@ -1,6 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  DEV_SESSION_COOKIE,
+  isDevLoginEnabled,
+} from "@/lib/auth/dev-login";
 import { readSupabaseConfig } from "@/lib/supabase/config";
 
 /**
@@ -55,6 +59,15 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  // TEMPORARY: the seeded test accounts sign in without Supabase. The Office
+  // layout still calls `requireOfficeAccess()`, which is the real decision.
+  if (
+    isDevLoginEnabled() &&
+    request.cookies.get(DEV_SESSION_COOKIE)?.value.trim()
+  ) {
     return NextResponse.next();
   }
 

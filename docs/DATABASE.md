@@ -36,15 +36,18 @@ earlier sections dated 19 Oct 2026).
 | `drizzle.config.ts` | Drizzle Kit configuration. Points at the schema barrel and `drizzle/`; reads **`ADMIN_DATABASE_URL`**, never `DATABASE_URL`. |
 | `drizzle/0000_moaning_ricochet.sql` | First migration file: four enums, three tables, seven checks, three indexes, three foreign keys, two unique constraints and the reviewed `volunteers` fillfactor statement. |
 | `drizzle/0001_tired_agent_zero.sql` | Second migration file: `office_assignments` with four enums, ten checks, four indexes, four foreign keys and two unique constraints. |
-| `drizzle/meta/` | Drizzle journal and snapshots for both migrations. |
+| `drizzle/0002_violet_makkari.sql` | Third migration file: `volunteers.blood_group` and `volunteers.project_id` become `NOT NULL`, so every volunteer row has a blood group and belongs to a project. |
+| `drizzle/meta/` | Drizzle journal and snapshots for all three migrations. |
 | `drizzle/manual/security.sql` | SRS 8.7 role, grants, audit restrictions, RLS, timeouts and `SYSTEM` row. Repeatable. |
 | `drizzle/manual/README.md` | Manual-SQL order, local role prerequisites and deferred SRS blocks. |
 | `src/db/seed/reference-data.ts` | Pure SRS Appendix A.1 fixed project rows; no env, no database import. |
 | `src/db/seed/fixtures.ts` | Optional, clearly synthetic volunteers and domains (SRS rule 20). |
+| `src/db/seed/office-roster-data.ts` | Test roster rows for every office role, plus the temporary dev sign-in accounts. Development/QA only. |
+| `src/db/seed/office-roster.ts` | Opt-in `--roster` seed: volunteers first, then one active post per person (ending a previous role on a role move). |
 | `src/db/seed/index.ts` | Idempotent seed operations (`on conflict do nothing`) and drift reporting. |
 | `src/db/seed/targets.ts` | Seed-target guard: production refusal and remote-host opt-in. |
 | `src/db/seed/validation.ts` | Zod validation for seed rows; issues never echo a value. |
-| `scripts/seed.ts` | `npm run db:seed`: dry run by default, `--apply`, `--fixtures`, `--url`. |
+| `scripts/seed.ts` | `npm run db:seed`: dry run by default, `--apply`, `--fixtures`, `--roster`, `--url`. |
 | `scripts/apply-security.ts` | `npm run db:security`: applies `drizzle/manual/security.sql` without psql. |
 | `scripts/lib/*.ts` | Shared `.env` loader and migration/manual-SQL helpers used by scripts and tests. |
 | `tests/db/*.test.ts`, `tests/db/harness.ts` | Real-PostgreSQL integration tests and the scratch-database harness. |
@@ -293,6 +296,9 @@ npm run db:seed -- --apply
 
 # Also write the synthetic development/test volunteers
 npm run db:seed -- --apply --fixtures
+
+# Also write the test roster (coordinators, tech team 3rd/4th year, PR, builders)
+npm run db:seed -- --apply --roster
 
 # Explicit database instead of ADMIN_DATABASE_URL
 npm run db:seed -- --url "postgresql://postgres:postgres@127.0.0.1:55432/nss_dev" --apply
