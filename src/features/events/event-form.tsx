@@ -61,7 +61,7 @@ export function EventForm({ mode }: EventFormProps) {
 // ============================================================================
 function CentralEventForm() {
   const router = useRouter();
-  const formRef = useUnsavedChanges();
+  const formRef = useUnsavedChanges({ draftKey: "event:central" });
   const [reviewOpen, setReviewOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -570,7 +570,7 @@ function CentralEventForm() {
 // ============================================================================
 function ProjectEventForm() {
   const router = useRouter();
-  const formRef = useUnsavedChanges();
+  const formRef = useUnsavedChanges({ draftKey: "event:project" });
   const [reviewOpen, setReviewOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 

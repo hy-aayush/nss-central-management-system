@@ -269,15 +269,21 @@ export async function getHoursSnapshot() {
  * The unit-wide figures several routes show in their header.
  *
  * Dashboard, projects, volunteers and analytics each used to build this inside
- * their own cache entry; now they share one `unit` entry, so moving between
- * those screens reuses a single cached value instead of four.
+ * their own cache entry; now they share one entry, so moving between those
+ * screens reuses a single cached value instead of four.
+ *
+ * The academic year is an explicit argument, not read inside the scope. A cache
+ * key that cannot see the year freezes September's figures for October's page as
+ * soon as the session crosses a boundary; passing it makes the key change when
+ * the label does, and returning it means a caller can never render numbers that
+ * belong to a different cycle than the heading above them.
  */
-export async function getUnitSummary() {
+export async function getUnitSummary(academicYear: number) {
   "use cache";
   cacheLife("hours");
   cacheTag("unit-summary");
 
-  return getDashboardSummary();
+  return { ...getDashboardSummary(), academicYear };
 }
 
 export async function getAttendanceSnapshot() {
@@ -296,7 +302,7 @@ export async function getProjectsSnapshot() {
   return {
     projects: getProjects(),
     domains: getCreativeDomains(),
-    summary: await getUnitSummary(),
+    summary: await getUnitSummary(academicYearStart()),
   };
 }
 
@@ -307,7 +313,7 @@ export async function getVolunteersSnapshot() {
 
   return {
     volunteers: getVolunteers().items,
-    summary: await getUnitSummary(),
+    summary: await getUnitSummary(academicYearStart()),
   };
 }
 
@@ -324,5 +330,5 @@ export async function getAnalyticsSnapshot() {
   cacheLife("hours");
   cacheTag("analytics");
 
-  return { summary: await getUnitSummary() };
+  return { summary: await getUnitSummary(academicYearStart()) };
 }

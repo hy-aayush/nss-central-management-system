@@ -4,6 +4,7 @@ import { useDeferredValue, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useTableQuery } from "@/hooks/use-table-query";
+import { useImeValue } from "@/hooks/use-ime-value";
 import { readPage, readText } from "@/lib/table-params";
 import {
   Search,
@@ -103,8 +104,66 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
     null,
   );
 
+  /**
+   * J/K move between ledger rows, Enter opens the focused one.
+   *
+   * The audit view is read top to bottom looking for one entry, and moving the
+   * hand to the mouse between rows breaks that. The handler sits on the table,
+   * so it only fires when focus is already inside it, and it steps aside for
+   * text fields and for anything with a modifier held — a browser find, a tab
+   * switch or a real typed "j" into a filter keeps working.
+   */
+  const handleTableKeyDown = (event: React.KeyboardEvent<HTMLTableElement>) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+    const target = event.target as HTMLElement;
+    if (target.closest("input, textarea, select, [contenteditable='true']")) {
+      return;
+    }
+
+    const rows = [
+      ...event.currentTarget.querySelectorAll<HTMLTableRowElement>(
+        "tr[data-audit-row]",
+      ),
+    ];
+    if (rows.length === 0) return;
+
+    const active = target.closest<HTMLTableRowElement>("tr[data-audit-row]");
+    const index = active ? rows.indexOf(active) : -1;
+
+    if (event.key === "j" || event.key === "k") {
+      event.preventDefault();
+      const nextIndex =
+        event.key === "j"
+          ? Math.min(index + 1, rows.length - 1)
+          : Math.max(index - 1, 0);
+      const next = rows[nextIndex];
+      next.focus();
+      next.scrollIntoView({ block: "nearest" });
+      return;
+    }
+
+    if ((event.key === "Enter" || event.key === " ") && active) {
+      const entry = paginatedLogs.find((row) => row.id === active.dataset.auditRow);
+      if (!entry) return;
+      event.preventDefault();
+      setInspectingEntry(entry);
+    }
+  };
+
   // Input stays instant; the audit set can be large, so its filter pass runs on
-  // a deferred copy of the query.
+  // a deferred copy of the query. An IME composition is not filtered at all
+  // until it commits, so a half-typed Devanagari name cannot empty the ledger.
+  const imeSearch = useImeValue((value) => {
+    setSearch(value);
+    setPage(1);
+  });
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    imeSearch.settled(e.target.value);
+  };
+
   const deferredSearch = useDeferredValue(search);
 
   // Filtered dataset
@@ -187,10 +246,8 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
             <Input
               placeholder="Search actor, target roll, reason, or entity..."
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
+              onChange={handleSearchChange}
+              {...imeSearch.compositionProps}
               className="pl-9 h-9 text-body-sm bg-background border-border"
             />
           </div>
@@ -310,9 +367,9 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
 
       {/* Audit Table */}
       <Card className="p-0 bg-card border-border shadow-xs overflow-hidden">
-        <Table>
+        <Table onKeyDown={handleTableKeyDown}>
           <TableCaption className="sr-only">
-            Audit ledger, newest first
+            Audit ledger, newest first. Press J and K to move between rows.
           </TableCaption>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-border/80">
@@ -372,8 +429,10 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
                 return (
                   <TableRow
                     key={entry.id}
+                    data-audit-row={entry.id}
+                    tabIndex={-1}
                     onClick={() => setInspectingEntry(entry)}
-                    className="row-virtual hover:bg-muted/40 transition-colors cursor-pointer group"
+                    className="row-virtual hover:bg-muted/40 transition-colors cursor-pointer group outline-none focus-visible:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                   >
                     {/* Timestamp */}
                     <TableCell className="text-label-xs text-muted-foreground">

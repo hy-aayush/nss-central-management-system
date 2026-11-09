@@ -42,3 +42,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /docs/MANUAL_SETUP_BEFORE_PHASE_4.md
+
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/

@@ -16,11 +16,16 @@
  *   JS_BUDGET_KB=820 npm run budget
  */
 
-import { readdirSync, readFileSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const DEFAULT_BUDGET_KB = 820;
+// Everything else the first load pays for: fonts, CSS, the favicon set. Fonts
+// are the part people forget — a second weight is ~30 KB and arrives before
+// first paint, so it is weighed here rather than left to chance.
+const DEFAULT_ASSET_BUDGET_KB = 1400;
+const DEFAULT_SINGLE_ASSET_KB = 400;
 const STATIC_DIR = join(process.cwd(), ".next", "static");
 
 const argBudget = process.argv
@@ -87,4 +92,55 @@ if (headroom < 0) {
   process.exit(1);
 }
 
-console.log(`\nWithin budget (${headroom.toFixed(1)} KB headroom).`);
+/** @param {string} dir */
+function collectAll(dir) {
+  /** @type {string[]} */
+  const files = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...collectAll(full));
+    else files.push(full);
+  }
+  return files;
+}
+
+const assetBudgetKb = Number(process.env.ASSET_BUDGET_KB ?? DEFAULT_ASSET_BUDGET_KB);
+const singleAssetKb = Number(process.env.SINGLE_ASSET_KB ?? DEFAULT_SINGLE_ASSET_KB);
+
+const assets = collectAll(STATIC_DIR)
+  .filter((file) => !file.endsWith(".js"))
+  .map((file) => ({
+    path: relative(process.cwd(), file).replaceAll("\\", "/"),
+    raw: statSync(file).size / 1024,
+    kb: gzipSync(readFileSync(file)).length / 1024,
+  }))
+  .sort((a, b) => b.kb - a.kb);
+
+const assetTotalKb = assets.reduce((sum, asset) => sum + asset.kb, 0);
+const heaviest = assets[0];
+
+console.log(
+  `\nOther static assets: ${assetTotalKb.toFixed(1)} KB gzip across ${assets.length} file(s) · budget ${assetBudgetKb.toFixed(0)} KB`,
+);
+for (const asset of assets.slice(0, 4)) {
+  console.log(`  ${asset.kb.toFixed(1).padStart(7)} KB  ${asset.path}`);
+}
+
+const assetFailures = [];
+if (assetTotalKb > assetBudgetKb) {
+  assetFailures.push(
+    `static assets ${assetTotalKb.toFixed(1)} KB exceed ${assetBudgetKb.toFixed(0)} KB`,
+  );
+}
+if (heaviest && heaviest.kb > singleAssetKb) {
+  assetFailures.push(
+    `${heaviest.path} is ${heaviest.kb.toFixed(1)} KB (limit ${singleAssetKb.toFixed(0)} KB)`,
+  );
+}
+
+if (assetFailures.length > 0) {
+  for (const failure of assetFailures) console.error(`  OVER: ${failure}`);
+  process.exit(1);
+}
+
+console.log(`\nWithin budget (${headroom.toFixed(1)} KB JS headroom, assets ${(assetBudgetKb - assetTotalKb).toFixed(1)} KB headroom).`);

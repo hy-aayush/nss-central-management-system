@@ -14,6 +14,10 @@ const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ["Ctrl", "B"], label: "Collapse or expand the sidebar" },
   { keys: ["?"], label: "Show this sheet" },
   { keys: ["Tab"], label: "Step through a page; rows highlight on focus" },
+  {
+    keys: ["J", "K"],
+    label: "Next and previous row in the audit ledger; Enter opens it",
+  },
   { keys: ["Esc"], label: "Close the palette, a dialog or a popover" },
 ];
 

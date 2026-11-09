@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { recordVitals } from "@/lib/vitals-store";
+
 /**
  * Field-metrics intake (see `src/lib/vitals.ts`).
  *
@@ -60,6 +62,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     env: typeof body.env === "string" ? body.env.slice(0, 12) : null,
   };
 
+  recordVitals({
+    at: Date.now(),
+    path: record.path,
+    lcp: record.lcp ?? 0,
+    cls: record.cls ?? 0,
+    longestEvent: record.longestEvent ?? 0,
+    ttfb: record.ttfb ?? 0,
+    viewport: record.viewport,
+    connection: record.connection,
+    env: record.env,
+  });
   console.info(`[vitals] ${JSON.stringify(record)}`);
 
   return new NextResponse(null, {

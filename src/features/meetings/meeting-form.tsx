@@ -38,7 +38,8 @@ const AUDIENCE_HINT: Record<MeetingFormValues["type"], string> = {
 
 export function MeetingForm() {
   const router = useRouter();
-  const formRef = useUnsavedChanges();
+  // `draftKey` keeps a half-written meeting through an accidental reload.
+  const formRef = useUnsavedChanges({ draftKey: "meeting:new" });
 
   const form = useForm<MeetingFormValues>({
     resolver: zodResolver(meetingSchema),

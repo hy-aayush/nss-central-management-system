@@ -1,6 +1,182 @@
 # Database Foundation Progress
 
-## Optimisation pass — items 55–74 of 94 (9 Nov 2026)
+## Optimisation pass — items 75–94 of 139 (9 Nov 2026)
+
+**Scope:** instrumentation you can read, checks that fail a build instead of a
+review, and the interaction work the earlier passes left open (column visibility,
+row navigation, drafts, IME). No route, auth, authorization, schema or dataset
+change.
+
+### What shipped (75–94)
+
+75. **Vitals buffer with percentiles.** `src/lib/vitals-store.ts` keeps an hour
+    of samples in a bounded ring (500 max), prunes by age and computes
+    nearest-rank p50/p75/p95 per route. `/api/vitals/summary` serves it
+    `private, no-store`. It is explicitly per-instance, not a database — the
+    limits are in the file header rather than discovered later.
+76. **Document-weight budget.** `scripts/html-budget.mjs` measures the gzipped
+    HTML + RSC payload of seven routes against a ceiling (`HTML_BUDGET_KB`,
+    420 KB default) and fails on an over-budget or unauthenticated response.
+    Measured on this build: `/dashboard` 42.9 KB, `/events` 33.9 KB,
+    `/volunteers` 30.5 KB, `/hours` 29.9 KB, `/analytics` 26.5 KB, `/audit`
+    25.2 KB, `/login` 10.7 KB.
+78. **Playwright smoke suite.** `playwright.config.ts` plus
+    `tests/smoke/office.spec.ts`: the sign-in shell renders with no console
+    errors, an unauthenticated office route redirects to `/login?next=…`, the
+    volunteer table keeps its caption and headers, a foreign-origin metrics post
+    is rejected, a `?hide=` column is not rendered, and the columns menu hides a
+    column and records it in the URL. 6 tests, ~13 s. `SMOKE_BASE_URL` points it
+    at an already-running dev server, because Next allows one dev server per
+    directory.
+79. **Unit summary keyed by academic year.** `getUnitSummary(academicYear)` takes
+    the year as an argument instead of reading it inside the cache scope, so the
+    key changes when the label does and the payload carries the year it
+    describes.
+80. **`j`/`k` on the audit ledger.** Rows are focusable, J/K move focus with
+    `scrollIntoView({ block: "nearest" })`, Enter/Space open the inspector. The
+    handler sits on the table and steps aside for text fields and modifier keys;
+    the shortcut sheet documents it.
+82. **Column visibility in the URL.** `ColumnsMenu` + `readList` + a declared
+    column registry on the volunteer table (`?hide=domains,year`). Hidden columns
+    are `hidden` (so they leave the accessibility tree as well), the identity
+    column is locked, and resetting filters keeps the column choice. The menu
+    goes through one `DropdownMenuGroup` because this primitive's label is a
+    group label and throws without one — caught by the smoke test, not by reading
+    the code.
+83. **Typed query contract.** `src/lib/query-contract.ts` names each read, its
+    entity, the columns it filters and the index that must cover it;
+    `tests/db/query-contract.test.ts` checks those names against both the Drizzle
+    schema and the generated migrations, and checks the filter order against the
+    index's leading column.
+84. **Idle next-page warming.** `useWarmPage` observes a sentinel at the end of
+    the list and prefetches the next page of *the same view* on
+    `requestIdleCallback`, once per href. The href comes from the same `queryFor`
+    serializer that writes the address bar.
+85. **Toolbar sort is announced.** The events table's sort buttons carry
+    `aria-pressed`, and a polite live region states "Sorted by date, descending"
+    for the control that has no column header of its own.
+86. **Charts in forced colours.** SVG series colours do not follow the system
+    palette on their own, so axes and grid take `CanvasText`, bars and sectors
+    take `Highlight`, tick labels take `CanvasText`, and the tooltip keeps a
+    system border.
+87. **Boundary errors carry their context.** `SectionError` posts section, route
+    and digest to `/api/errors` (origin-checked, 1 KB cap, no message field — a
+    message can contain the data the render was handling), which logs one line.
+88. **Form drafts.** `useUnsavedChanges({ draftKey })` now also writes named
+    fields to `sessionStorage` on a 500 ms debounce, restores only into empty
+    fields, and clears on submit. Wired into both event forms and the meeting
+    form.
+89. **IME-aware search.** `useImeValue` shows every keystroke but defers the
+    filter pass until composition ends, so a half-composed Devanagari or Japanese
+    query cannot empty the table or persist a value nobody chose. Wired into the
+    volunteer, events and audit searches.
+90. **Chunk-level bundle diff.** `scripts/bundle-diff.mjs` writes
+    `.bundle-baseline.json` and reports per-chunk deltas, added/removed chunks and
+    total growth against `DIFF_REGRESSION_KB` (25 KB).
+91. **First-load asset budget.** `js-budget.mjs` now also weighs every non-JS
+    file under `.next/static` against `ASSET_BUDGET_KB` (1400 KB) and
+    `SINGLE_ASSET_KB` (400 KB), so a second font weight cannot arrive unnoticed.
+    Measured: 331.0 KB gzip across 16 files, heaviest 83.3 KB (an Inter woff2).
+94. **One page-width table.** `PAGE_RHYTHM` is read by both the route skeletons
+    and `SectionHeader`. This fixed a real shift: the skeleton drew a 32rem
+    description while the header rendered `max-w-2xl` (42rem), so the page moved
+    sideways at the moment it loaded.
+
+### Verified as already satisfied
+
+77. **Style-sheet split is conditional and not triggered.** The audit measures
+    **190.3 KB raw / 30.1 KB gzip**, of which every rule is used; splitting the
+    sheet per surface would trade one cached request for two and save nothing
+    until a gzip ceiling is crossed. Recorded, not done.
+81. **The remaining state+effect pairs are not derived state.** What is left is
+    mount gating for deferred chunks (`DeferredChart`, `ShortcutSheet`,
+    `LazyToaster`) and React Hook Form's `form.reset()` on a changed prop in the
+    minutes panel — neither is a value that could be read during render, so
+    `useSyncExternalStore` would be the wrong tool.
+92. **The contrast audit already runs both themes.** `scripts/contrast-audit.mjs`
+    loops `:root` and `.dark` over the same ten text/background pairs; dark
+    reports 17.73:1 foreground on background down to 6.85:1 error on card, all
+    AA.
+
+### Verified
+
+| Check | Result |
+|---|---|
+| `npm run verify` | exit 0 — typecheck, lint, contrast (light + dark), JS and asset budget |
+| `npm run build` | exit 0, `/api/errors` and `/api/vitals/summary` present as dynamic routes |
+| `npm run budget` | 789.9 KB gzip across 85 chunks (30.1 KB under the ceiling); assets 331.0 KB gzip, heaviest 83.3 KB |
+| `node scripts/bundle-diff.mjs` | baseline recorded, 4 chunks added and 4 removed by the rebuild, total delta +0.0 KB |
+| `scripts/html-budget.mjs` | all seven documents within budget; heaviest `/dashboard` 42.9 KB gzip |
+| `npx playwright test` | 6/6 passed |
+| `npx vitest run tests/db/query-contract.test.ts` | 4/4 passed |
+| `/volunteers?hide=roll,domains` | hidden cells rendered with the `hidden` class; menu reads `Columns 7/7` |
+| Column menu (browser) | toggling "Academic year" writes `?hide=…` and the header disappears |
+| Audit ledger (browser) | `j` moved focus 13 → 1 → 12, `k` back to 1 |
+| Meeting form | typed agenda survived a reload from `nss:draft:meeting:new` |
+| `/api/vitals/summary` | `{"window":"1h","count":2,…}` with per-route p50/p75/p95 |
+| `/api/errors` | 403 for a foreign `Origin`, 204 same-origin, one log line |
+| Unsaved-changes guard | a reload with a dirty form triggered `beforeunload`, blocking programmatic navigation until submit |
+
+**Limits.** The vitals numbers are per process and lost on restart — they answer
+"did this build get slower", not "what is the fleet doing". The smoke suite runs
+against `next dev` because the office routes need the development session, so it
+is not a production check. Everything above remains uncommitted.
+
+### Backlog (95–139)
+
+95. Persist vitals to a real table with a 30-day retention job and read p75 per
+    route over a week, not an hour.
+96. Put `/api/vitals/summary` behind a role check and render it in Settings
+    instead of leaving it as a JSON endpoint.
+97. Extract a shared `<DataTable>` shell so the five tables stop repeating the
+    toolbar, empty state and pager.
+98. Move volunteer filtering into SQL with keyset pagination when the data is
+    real.
+99. Cache `getVolunteersSnapshot` per filter combination instead of one entry for
+    every view.
+100. Replace `useTableQuery` writes with batched `history.replaceState` calls.
+101. Server-render the audit ledger's first page and stream the rest.
+102. Add `ETag`/`If-None-Match` to the metrics summary.
+103. Aggregate chart series server-side per month instead of shipping raw points.
+104. Defer the sidebar's count badges until after first paint.
+105. Load the command palette on its first keypress rather than with the shell.
+106. Replace `date-fns` formatting with `Intl` where only output is needed.
+107. Audit `lucide-react` imports for deep paths to shrink the 92.7 KB chunk.
+108. Split that largest chunk by route and re-measure.
+109. Answer signed-out `/api/*` with a 401 before any RSC work.
+110. Precompute IST formatting on the server for table rows.
+111. Virtualise the events table above 200 rows.
+112. Debounce `syncUrl` per control instead of per keystroke.
+113. Add an axe accessibility pass to the smoke suite.
+114. Check the status palette against colour-vision deficiency simulations.
+115. Give avatar initials a deterministic background so rows stop looking uniform.
+116. Add a print stylesheet for the audit ledger and hours statements.
+117. Add `g d` / `g v` go-to shortcuts next to `j`/`k`.
+118. Search across entities from the palette, not just navigation.
+119. Optimistic attendance marking with rollback on failure.
+120. Retry table queries with exponential backoff on a transient error.
+121. `generateMetadata` for detail routes so tabs and shares carry a real title.
+122. Structured data for public event pages.
+123. `sitemap.ts` and `robots.ts` for the public surfaces.
+124. Re-check the variable font: are all shipped weights reachable from the UI?
+125. Subset the mono face to digits, dashes and the few letters it actually sets.
+126. Preload the mono face only on routes that render roll numbers.
+127. Cap the number of preloaded font files at one and assert it in `verify`.
+128. Re-measure inline critical CSS for the shell only.
+129. Budget the RSC payload per route the way HTML is budgeted now.
+130. Cache the metric strip behind its own Suspense boundary (PPR-shaped).
+131. `useOptimistic` for meeting status transitions once they hit the server.
+132. Warm volunteer detail pages on row focus, not only pointer intent.
+133. Add per-route performance marks around the table's filter pass.
+134. Record long tasks during audit-ledger scrolling to size item 111 honestly.
+135. Paginate the audit ledger on the server; today it filters the full set.
+136. Stream CSV exports instead of building a blob in memory.
+137. Rate-limit mutations per session, not per IP.
+138. Add a `/health` route that reports database reachability for uptime checks.
+139. Write the performance budget policy (what fails, what warns, who raises it)
+    into `docs/` and link it from `npm run verify`.
+
+## Optimisation pass — items 55–74 of 139 (9 Nov 2026)
 
 **Scope:** accessibility of the data grids, a measured style-sheet audit, field
 level errors, field metrics, and the tooling that keeps the previous passes from

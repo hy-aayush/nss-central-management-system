@@ -64,6 +64,30 @@ export function readSort<T extends string>(
     : fallback;
 }
 
+/**
+ * A comma-separated list, filtered to known values.
+ *
+ * Column visibility arrives this way (`?hide=domains,year`) but so would any
+ * future multi-value filter, and the rule is the same: unknown entries are
+ * dropped rather than trusted, so a hand-edited URL cannot widen the table.
+ */
+export function readList(
+  params: ParamSource,
+  name: string,
+  allowed: readonly string[],
+): string[] {
+  const raw = params.get(name);
+  if (!raw) return [];
+
+  const values = raw
+    .slice(0, 240)
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => allowed.includes(value));
+
+  return [...new Set(values)];
+}
+
 export function readDirection(
   params: ParamSource,
   fallback: "asc" | "desc",

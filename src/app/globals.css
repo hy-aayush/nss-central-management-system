@@ -1005,4 +1005,35 @@
   .skeleton-sheen::after {
     display: none;
   }
+
+  /* Charts are SVG, so the system palette does not reach them on its own: a
+     themed series colour becomes a pale tint on a white forced background and
+     the grid disappears entirely. Strokes and axes take the text colour, the
+     data itself takes the highlight, and the tooltip keeps its border. */
+  .recharts-cartesian-axis-line,
+  .recharts-cartesian-axis-tick-line,
+  .recharts-cartesian-grid line,
+  .recharts-line-curve,
+  .recharts-area-curve {
+    stroke: CanvasText;
+  }
+
+  .recharts-cartesian-axis-tick-value,
+  .recharts-legend-item-text {
+    fill: CanvasText;
+    color: CanvasText;
+  }
+
+  .recharts-bar-rectangle path,
+  .recharts-rectangle,
+  .recharts-pie-sector path {
+    fill: Highlight;
+    stroke: CanvasText;
+  }
+
+  .recharts-tooltip-wrapper > * {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
 }

@@ -18,7 +18,10 @@
     "db:security": "tsx scripts/apply-security.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:studio": "drizzle-kit studio --host 127.0.0.1",
-    "test:db": "vitest run --config vitest.config.mts"
+    "test:db": "vitest run --config vitest.config.mts",
+    "test:smoke": "playwright test",
+    "budget:diff": "node scripts/bundle-diff.mjs",
+    "html:budget": "node scripts/html-budget.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

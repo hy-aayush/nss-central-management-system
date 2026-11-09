@@ -6,11 +6,17 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useUrlSync } from "@/hooks/use-url-sync";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIntentPrefetch } from "@/hooks/use-intent-prefetch";
+import { useWarmPage } from "@/hooks/use-warm-page";
+import { useImeValue } from "@/hooks/use-ime-value";
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
+import {
+  ColumnsMenu,
+  type ColumnSpec,
+} from "@/components/shared/columns-menu";
 import {
   Table,
   TableBody,
@@ -38,6 +44,7 @@ import {
   readDirection,
   readPage,
   readPageSize,
+  readList,
   readSort,
   readText,
 } from "@/lib/table-params";
@@ -90,6 +97,26 @@ type SortField =
 /** The only page sizes the select offers, and the only ones URL state accepts. */
 const VOLUNTEER_PAGE_SIZES = [8, 16, 32] as const;
 
+/**
+ * The table's columns, in render order.
+ *
+ * Declared once so the header, the body and the visibility menu cannot disagree
+ * about what exists. `name` is locked because it is the row's identity: a table
+ * of hours with no name is not a narrower view, it is an unreadable one.
+ */
+const VOLUNTEER_COLUMNS: ColumnSpec[] = [
+  { id: "name", label: "Volunteer", locked: true },
+  { id: "roll", label: "Roll number" },
+  { id: "project", label: "Project" },
+  { id: "domains", label: "Creative domains" },
+  { id: "year", label: "Academic year" },
+  { id: "hours", label: "Service hours" },
+  { id: "turnout", label: "Turnout" },
+  { id: "status", label: "Status" },
+];
+
+const HIDEABLE_COLUMNS = VOLUNTEER_COLUMNS.map((column) => column.id);
+
 type TableQuery = {
   search: string;
   project: string;
@@ -100,6 +127,7 @@ type TableQuery = {
   sort: SortField;
   asc: boolean;
   size: number;
+  hide: string;
 };
 
 export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
@@ -139,6 +167,13 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
   const [currentPage, setCurrentPage] = React.useState(pageParam);
   const [pageSize, setPageSize] = React.useState(sizeParam);
 
+  // Column visibility lives in the URL (`?hide=domains,year`) so a table someone
+  // trimmed for a screen-share comes back trimmed on reload and on a shared link.
+  const [hiddenColumns, setHiddenColumns] = React.useState<string[]>(() =>
+    readList(searchParams, "hide", HIDEABLE_COLUMNS),
+  );
+  const isVisible = (id: string) => !hiddenColumns.includes(id);
+
   // Sorting
   const [sortField, setSortField] = React.useState<SortField>(initialSort);
   const [sortAsc, setSortAsc] = React.useState(initialAsc);
@@ -159,23 +194,29 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
     sort: sortField,
     asc: sortAsc,
     size: pageSize,
+    hide: hiddenColumns.join(","),
   };
+
+  // One serializer for "this view as a URL", so the address bar and the link the
+  // idle prefetch warms can never describe two different tables.
+  const queryFor = React.useCallback((merged: TableQuery) => {
+    const params = new URLSearchParams();
+    if (merged.search) params.set("search", merged.search);
+    if (merged.project !== "ALL") params.set("project", merged.project);
+    if (merged.domain !== "ALL") params.set("domain", merged.domain);
+    if (merged.status !== "ALL") params.set("status", merged.status);
+    if (merged.year !== "ALL") params.set("year", merged.year);
+    if (merged.page > 1) params.set("page", String(merged.page));
+    if (merged.sort !== "name") params.set("sort", merged.sort);
+    if (!merged.asc) params.set("dir", "desc");
+    if (merged.size !== 8) params.set("size", String(merged.size));
+    if (merged.hide) params.set("hide", merged.hide);
+    return params.toString();
+  }, []);
 
   const commit = React.useCallback(
     (next: Partial<TableQuery>) => {
-      const merged = { ...view, ...next };
-      const params = new URLSearchParams();
-      if (merged.search) params.set("search", merged.search);
-      if (merged.project !== "ALL") params.set("project", merged.project);
-      if (merged.domain !== "ALL") params.set("domain", merged.domain);
-      if (merged.status !== "ALL") params.set("status", merged.status);
-      if (merged.year !== "ALL") params.set("year", merged.year);
-      if (merged.page > 1) params.set("page", String(merged.page));
-      if (merged.sort !== "name") params.set("sort", merged.sort);
-      if (!merged.asc) params.set("dir", "desc");
-      if (merged.size !== 8) params.set("size", String(merged.size));
-
-      const query = params.toString();
+      const query = queryFor({ ...view, ...next });
       syncUrl(query ? `${pathname}?${query}` : pathname);
     },
     // `view` is rebuilt on every render from the state above.
@@ -183,6 +224,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
     [
       pathname,
       syncUrl,
+      queryFor,
       search,
       project,
       domain,
@@ -192,14 +234,21 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
       sortField,
       sortAsc,
       pageSize,
+      hiddenColumns,
     ],
   );
+
+  // The input follows the keystroke; the filter pass waits for an IME.
+  const imeSearch = useImeValue((value) => {
+    setSearch(value);
+    setCurrentPage(1);
+    commit({ search: value, page: 1 });
+  });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearch(val);
-    setCurrentPage(1);
-    commit({ search: val, page: 1 });
+    imeSearch.settled(val);
   };
 
   const handleProjectChange = (val: string) => {
@@ -239,7 +288,14 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
     setStatus("ALL");
     setYear("ALL");
     setCurrentPage(1);
-    syncUrl(pathname);
+    // Reset clears the filters, not the columns: someone who hid four columns
+    // to read this table did not ask for them back.
+    commit({ search: "", project: "ALL", domain: "ALL", status: "ALL", year: "ALL", page: 1 });
+  };
+
+  const handleColumnsChange = (next: string[]) => {
+    setHiddenColumns(next);
+    commit({ hide: next.join(",") });
   };
 
   const hasActiveFilters =
@@ -322,6 +378,13 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const pageIndex = Math.min(currentPage, totalPages);
   const startIndex = (pageIndex - 1) * pageSize;
+  // The next page of this exact view, serialized by the same function that
+  // writes the address bar (see `queryFor`).
+  const nextPageHref =
+    pageIndex < totalPages
+      ? `${pathname}?${queryFor({ ...view, page: pageIndex + 1 })}`
+      : null;
+  const warmNextPage = useWarmPage(nextPageHref);
   const paginated = sorted.slice(startIndex, startIndex + pageSize);
 
   // Mirrors the visible arrow so a screen reader announces "sorted ascending"
@@ -350,6 +413,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
               placeholder="Search by student name, roll number, or KIIT email..."
               value={search}
               onChange={handleSearchChange}
+              {...imeSearch.compositionProps}
               className="pl-9 h-9 text-xs"
             />
           </div>
@@ -366,6 +430,16 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
               Reset Filters
             </Button>
           )}
+
+          {/* Column visibility is a desktop concern: the small-screen view is a
+              card list, which has no columns to hide. */}
+          <div className="hidden md:block">
+            <ColumnsMenu
+              columns={VOLUNTEER_COLUMNS}
+              hidden={hiddenColumns}
+              onChange={handleColumnsChange}
+            />
+          </div>
         </div>
 
         {/* Dropdown / Select Filter Controls */}
@@ -505,7 +579,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                   </TableHead>
                   <TableHead
                     aria-sort={sortDirection("rollNumber")}
-                    className="h-9 w-[120px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase"
+                    className={`h-9 w-[120px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase ${isVisible("roll") ? "" : "hidden"}`}
                   >
                     <button
                       onClick={() => toggleSort("rollNumber")}
@@ -515,18 +589,18 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="h-9 w-[130px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                  <TableHead className={`h-9 w-[130px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase ${isVisible("project") ? "" : "hidden"}`}>
                     Project
                   </TableHead>
-                  <TableHead className="h-9 text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                  <TableHead className={`h-9 text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase ${isVisible("domains") ? "" : "hidden"}`}>
                     Creative Domains
                   </TableHead>
-                  <TableHead className="h-9 w-[90px] text-center text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                  <TableHead className={`h-9 w-[90px] text-center text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase ${isVisible("year") ? "" : "hidden"}`}>
                     Year
                   </TableHead>
                   <TableHead
                     aria-sort={sortDirection("allocatedHours")}
-                    className="h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase"
+                    className={`h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase ${isVisible("hours") ? "" : "hidden"}`}
                   >
                     <button
                       onClick={() => toggleSort("allocatedHours")}
@@ -538,7 +612,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                   </TableHead>
                   <TableHead
                     aria-sort={sortDirection("attendanceRateEvents")}
-                    className="h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase"
+                    className={`h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase ${isVisible("turnout") ? "" : "hidden"}`}
                   >
                     <button
                       onClick={() => toggleSort("attendanceRateEvents")}
@@ -548,7 +622,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="h-9 w-[100px] text-center text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                  <TableHead className={`h-9 w-[100px] text-center text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase ${isVisible("status") ? "" : "hidden"}`}>
                     Status
                   </TableHead>
                   <TableHead className="h-9 w-[70px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
@@ -593,12 +667,12 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       </TableCell>
 
                       {/* Roll Number */}
-                      <TableCell className="font-mono text-xs text-foreground font-medium">
+                      <TableCell className={`font-mono text-xs text-foreground font-medium ${isVisible("roll") ? "" : "hidden"}`}>
                         {vol.rollNumber}
                       </TableCell>
 
                       {/* Project Affiliation */}
-                      <TableCell>
+                      <TableCell className={isVisible("project") ? undefined : "hidden"}>
                         {vol.project ? (
                           <Link
                             prefetch={false}
@@ -615,7 +689,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       </TableCell>
 
                       {/* Creative Domains */}
-                      <TableCell>
+                      <TableCell className={isVisible("domains") ? undefined : "hidden"}>
                         {vol.domains.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">
                             General
@@ -636,22 +710,22 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       </TableCell>
 
                       {/* Academic Year */}
-                      <TableCell className="text-center font-mono text-xs">
+                      <TableCell className={`text-center font-mono text-xs ${isVisible("year") ? "" : "hidden"}`}>
                         Year {vol.year}
                       </TableCell>
 
                       {/* Service Hours */}
-                      <TableCell className="text-right font-mono text-xs font-semibold text-foreground">
+                      <TableCell className={`text-right font-mono text-xs font-semibold text-foreground ${isVisible("hours") ? "" : "hidden"}`}>
                         {vol.allocatedHours} hrs
                       </TableCell>
 
                       {/* Turnout Rate */}
-                      <TableCell className="tnum text-right text-[0.75rem] font-medium text-foreground">
+                      <TableCell className={`tnum text-right text-[0.75rem] font-medium text-foreground ${isVisible("turnout") ? "" : "hidden"}`}>
                         {vol.attendanceRateEvents ?? 0}%
                       </TableCell>
 
                       {/* Status & Red Flags */}
-                      <TableCell className="text-center">
+                      <TableCell className={`text-center ${isVisible("status") ? "" : "hidden"}`}>
                         <div className="flex flex-col items-center gap-0.5">
                           <StatusBadge
                             status={vol.status}
@@ -842,6 +916,10 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
               </div>
             </div>
           )}
+
+          {/* End of the list: once this is within 200px of the viewport the
+              next page of the same view is warmed on idle. */}
+          <div ref={warmNextPage} aria-hidden className="h-px" />
         </>
       )}
     </div>

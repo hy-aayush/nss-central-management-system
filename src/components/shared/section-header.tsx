@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { PAGE_RHYTHM } from "@/components/shared/page-rhythm";
 import { cn } from "@/lib/utils";
 
 export interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -36,7 +37,12 @@ export function SectionHeader({
         {eyebrow ? <p className="text-eyebrow">{eyebrow}</p> : null}
         <Heading className="text-headline-md text-foreground">{title}</Heading>
         {description ? (
-          <p className="max-w-2xl text-body-sm text-muted-foreground">
+          <p
+            className={cn(
+              PAGE_RHYTHM.descriptionWidth,
+              "text-body-sm text-muted-foreground",
+            )}
+          >
             {description}
           </p>
         ) : null}

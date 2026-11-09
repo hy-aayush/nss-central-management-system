@@ -24,6 +24,24 @@ export function SectionError({
 }) {
   React.useEffect(() => {
     console.error(`${section} section error:`, error);
+
+    // The digest is the only part of this that a log can join to the server's
+    // report, and it is worthless without the section and route beside it. The
+    // message is never sent: it can contain the data the render was handling.
+    try {
+      void fetch("/api/errors", {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section,
+          digest: error.digest ?? "no-digest",
+          path: window.location.pathname,
+        }),
+      });
+    } catch {
+      // Reporting an error must not raise one.
+    }
   }, [error, section]);
 
   return (

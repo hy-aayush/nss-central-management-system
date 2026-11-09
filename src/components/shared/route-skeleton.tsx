@@ -1,4 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { PAGE_RHYTHM } from "@/components/shared/page-rhythm";
+import { cn } from "@/lib/utils";
 
 /**
  * Per-route skeletons.
@@ -12,13 +14,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 function HeaderBlock({ actions = 1 }: { actions?: number }) {
   return (
     <div className="space-y-3">
-      <Skeleton className="h-3 w-40" />
-      <Skeleton className="h-9 w-80 max-w-full" />
-      <Skeleton className="h-3.5 w-[32rem] max-w-full" />
+      <Skeleton className={cn("h-3", PAGE_RHYTHM.eyebrowWidth)} />
+      <Skeleton className={cn("h-9", PAGE_RHYTHM.titleWidth)} />
+      <Skeleton className={cn("h-3.5 w-full", PAGE_RHYTHM.descriptionWidth)} />
       {actions > 0 ? (
         <div className="flex gap-2 pt-1">
           {Array.from({ length: actions }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-32 rounded-lg" />
+            <Skeleton
+              key={i}
+              className={cn("h-8 rounded-lg", PAGE_RHYTHM.actionWidth)}
+            />
           ))}
         </div>
       ) : null}
@@ -28,7 +33,7 @@ function HeaderBlock({ actions = 1 }: { actions?: number }) {
 
 function MetricCards({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={PAGE_RHYTHM.metricGrid}>
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}

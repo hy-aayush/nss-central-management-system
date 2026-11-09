@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useUrlSync } from "@/hooks/use-url-sync";
 import { useIntentPrefetch } from "@/hooks/use-intent-prefetch";
+import { useImeValue } from "@/hooks/use-ime-value";
 import {
   Calendar,
   Clock,
@@ -185,10 +186,18 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
     syncUrl(`?${current.toString()}`);
   };
 
-  const handleSearchChange = (val: string) => {
+  const commitSearch = (val: string) => {
     setSearch(val);
     setPage(1);
     updateFilters({ search: val.trim() || null, page: "1" });
+  };
+
+  // Typing shows up immediately; filtering waits for an IME to commit.
+  const imeSearch = useImeValue(commitSearch);
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    imeSearch.settled(val);
   };
 
   const handleTypeChange = (val: EventType | "ALL" | null) => {
@@ -239,6 +248,7 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
             placeholder="Search events by title, description or venue..."
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
+            {...imeSearch.compositionProps}
             className="pl-9 bg-card border-border h-9.5 text-body-sm"
           />
         </div>
@@ -323,11 +333,19 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
           {filteredEvents.length} events
         </span>
         <div className="flex items-center gap-1.5">
+          {/* The buttons below are the only sort control, so they have to say
+              which one is active; the colour alone does not reach a screen
+              reader, and the adapter also announces the new order. */}
+          <span aria-live="polite" aria-atomic="true" className="sr-only">
+            Sorted by {sortBy === "date" ? "date" : "title"},{" "}
+            {sortOrder === "asc" ? "ascending" : "descending"}
+          </span>
           <span className="hidden sm:inline">Sort by:</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => toggleSort("date")}
+            aria-pressed={sortBy === "date"}
             className={`h-7 px-2 text-label-xs ${sortBy === "date" ? "text-primary font-medium" : "text-muted-foreground"}`}
           >
             Date
@@ -337,6 +355,7 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
             variant="ghost"
             size="sm"
             onClick={() => toggleSort("title")}
+            aria-pressed={sortBy === "title"}
             className={`h-7 px-2 text-label-xs ${sortBy === "title" ? "text-primary font-medium" : "text-muted-foreground"}`}
           >
             Title
