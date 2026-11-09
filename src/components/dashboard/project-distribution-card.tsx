@@ -56,6 +56,7 @@ export function ProjectDistributionCard({
             return (
               <Link
                 key={project.id}
+                prefetch={false}
                 href={`/projects/${project.slug}`}
                 className="group flex flex-col gap-2.5 rounded-xl border border-border/60 bg-surface-container-low/30 p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-300 ease-[var(--ease-out-quart)] hover:-translate-y-0.5 hover:border-border hover:bg-card hover:shadow-[var(--elevation-1)]"
               >
@@ -108,7 +109,9 @@ export function ProjectDistributionCard({
                       Turnout
                     </p>
                     <p className="tnum text-[0.8125rem] font-semibold text-foreground">
-                      {summary?.attendanceRate ? `${summary.attendanceRate}%` : "—"}
+                      {summary?.attendanceRate
+                        ? `${summary.attendanceRate}%`
+                        : "—"}
                     </p>
                   </div>
                 </div>

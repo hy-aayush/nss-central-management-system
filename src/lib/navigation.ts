@@ -19,11 +19,26 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   badge?: string;
-  badgeVariant?: "default" | "secondary" | "accent" | "success" | "warning" | "destructive" | "info" | "outline";
+  badgeVariant?:
+    | "default"
+    | "secondary"
+    | "accent"
+    | "success"
+    | "warning"
+    | "destructive"
+    | "info"
+    | "outline";
   /** Keyword shown in the command menu and used for search matching. */
   description?: string;
   /** Extra terms that should match this destination in the command menu. */
   keywords?: string[];
+  /**
+   * Set to `false` for destinations that are rarely opened (reports and admin
+   * screens). Their links then wait for a real click instead of speculatively
+   * fetching a private RSC payload, which on this app also means an access-gate
+   * database query and a serverless invocation per prefetch.
+   */
+  prefetch?: boolean;
 }
 
 export interface NavSection {
@@ -65,6 +80,7 @@ export const NAV_SECTIONS: NavSection[] = [
         title: "Projects",
         href: "/projects",
         icon: FolderKanban,
+        prefetch: false,
         badge: "9",
         badgeVariant: "outline",
         description: "Assigned projects and creative domains",
@@ -107,6 +123,7 @@ export const NAV_SECTIONS: NavSection[] = [
         title: "Requests",
         href: "/requests",
         icon: Inbox,
+        prefetch: false,
         badge: "3",
         badgeVariant: "warning",
         description: "Two-man rule suspension, archival, and delete requests",
@@ -121,6 +138,7 @@ export const NAV_SECTIONS: NavSection[] = [
         title: "Analytics",
         href: "/analytics",
         icon: BarChart3,
+        prefetch: false,
         description: "Turnout rates, hours distribution, and trends",
         keywords: ["charts", "reports", "trends"],
       },
@@ -128,6 +146,7 @@ export const NAV_SECTIONS: NavSection[] = [
         title: "Audit Logs",
         href: "/audit",
         icon: ScrollText,
+        prefetch: false,
         badge: "Live",
         badgeVariant: "outline",
         description: "Immutable application-level audit history",
@@ -142,6 +161,7 @@ export const NAV_SECTIONS: NavSection[] = [
         title: "Team & Access",
         href: "/team",
         icon: ShieldCheck,
+        prefetch: false,
         description: "Roster approvals and administrative assignments",
         keywords: ["permissions", "roles", "staff"],
       },
@@ -149,6 +169,7 @@ export const NAV_SECTIONS: NavSection[] = [
         title: "Settings",
         href: "/settings",
         icon: SlidersHorizontal,
+        prefetch: false,
         description: "Office configurations and personal preferences",
         keywords: ["preferences", "config", "theme"],
       },

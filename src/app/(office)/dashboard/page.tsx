@@ -175,8 +175,12 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* Project distribution */}
-      <section aria-labelledby="projects-heading" className="space-y-3">
+      {/* Project distribution — below the fold, so its first layout/paint pass
+          is deferred until it approaches the viewport (`defer-render`). */}
+      <section
+        aria-labelledby="projects-heading"
+        className="defer-render space-y-3"
+      >
         <SectionHeader
           id="projects-heading"
           eyebrow="Programmes"
@@ -190,7 +194,10 @@ export default async function DashboardPage() {
       </section>
 
       {/* Governance + shortcuts */}
-      <section aria-labelledby="audit-heading" className="space-y-3">
+      <section
+        aria-labelledby="audit-heading"
+        className="defer-render space-y-3"
+      >
         <SectionHeader
           id="audit-heading"
           eyebrow="Governance"

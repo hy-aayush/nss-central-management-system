@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useUrlSync } from "@/hooks/use-url-sync";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,9 +73,15 @@ const YEARS = [
 ];
 
 export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const syncUrl = useUrlSync();
+  // The card list and the table are two presentations of the same rows. Only
+  // one of them is mounted: the table is what the server renders (desktop is
+  // the primary office context), and the card list is added on a small screen
+  // after mount. Previously both were always in the DOM, so every row was
+  // serialised, hydrated and laid out twice.
+  const isMobile = useIsMobile();
 
   // URL state synchronization
   const searchParam = searchParams.get("search") ?? "";
@@ -93,12 +101,24 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
   const [pageSize] = React.useState(8);
 
   // Sorting
-  const [sortField, setSortField] = React.useState<"name" | "rollNumber" | "allocatedHours" | "attendanceRateEvents">("name");
+  const [sortField, setSortField] = React.useState<
+    "name" | "rollNumber" | "allocatedHours" | "attendanceRateEvents"
+  >("name");
   const [sortAsc, setSortAsc] = React.useState(true);
 
-  // Sync state to URL search parameters on changes
+  // Filters are applied from local state; the URL is updated behind them purely
+  // so a filtered view can be shared. That write is debounced and does not go
+  // through the router, so typing never triggers a server render or a second
+  // access-gate query (see useUrlSync).
   const updateUrlParams = React.useCallback(
-    (newSearch: string, newProj: string, newDom: string, newStat: string, newYr: string, newPg: number) => {
+    (
+      newSearch: string,
+      newProj: string,
+      newDom: string,
+      newStat: string,
+      newYr: string,
+      newPg: number,
+    ) => {
       const params = new URLSearchParams();
       if (newSearch) params.set("search", newSearch);
       if (newProj !== "ALL") params.set("project", newProj);
@@ -108,9 +128,9 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
       if (newPg > 1) params.set("page", String(newPg));
 
       const query = params.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+      syncUrl(query ? `${pathname}?${query}` : pathname);
     },
-    [pathname, router]
+    [pathname, syncUrl],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,18 +171,30 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
     setStatus("ALL");
     setYear("ALL");
     setCurrentPage(1);
-    router.replace(pathname, { scroll: false });
+    syncUrl(pathname);
   };
 
   const hasActiveFilters =
-    Boolean(search) || project !== "ALL" || domain !== "ALL" || status !== "ALL" || year !== "ALL";
+    Boolean(search) ||
+    project !== "ALL" ||
+    domain !== "ALL" ||
+    status !== "ALL" ||
+    year !== "ALL";
+
+  // The text box and the table are decoupled: the input updates immediately,
+  // while the (potentially large) filter pass runs on a deferred copy. On a
+  // slow device this is the difference between typing at keystroke speed and
+  // typing at render speed.
+  const deferredSearch = React.useDeferredValue(search);
 
   // Filtered dataset
   const filtered = React.useMemo(() => {
+    const query = deferredSearch.toLowerCase().trim();
+
     return initialVolunteers.filter((v) => {
       // Text search
-      if (search) {
-        const q = search.toLowerCase().trim();
+      if (query) {
+        const q = query;
         const matchesName = v.name.toLowerCase().includes(q);
         const matchesRoll = v.rollNumber.toLowerCase().includes(q);
         const matchesEmail = v.email.toLowerCase().includes(q);
@@ -178,7 +210,11 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
       if (domain === "NONE" && v.domains.length > 0) {
         return false;
       }
-      if (domain !== "ALL" && domain !== "NONE" && !v.domains.includes(domain as CreativeDomain)) {
+      if (
+        domain !== "ALL" &&
+        domain !== "NONE" &&
+        !v.domains.includes(domain as CreativeDomain)
+      ) {
         return false;
       }
 
@@ -194,7 +230,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
 
       return true;
     });
-  }, [initialVolunteers, search, project, domain, status, year]);
+  }, [initialVolunteers, deferredSearch, project, domain, status, year]);
 
   // Sort filtered dataset
   const sorted = React.useMemo(() => {
@@ -264,7 +300,9 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-border/40">
           {/* Project Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-muted-foreground">Project</label>
+            <label className="text-[11px] font-medium text-muted-foreground">
+              Project
+            </label>
             <select
               value={project}
               onChange={(e) => handleProjectChange(e.target.value)}
@@ -281,7 +319,9 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
 
           {/* Domain Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-muted-foreground">Creative Domain</label>
+            <label className="text-[11px] font-medium text-muted-foreground">
+              Creative Domain
+            </label>
             <select
               value={domain}
               onChange={(e) => handleDomainChange(e.target.value)}
@@ -297,7 +337,9 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
 
           {/* Year Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-muted-foreground">Academic Year</label>
+            <label className="text-[11px] font-medium text-muted-foreground">
+              Academic Year
+            </label>
             <select
               value={year}
               onChange={(e) => handleYearChange(e.target.value)}
@@ -313,7 +355,9 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
 
           {/* Status Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-muted-foreground">Enrollment Status</label>
+            <label className="text-[11px] font-medium text-muted-foreground">
+              Enrollment Status
+            </label>
             <select
               value={status}
               onChange={(e) => handleStatusChange(e.target.value)}
@@ -332,8 +376,12 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
       {/* Results Count & Active Filters Indicator */}
       <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
         <span>
-          Showing <strong className="font-mono text-foreground">{paginated.length}</strong> of{" "}
-          <strong className="font-mono text-foreground">{totalItems}</strong> matching volunteers
+          Showing{" "}
+          <strong className="font-mono text-foreground">
+            {paginated.length}
+          </strong>{" "}
+          of <strong className="font-mono text-foreground">{totalItems}</strong>{" "}
+          matching volunteers
         </span>
         {hasActiveFilters && (
           <span className="flex items-center gap-1.5 text-primary text-[11px]">
@@ -350,7 +398,12 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
           title="No Volunteers Found"
           description="No volunteer records match your search criteria. Try modifying your search keywords or clearing active filters."
           action={
-            <Button size="sm" variant="outline" onClick={resetFilters} className="text-xs">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={resetFilters}
+              className="text-xs"
+            >
               Clear All Filters
             </Button>
           }
@@ -359,72 +412,88 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block rounded-xl border border-border/70 bg-card overflow-hidden shadow-sm">
+          <div className="hidden overflow-hidden rounded-xl border border-border/70 bg-card shadow-[var(--elevation-1)] md:block">
             <Table>
-              <TableHeader className="bg-muted/40">
+              <TableHeader className="bg-surface-container-low/60">
                 <TableRow>
-                  <TableHead className="w-[240px]">
+                  <TableHead className="h-9 w-[240px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
                     <button
                       onClick={() => toggleSort("name")}
-                      className="flex items-center gap-1 hover:text-foreground text-xs font-semibold"
+                      className="flex items-center gap-1 rounded-sm text-[0.6875rem] font-semibold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease-out-quart)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     >
                       Volunteer
                       <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="w-[120px]">
+                  <TableHead className="h-9 w-[120px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
                     <button
                       onClick={() => toggleSort("rollNumber")}
-                      className="flex items-center gap-1 hover:text-foreground text-xs font-semibold"
+                      className="flex items-center gap-1 rounded-sm text-[0.6875rem] font-semibold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease-out-quart)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     >
                       Roll No.
                       <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="w-[130px]">Project</TableHead>
-                  <TableHead>Creative Domains</TableHead>
-                  <TableHead className="w-[90px] text-center">Year</TableHead>
-                  <TableHead className="w-[110px] text-right">
+                  <TableHead className="h-9 w-[130px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                    Project
+                  </TableHead>
+                  <TableHead className="h-9 text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                    Creative Domains
+                  </TableHead>
+                  <TableHead className="h-9 w-[90px] text-center text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                    Year
+                  </TableHead>
+                  <TableHead className="h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
                     <button
                       onClick={() => toggleSort("allocatedHours")}
-                      className="inline-flex items-center gap-1 hover:text-foreground text-xs font-semibold ml-auto"
+                      className="ml-auto inline-flex items-center gap-1 rounded-sm text-[0.6875rem] font-semibold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease-out-quart)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     >
                       Hours
                       <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="w-[110px] text-right">
+                  <TableHead className="h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
                     <button
                       onClick={() => toggleSort("attendanceRateEvents")}
-                      className="inline-flex items-center gap-1 hover:text-foreground text-xs font-semibold ml-auto"
+                      className="ml-auto inline-flex items-center gap-1 rounded-sm text-[0.6875rem] font-semibold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease-out-quart)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     >
                       Turnout
                       <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="w-[100px] text-center">Status</TableHead>
-                  <TableHead className="w-[70px] text-right">Action</TableHead>
+                  <TableHead className="h-9 w-[100px] text-center text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                    Status
+                  </TableHead>
+                  <TableHead className="h-9 w-[70px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                    Action
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginated.map((vol) => {
-                  const projColor = (vol.project && PROJECT_COLOR_MAP[vol.project]?.light) || "bg-primary/10 text-primary";
+                  const projColor =
+                    (vol.project && PROJECT_COLOR_MAP[vol.project]?.light) ||
+                    "bg-primary/10 text-primary";
 
                   return (
                     <TableRow
                       key={vol.rollNumber}
-                      className="hover:bg-muted/40 transition-colors group"
+                      className="row-focus group transition-colors duration-150 ease-[var(--ease-out-quart)] hover:bg-surface-container-low/50"
                     >
                       {/* Name & Role */}
                       <TableCell className="font-medium">
                         <Link
+                          prefetch={false}
                           href={`/volunteers/${vol.rollNumber}`}
                           className="hover:text-primary transition-colors block"
                         >
                           <div className="font-semibold text-foreground flex items-center gap-1.5">
                             {vol.name}
                             {vol.officeRole && (
-                              <Badge variant="outline" className="text-[10px] py-0 px-1 font-normal">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] py-0 px-1 font-normal"
+                              >
                                 {vol.officeRole}
                               </Badge>
                             )}
@@ -444,20 +513,25 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       <TableCell>
                         {vol.project ? (
                           <Link
+                            prefetch={false}
                             href={`/projects/${vol.project.toLowerCase()}`}
                             className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium transition-opacity hover:opacity-80 ${projColor}`}
                           >
                             {vol.project}
                           </Link>
                         ) : (
-                          <span className="text-xs text-muted-foreground italic">Unassigned</span>
+                          <span className="text-xs text-muted-foreground italic">
+                            Unassigned
+                          </span>
                         )}
                       </TableCell>
 
                       {/* Creative Domains */}
                       <TableCell>
                         {vol.domains.length === 0 ? (
-                          <span className="text-xs text-muted-foreground italic">General</span>
+                          <span className="text-xs text-muted-foreground italic">
+                            General
+                          </span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {vol.domains.map((dom) => (
@@ -491,7 +565,12 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       {/* Status & Red Flags */}
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-0.5">
-                          <StatusBadge status={vol.status} type="volunteer" showDot className="text-[10px] py-0 px-2" />
+                          <StatusBadge
+                            status={vol.status}
+                            type="volunteer"
+                            showDot
+                            className="text-[10px] py-0 px-2"
+                          />
                           {vol.redFlagsCount > 0 && (
                             <span className="inline-flex items-center gap-0.5 text-[10px] text-destructive font-mono">
                               <ShieldAlert className="h-2.5 w-2.5" />
@@ -504,11 +583,13 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       {/* Action */}
                       <TableCell className="text-right">
                         <Link
+                          prefetch={false}
                           href={`/volunteers/${vol.rollNumber}`}
                           className={buttonVariants({
                             variant: "ghost",
                             size: "sm",
-                            className: "h-7 w-7 p-0 opacity-70 group-hover:opacity-100",
+                            className:
+                              "h-7 w-7 p-0 opacity-70 group-hover:opacity-100",
                           })}
                           aria-label={`View ${vol.name}'s profile`}
                         >
@@ -522,72 +603,107 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
             </Table>
           </div>
 
-          {/* Mobile Card List View */}
-          <div className="md:hidden space-y-2.5">
-            {paginated.map((vol) => {
-              const projColor = (vol.project && PROJECT_COLOR_MAP[vol.project]?.light) || "bg-primary/10 text-primary";
+          {/* Mobile Card List View — mounted only when the viewport is small */}
+          {isMobile ? (
+            <div className="space-y-2.5 md:hidden">
+              {paginated.map((vol) => {
+                const projColor =
+                  (vol.project && PROJECT_COLOR_MAP[vol.project]?.light) ||
+                  "bg-primary/10 text-primary";
 
-              return (
-                <Link
-                  key={vol.rollNumber}
-                  href={`/volunteers/${vol.rollNumber}`}
-                  className="block p-3.5 rounded-xl border border-border/70 bg-card hover:border-primary/50 transition-colors shadow-sm space-y-2"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-sm text-foreground">{vol.name}</span>
-                        {vol.officeRole && (
-                          <Badge variant="outline" className="text-[10px] py-0 px-1">
-                            {vol.officeRole}
-                          </Badge>
-                        )}
+                return (
+                  <Link
+                    key={vol.rollNumber}
+                    prefetch={false}
+                    href={`/volunteers/${vol.rollNumber}`}
+                    className="block p-3.5 rounded-xl border border-border/70 bg-card hover:border-primary/50 transition-colors shadow-sm space-y-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-sm text-foreground">
+                            {vol.name}
+                          </span>
+                          {vol.officeRole && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] py-0 px-1"
+                            >
+                              {vol.officeRole}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                          Roll: {vol.rollNumber} • Year {vol.year}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                        Roll: {vol.rollNumber} • Year {vol.year}
-                      </div>
+                      <StatusBadge
+                        status={vol.status}
+                        type="volunteer"
+                        showDot
+                        className="text-[10px] py-0 px-2 shrink-0"
+                      />
                     </div>
-                    <StatusBadge status={vol.status} type="volunteer" showDot className="text-[10px] py-0 px-2 shrink-0" />
-                  </div>
 
-                  <div className="flex items-center gap-2 flex-wrap text-xs pt-1 border-t border-border/40">
-                    {vol.project ? (
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${projColor}`}>
-                        {vol.project}
+                    <div className="flex items-center gap-2 flex-wrap text-xs pt-1 border-t border-border/40">
+                      {vol.project ? (
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium ${projColor}`}
+                        >
+                          {vol.project}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground italic">
+                          Unassigned
+                        </span>
+                      )}
+                      {vol.domains.map((dom) => (
+                        <Badge
+                          key={dom}
+                          variant="secondary"
+                          className="text-[10px] px-1.5 py-0"
+                        >
+                          {dom.replace("_", " ")}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1 text-muted-foreground font-mono">
+                      <span>
+                        Hours:{" "}
+                        <strong className="text-foreground">
+                          {vol.allocatedHours} hrs
+                        </strong>
                       </span>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground italic">Unassigned</span>
-                    )}
-                    {vol.domains.map((dom) => (
-                      <Badge key={dom} variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {dom.replace("_", " ")}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs pt-1 text-muted-foreground font-mono">
-                    <span>
-                      Hours: <strong className="text-foreground">{vol.allocatedHours} hrs</strong>
-                    </span>
-                    <span>
-                      Turnout: <strong className="text-foreground">{vol.attendanceRateEvents ?? 0}%</strong>
-                    </span>
-                    <span className="flex items-center gap-0.5 text-primary text-[11px] font-sans font-medium">
-                      Details
-                      <ArrowRight className="h-3 w-3" />
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+                      <span>
+                        Turnout:{" "}
+                        <strong className="text-foreground">
+                          {vol.attendanceRateEvents ?? 0}%
+                        </strong>
+                      </span>
+                      <span className="flex items-center gap-0.5 text-primary text-[11px] font-sans font-medium">
+                        Details
+                        <ArrowRight className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-2 px-1">
               <span className="text-xs text-muted-foreground">
-                Page <strong className="text-foreground font-mono">{pageIndex}</strong> of{" "}
-                <strong className="text-foreground font-mono">{totalPages}</strong>
+                Page{" "}
+                <strong className="text-foreground font-mono">
+                  {pageIndex}
+                </strong>{" "}
+                of{" "}
+                <strong className="text-foreground font-mono">
+                  {totalPages}
+                </strong>
               </span>
 
               <div className="flex items-center gap-2">
@@ -597,7 +713,14 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                   onClick={() => {
                     const newPage = Math.max(1, pageIndex - 1);
                     setCurrentPage(newPage);
-                    updateUrlParams(search, project, domain, status, year, newPage);
+                    updateUrlParams(
+                      search,
+                      project,
+                      domain,
+                      status,
+                      year,
+                      newPage,
+                    );
                   }}
                   disabled={pageIndex <= 1}
                   className="h-8 gap-1 text-xs"
@@ -611,7 +734,14 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                   onClick={() => {
                     const newPage = Math.min(totalPages, pageIndex + 1);
                     setCurrentPage(newPage);
-                    updateUrlParams(search, project, domain, status, year, newPage);
+                    updateUrlParams(
+                      search,
+                      project,
+                      domain,
+                      status,
+                      year,
+                      newPage,
+                    );
                   }}
                   disabled={pageIndex >= totalPages}
                   className="h-8 gap-1 text-xs"

@@ -145,9 +145,10 @@ Compatibility aliases are defined so legacy call sites never render unstyled:
 | `--ease-out-expo` | `cubic-bezier(0.16, 1, 0.3, 1)` | Entrances |
 | `--ease-in-out-soft` | `cubic-bezier(0.65, 0, 0.35, 1)` | Reversible transitions |
 
-Utilities: `ease-brand`, `lift` (translateY −1px + shadow), `press`
-(scale 0.99), `animate-rise`, `animate-fade`, `stagger-1/2/3`,
-`skeleton-sheen`.
+Utilities: `ease-brand`, `lift` (translateY −2px + shadow, hover-capable
+pointers only), `press` (scale 0.99), `animate-rise`, `animate-fade`,
+`page-flow` (route children settle in sequence, 55ms steps), `stagger-1/2/3`,
+`skeleton-sheen`. Overlays enter in 150–200ms, entrances never exceed 380ms.
 
 `motion/react` is used only where CSS cannot express the behaviour:
 `layoutId` for the mobile dock active pill (spring), and `AnimatePresence`
@@ -213,7 +214,14 @@ Composition rules:
   so navigation paints structure immediately.
 - Client router cache: `staleTimes.dynamic = 30s` (deliberate: every office
   route is access-gated) and `staleTimes.static = 300s`.
-- The dashboard's synthetic, request-independent snapshot is server-cached with
-  `use cache` + `cacheLife("hours")` (`src/lib/mock-data/cached.ts`).
-  Authorization stays outside the cache.
+- Every office route's synthetic payload is server-cached with
+  `use cache` + `cacheLife("hours")` and a `cacheTag` in
+  `src/lib/mock-data/cached.ts` (dashboard, events, event detail by id,
+  meetings, meeting detail by id, hours, attendance, projects, volunteers,
+  team, audit, analytics). Authorization stays outside the cache and page
+  helpers receive only plain ids/years, never session data.
+- The command palette (`cmdk`) is a `ssr: false` dynamic chunk fetched on first
+  use, so it is absent from the office shell's initial payload.
+- The access gate is never cached: one indexed query per request, deduped
+  inside the request with `React.cache`.
 - Motion never delays input: entrances are ≤380ms and interruptible.

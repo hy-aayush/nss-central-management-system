@@ -1,12 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { UserPlus, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TeamStatsHeader } from "./team-stats-header";
 import { TeamRosterTable } from "./team-roster-table";
-import { RoleAssignmentDialog } from "./role-assignment-dialog";
 import type { RosterEntry } from "@/types/auth";
+
+// The role dialog is a form (react-hook-form + zod) that only exists after an
+// explicit action, so it is fetched on first open rather than with the roster.
+const RoleAssignmentDialog = dynamic(
+  () =>
+    import("./role-assignment-dialog").then(
+      (module) => module.RoleAssignmentDialog,
+    ),
+  { ssr: false },
+);
 
 interface TeamManagerProps {
   initialEntries: RosterEntry[];
@@ -39,9 +49,16 @@ export function TeamManager({ initialEntries }: TeamManagerProps) {
     });
   };
 
-  const handleUpdateStatus = (entryId: number, newStatus: "ACTIVE" | "SUSPENDED") => {
+  const handleUpdateStatus = (
+    entryId: number,
+    newStatus: "ACTIVE" | "SUSPENDED",
+  ) => {
     setEntries((prev) =>
-      prev.map((e) => (e.id === entryId ? { ...e, status: newStatus, accessStatus: newStatus } : e))
+      prev.map((e) =>
+        e.id === entryId
+          ? { ...e, status: newStatus, accessStatus: newStatus }
+          : e,
+      ),
     );
   };
 
@@ -58,7 +75,8 @@ export function TeamManager({ initialEntries }: TeamManagerProps) {
               Institutional Access Governance
             </h4>
             <p className="text-label-xs text-muted-foreground">
-              Roster-gated Google Workspace credentials matching active assignments (Rule 1).
+              Roster-gated Google Workspace credentials matching active
+              assignments (Rule 1).
             </p>
           </div>
         </div>
@@ -83,13 +101,15 @@ export function TeamManager({ initialEntries }: TeamManagerProps) {
         onUpdateStatus={handleUpdateStatus}
       />
 
-      {/* Role Assignment Dialog */}
-      <RoleAssignmentDialog
-        open={assignmentModalOpen}
-        onOpenChange={setAssignmentModalOpen}
-        entry={editingEntry}
-        onSuccess={handleAssignmentSuccess}
-      />
+      {/* Role Assignment Dialog — rendered only while open */}
+      {assignmentModalOpen ? (
+        <RoleAssignmentDialog
+          open
+          onOpenChange={setAssignmentModalOpen}
+          entry={editingEntry}
+          onSuccess={handleAssignmentSuccess}
+        />
+      ) : null}
     </div>
   );
 }

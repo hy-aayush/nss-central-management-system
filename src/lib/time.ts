@@ -7,6 +7,49 @@
 import { ACADEMIC_YEAR_START_MONTH, LOCALE, TZ } from "@/config/app";
 
 /**
+ * Formatters are built once per module instance, not per call.
+ *
+ * `new Intl.DateTimeFormat(...)` resolves locale data and builds an ICU
+ * formatter every time; a table that prints a date and a time on each of forty
+ * rows did that eighty times per render, on the server and again on the client.
+ * These instances are immutable and thread-safe, so reusing them is both
+ * cheaper and consistent. `formatToParts` results are unaffected.
+ */
+const DATE_FORMATTER = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: TZ,
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+const TIME_FORMATTER = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: TZ,
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+const CLOCK_FORMATTER = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: "UTC",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+const IST_PARTS_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: TZ,
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+});
+
+const MONTH_YEAR_FORMATTER = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: TZ,
+  month: "long",
+  year: "numeric",
+});
+
+/**
  * Returns current Date in UTC.
  */
 export function nowUTC(): Date {
@@ -27,12 +70,7 @@ export function formatDateIST(input: string | Date): string {
   try {
     const d = parseInstant(input);
     if (isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat(LOCALE, {
-      timeZone: TZ,
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }).format(d);
+    return DATE_FORMATTER.format(d);
   } catch {
     return "—";
   }
@@ -45,15 +83,26 @@ export function formatTimeIST(input: string | Date): string {
   try {
     const d = parseInstant(input);
     if (isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat(LOCALE, {
-      timeZone: TZ,
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    }).format(d).toLowerCase();
+    return TIME_FORMATTER.format(d).toLowerCase();
   } catch {
     return "—";
   }
+}
+
+/**
+ * Formats a stored "HH:mm" clock string (meetings keep time-of-day, not an
+ * instant) into the same style as formatTimeIST, e.g. "6:30 pm".
+ * Anything that is not a valid HH:mm returns an em dash.
+ */
+export function formatClockTimeIST(value: string): string {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) return "\u2014";
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return "\u2014";
+  // Format a synthetic UTC instant so the output never depends on the host zone.
+  const synthetic = new Date(Date.UTC(2026, 0, 1, hours, minutes));
+  return CLOCK_FORMATTER.format(synthetic).toLowerCase();
 }
 
 /**
@@ -73,15 +122,13 @@ export function formatDateTimeIST(input: string | Date): string {
  * Extracts the IST calendar date parts [year, month, day] for a given instant.
  * Month is 1-indexed (1 = Jan, 12 = Dec).
  */
-export function getISTDateParts(input: string | Date = new Date()): { year: number; month: number; day: number } {
+export function getISTDateParts(input: string | Date = new Date()): {
+  year: number;
+  month: number;
+  day: number;
+} {
   const d = parseInstant(input);
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: TZ,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  });
-  const parts = formatter.formatToParts(d);
+  const parts = IST_PARTS_FORMATTER.formatToParts(d);
   let year = 2026;
   let month = 1;
   let day = 1;
@@ -108,7 +155,10 @@ export function academicYearStart(input: string | Date = new Date()): number {
  * year = academicYearStart(now) - batchYear + 1
  * E.g. batchYear 2024 in Oct 2026: 2026 - 2024 + 1 = 3 (3rd year).
  */
-export function volunteerYear(batchYear: number, input: string | Date = new Date()): number {
+export function volunteerYear(
+  batchYear: number,
+  input: string | Date = new Date(),
+): number {
   return academicYearStart(input) - batchYear + 1;
 }
 
@@ -131,11 +181,7 @@ export function formatMonthYearIST(input: string | Date): string {
   try {
     const d = parseInstant(input);
     if (isNaN(d.getTime())) return "\u2014";
-    return new Intl.DateTimeFormat(LOCALE, {
-      timeZone: TZ,
-      month: "long",
-      year: "numeric",
-    }).format(d);
+    return MONTH_YEAR_FORMATTER.format(d);
   } catch {
     return "\u2014";
   }
@@ -160,7 +206,10 @@ export function startOfNextDayIST(input: string | Date): string {
  * Determines whether the current time is within or past the attendance opening lead window
  * (startsAt - 15 minutes).
  */
-export function isAttendanceWindowOpen(startsAt: string | Date, now: string | Date = new Date()): boolean {
+export function isAttendanceWindowOpen(
+  startsAt: string | Date,
+  now: string | Date = new Date(),
+): boolean {
   const startMs = parseInstant(startsAt).getTime();
   const nowMs = parseInstant(now).getTime();
   const openMs = startMs - 15 * 60 * 1000;

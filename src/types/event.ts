@@ -119,6 +119,7 @@ export interface Meeting {
   endedAt: string | null;
   mom: string | null;                    // max 100 words
   momBy: string | null;
+  momAt?: string | null;                 // when the minutes were last written
   momEditsLeft: number | null;
   editsLeft: number | null;
   isAttendanceLocked: boolean;           // DERIVED: stored flag OR now >= attendanceLockAt

@@ -6,11 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ProjectStatsHeader } from "@/features/projects/project-stats-header";
 import { ProjectGrid } from "@/features/projects/project-grid";
 import { DomainRosterSection } from "@/features/projects/domain-roster-section";
-import {
-  getProjects,
-  getCreativeDomains,
-  getDashboardSummary,
-} from "@/lib/mock-data";
+import { getProjectsSnapshot } from "@/lib/mock-data/cached";
 import { CalendarPlus } from "lucide-react";
 
 import { requireOfficeAccess } from "@/lib/auth/actor";
@@ -25,9 +21,7 @@ export const instant = false;
 
 export default async function ProjectsPage() {
   await requireOfficeAccess();
-  const projects = getProjects();
-  const domains = getCreativeDomains();
-  const summary = getDashboardSummary();
+  const { projects, domains, summary } = await getProjectsSnapshot();
 
   const totalVolunteers = summary.volunteers.active;
   const totalHours = summary.hours.totalAllocated;

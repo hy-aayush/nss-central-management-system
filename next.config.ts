@@ -17,9 +17,6 @@ const nextConfig: NextConfig = {
     optimizePackageImports: [
       "lucide-react",
       "recharts",
-      "date-fns",
-      "@tanstack/react-table",
-      "motion",
     ],
     /**
      * Client router cache. `dynamic` stays at 30s on purpose: every office

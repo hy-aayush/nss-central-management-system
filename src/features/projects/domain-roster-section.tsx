@@ -34,7 +34,8 @@ export function DomainRosterSection({ domains }: DomainRosterSectionProps) {
           className={buttonVariants({
             variant: "ghost",
             size: "sm",
-            className: "shrink-0 gap-1 self-start text-muted-foreground hover:text-foreground sm:self-auto",
+            className:
+              "shrink-0 gap-1 self-start text-muted-foreground hover:text-foreground sm:self-auto",
           })}
         >
           All specialists
@@ -83,6 +84,7 @@ export function DomainRosterSection({ domains }: DomainRosterSectionProps) {
                   </span>
                 </span>
                 <Link
+                  prefetch={false}
                   href={`/volunteers?domain=${dom.domain}`}
                   className="shrink-0 font-medium text-primary transition-colors hover:text-primary/80"
                 >

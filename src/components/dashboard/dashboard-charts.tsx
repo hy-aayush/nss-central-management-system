@@ -1,9 +1,11 @@
 "use client";
 
+import * as React from "react";
 import dynamic from "next/dynamic";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DeferredChart } from "./deferred-chart";
 
 /**
  * On-demand chart loading (SRS 16.6).
@@ -17,6 +19,10 @@ import { Skeleton } from "@/components/ui/skeleton";
  * NOT achieve this under Cache Components/PPR — the statically prerendered
  * shell still hydrates the chart module eagerly (424 KB gz initial). Recorded
  * in docs/DECISIONS.md.
+ *
+ * The wrapper below also gates the fetch on the card approaching the viewport
+ * (`DeferredChart`), so the heaviest chunk in the app downloads when it can
+ * actually be seen instead of during hydration.
  */
 
 function ChartCardSkeleton({ className }: { className?: string }) {
@@ -33,18 +39,44 @@ function ChartCardSkeleton({ className }: { className?: string }) {
   );
 }
 
-export const LazyGenderDonutChart = dynamic(
+const GenderDonutChart = dynamic(
   () =>
     import("@/components/dashboard/gender-donut-chart").then((m) => ({
       default: m.GenderDonutChart,
     })),
-  { ssr: false, loading: () => <ChartCardSkeleton className="h-full" /> }
+  { ssr: false, loading: () => <ChartCardSkeleton className="h-full" /> },
 );
 
-export const LazyMonthlyTrendsChart = dynamic(
+const MonthlyTrendsChart = dynamic(
   () =>
     import("@/components/dashboard/monthly-trends-chart").then((m) => ({
       default: m.MonthlyTrendsChart,
     })),
-  { ssr: false, loading: () => <ChartCardSkeleton className="h-full" /> }
+  { ssr: false, loading: () => <ChartCardSkeleton className="h-full" /> },
 );
+
+export function LazyGenderDonutChart(
+  props: React.ComponentProps<typeof GenderDonutChart>,
+) {
+  return (
+    <DeferredChart
+      className="h-full"
+      placeholder={<ChartCardSkeleton className="h-full" />}
+    >
+      <GenderDonutChart {...props} />
+    </DeferredChart>
+  );
+}
+
+export function LazyMonthlyTrendsChart(
+  props: React.ComponentProps<typeof MonthlyTrendsChart>,
+) {
+  return (
+    <DeferredChart
+      className="h-full"
+      placeholder={<ChartCardSkeleton className="h-full" />}
+    >
+      <MonthlyTrendsChart {...props} />
+    </DeferredChart>
+  );
+}

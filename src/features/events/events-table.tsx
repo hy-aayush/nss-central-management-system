@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useUrlSync } from "@/hooks/use-url-sync";
 import {
   Calendar,
   Clock,
@@ -47,19 +48,19 @@ interface EventsTableProps {
 }
 
 export function EventsTable({ initialEvents }: EventsTableProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const syncUrl = useUrlSync();
 
   // Search & Filter state synced with URL search params
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [typeFilter, setTypeFilter] = useState<EventType | "ALL">(
-    (searchParams.get("type") as EventType) || "ALL"
+    (searchParams.get("type") as EventType) || "ALL",
   );
   const [statusFilter, setStatusFilter] = useState<EventStatus | "ALL">(
-    (searchParams.get("status") as EventStatus) || "ALL"
+    (searchParams.get("status") as EventStatus) || "ALL",
   );
   const [projectFilter, setProjectFilter] = useState<ProjectName | "ALL">(
-    (searchParams.get("project") as ProjectName) || "ALL"
+    (searchParams.get("project") as ProjectName) || "ALL",
   );
   const [page, setPage] = useState(Number(searchParams.get("page") || 1));
   const [sortBy, setSortBy] = useState<"date" | "title" | "attendance">("date");
@@ -67,17 +68,21 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
 
   const pageSize = 10;
 
+  // Typing updates the input first; the filter/sort pass follows on a deferred
+  // copy so the field never waits for the table work.
+  const deferredSearch = useDeferredValue(search);
+
   // Filter & sort pipeline
   const filteredEvents = useMemo(() => {
     let result = [...initialEvents];
 
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
+    if (deferredSearch.trim()) {
+      const q = deferredSearch.toLowerCase().trim();
       result = result.filter(
         (e) =>
           e.title.toLowerCase().includes(q) ||
           e.description.toLowerCase().includes(q) ||
-          e.venue.toLowerCase().includes(q)
+          e.venue.toLowerCase().includes(q),
       );
     }
 
@@ -93,7 +98,7 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
       result = result.filter(
         (e) =>
           e.projectName === projectFilter ||
-          e.projects.some((p) => p.projectName === projectFilter)
+          e.projects.some((p) => p.projectName === projectFilter),
       );
     }
 
@@ -101,7 +106,10 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
     result.sort((a, b) => {
       const order = sortOrder === "asc" ? 1 : -1;
       if (sortBy === "date") {
-        return (new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()) * order;
+        return (
+          (new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()) *
+          order
+        );
       }
       if (sortBy === "title") {
         return a.title.localeCompare(b.title) * order;
@@ -115,7 +123,15 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
     });
 
     return result;
-  }, [initialEvents, search, typeFilter, statusFilter, projectFilter, sortBy, sortOrder]);
+  }, [
+    initialEvents,
+    deferredSearch,
+    typeFilter,
+    statusFilter,
+    projectFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   const totalPages = Math.ceil(filteredEvents.length / pageSize) || 1;
   const paginatedEvents = useMemo(() => {
@@ -129,7 +145,9 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
       if (!v || v === "ALL") current.delete(k);
       else current.set(k, v);
     });
-    router.replace(`?${current.toString()}`, { scroll: false });
+    // Shallow URL write: the table already has its rows, so this must not
+    // re-render the server route (which would cost a gate query).
+    syncUrl(`?${current.toString()}`);
   };
 
   const handleSearchChange = (val: string) => {
@@ -225,7 +243,10 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
             </SelectContent>
           </Select>
 
-          {(search || typeFilter !== "ALL" || statusFilter !== "ALL" || projectFilter !== "ALL") && (
+          {(search ||
+            typeFilter !== "ALL" ||
+            statusFilter !== "ALL" ||
+            projectFilter !== "ALL") && (
             <Button
               variant="ghost"
               size="sm"
@@ -235,7 +256,13 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                 setStatusFilter("ALL");
                 setProjectFilter("ALL");
                 setPage(1);
-                updateFilters({ search: null, type: null, status: null, project: null, page: "1" });
+                updateFilters({
+                  search: null,
+                  type: null,
+                  status: null,
+                  project: null,
+                  page: "1",
+                });
               }}
               className="text-muted-foreground hover:text-foreground text-label-sm h-9.5 px-2.5"
             >
@@ -249,7 +276,8 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
       <div className="flex items-center justify-between text-label-sm text-muted-foreground px-1">
         <span>
           Showing {filteredEvents.length === 0 ? 0 : (page - 1) * pageSize + 1}–
-          {Math.min(page * pageSize, filteredEvents.length)} of {filteredEvents.length} events
+          {Math.min(page * pageSize, filteredEvents.length)} of{" "}
+          {filteredEvents.length} events
         </span>
         <div className="flex items-center gap-1.5">
           <span className="hidden sm:inline">Sort by:</span>
@@ -275,24 +303,39 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block rounded-xl border border-border bg-card overflow-hidden shadow-xs">
+      <div className="hidden overflow-hidden rounded-xl border border-border/70 bg-card shadow-[var(--elevation-1)] md:block">
         <Table>
-          <TableHeader className="bg-muted/40">
+          <TableHeader className="bg-surface-container-low/60">
             <TableRow>
-              <TableHead className="w-[38%]">Event &amp; Scope</TableHead>
-              <TableHead className="w-[20%]">Date &amp; Time (IST)</TableHead>
-              <TableHead className="w-[18%]">Venue</TableHead>
-              <TableHead className="w-[12%] text-center">Roster / Turnout</TableHead>
-              <TableHead className="w-[12%] text-right">Actions</TableHead>
+              <TableHead className="h-9 w-[38%] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                Event &amp; Scope
+              </TableHead>
+              <TableHead className="h-9 w-[20%] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                Date &amp; Time (IST)
+              </TableHead>
+              <TableHead className="h-9 w-[18%] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                Venue
+              </TableHead>
+              <TableHead className="h-9 w-[12%] text-center text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                Roster / Turnout
+              </TableHead>
+              <TableHead className="h-9 w-[12%] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginatedEvents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-40 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={5}
+                  className="h-40 text-center text-muted-foreground"
+                >
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Calendar className="size-8 text-muted-foreground/40" />
-                    <p className="font-medium text-foreground">No matching events found</p>
+                    <p className="font-medium text-foreground">
+                      No matching events found
+                    </p>
                     <p className="text-body-sm text-muted-foreground">
                       Try relaxing your search terms or clearing status filters.
                     </p>
@@ -303,21 +346,27 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
               paginatedEvents.map((event) => {
                 const isCentral = event.type === "CENTRAL";
                 const isCompleted = event.status === "COMPLETED";
-                const primaryWing = event.projectName ?? (event.projects[0]?.projectName || "All Wings");
+                const primaryWing =
+                  event.projectName ??
+                  (event.projects[0]?.projectName || "All Wings");
                 const turnout =
                   event.presentCount && event.registeredCount
                     ? `${event.presentCount}/${event.registeredCount}`
                     : event.expectedAttendees
-                    ? `~${event.expectedAttendees}`
-                    : "—";
+                      ? `~${event.expectedAttendees}`
+                      : "—";
 
                 return (
-                  <TableRow key={event.id} className="hover:bg-muted/30 transition-colors">
+                  <TableRow
+                    key={event.id}
+                    className="row-focus transition-colors duration-150 ease-[var(--ease-out-quart)] hover:bg-surface-container-low/50"
+                  >
                     {/* Event Title & Metadata */}
                     <TableCell className="align-top py-3.5">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <Link
+                            prefetch={false}
                             href={`/events/${event.id}`}
                             className="font-medium text-foreground hover:text-primary transition-colors text-body-sm line-clamp-1"
                           >
@@ -345,7 +394,9 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                             <span>• {event.category.name}</span>
                           )}
                           {event.hours && (
-                            <span className="text-primary font-medium">• {event.hours}h credit</span>
+                            <span className="text-primary font-medium">
+                              • {event.hours}h credit
+                            </span>
                           )}
                         </div>
                       </div>
@@ -361,7 +412,9 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                         <div className="flex items-center gap-1.5 text-label-xs text-muted-foreground">
                           <Clock className="size-3" />
                           <span>{formatTimeIST(event.startsAt)}</span>
-                          {event.endsAt && <span>– {formatTimeIST(event.endsAt)}</span>}
+                          {event.endsAt && (
+                            <span>– {formatTimeIST(event.endsAt)}</span>
+                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -370,14 +423,18 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                     <TableCell className="align-top py-3.5 text-body-sm text-muted-foreground">
                       <div className="flex items-start gap-1.5">
                         <MapPin className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                        <span className="line-clamp-2 text-label-sm">{event.venue}</span>
+                        <span className="line-clamp-2 text-label-sm">
+                          {event.venue}
+                        </span>
                       </div>
                     </TableCell>
 
                     {/* Roster / Turnout */}
                     <TableCell className="align-top py-3.5 text-center">
                       <div className="inline-flex flex-col items-center">
-                        <span className="text-body-sm font-semibold text-foreground">{turnout}</span>
+                        <span className="text-body-sm font-semibold text-foreground">
+                          {turnout}
+                        </span>
                         <span className="text-label-xs text-muted-foreground">
                           {isCompleted ? "Attended" : "Slots / Roster"}
                         </span>
@@ -388,16 +445,21 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                     <TableCell className="align-top py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <Link
+                          prefetch={false}
                           href={`/events/${event.id}`}
-                          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 px-2.5 text-label-xs")}
+                          className={cn(
+                            buttonVariants({ variant: "outline", size: "sm" }),
+                            "h-8 px-2.5 text-label-xs",
+                          )}
                         >
                           View
                         </Link>
                         <Link
+                          prefetch={false}
                           href={`/attendance?eventId=${event.id}`}
                           className={cn(
                             buttonVariants({ variant: "ghost", size: "sm" }),
-                            "h-8 px-2 text-label-xs text-primary hover:bg-primary/10"
+                            "h-8 px-2 text-label-xs text-primary hover:bg-primary/10",
                           )}
                         >
                           <UserCheck className="size-3.5 mr-1" />
@@ -419,12 +481,16 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
           <Card className="p-8 text-center bg-card border-dashed">
             <Calendar className="size-8 text-muted-foreground/40 mx-auto mb-2" />
             <p className="font-medium text-foreground">No matching events</p>
-            <p className="text-body-sm text-muted-foreground">Try clearing filters or search terms.</p>
+            <p className="text-body-sm text-muted-foreground">
+              Try clearing filters or search terms.
+            </p>
           </Card>
         ) : (
           paginatedEvents.map((event) => {
             const isCentral = event.type === "CENTRAL";
-            const primaryWing = event.projectName ?? (event.projects[0]?.projectName || "All Wings");
+            const primaryWing =
+              event.projectName ??
+              (event.projects[0]?.projectName || "All Wings");
 
             return (
               <Card key={event.id} className="space-y-3 p-4">
@@ -441,6 +507,7 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                       {isCentral ? "Central Drive" : primaryWing}
                     </Badge>
                     <Link
+                      prefetch={false}
                       href={`/events/${event.id}`}
                       className="font-medium text-foreground hover:text-primary transition-colors text-body-sm block line-clamp-2"
                     >
@@ -452,14 +519,21 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
 
                 <div className="grid grid-cols-2 gap-2 rounded-lg border border-border/50 bg-surface-container-low/50 p-2.5 text-label-xs text-muted-foreground">
                   <div>
-                    <span className="text-muted-foreground/70 block">Date &amp; Time</span>
+                    <span className="text-muted-foreground/70 block">
+                      Date &amp; Time
+                    </span>
                     <span className="text-foreground font-medium">
-                      {formatDateIST(event.startsAt)}, {formatTimeIST(event.startsAt)}
+                      {formatDateIST(event.startsAt)},{" "}
+                      {formatTimeIST(event.startsAt)}
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground/70 block">Venue</span>
-                    <span className="text-foreground font-medium truncate block">{event.venue}</span>
+                    <span className="text-muted-foreground/70 block">
+                      Venue
+                    </span>
+                    <span className="text-foreground font-medium truncate block">
+                      {event.venue}
+                    </span>
                   </div>
                 </div>
 
@@ -469,14 +543,22 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                   </span>
                   <div className="flex items-center gap-2">
                     <Link
+                      prefetch={false}
                       href={`/events/${event.id}`}
-                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-7.5 px-2.5 text-label-xs")}
+                      className={cn(
+                        buttonVariants({ variant: "outline", size: "sm" }),
+                        "h-7.5 px-2.5 text-label-xs",
+                      )}
                     >
                       Details
                     </Link>
                     <Link
+                      prefetch={false}
                       href={`/attendance?eventId=${event.id}`}
-                      className={cn(buttonVariants({ size: "sm" }), "h-7.5 px-2.5 text-label-xs")}
+                      className={cn(
+                        buttonVariants({ size: "sm" }),
+                        "h-7.5 px-2.5 text-label-xs",
+                      )}
                     >
                       <UserCheck className="size-3 mr-1" />
                       Roll Call

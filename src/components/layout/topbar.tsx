@@ -34,7 +34,10 @@ export function Topbar({ actor }: { actor: TopbarActor }) {
       className={[
         "sticky top-0 z-30 flex h-14 w-full items-center justify-between gap-3 border-b border-border/60 px-3 md:h-16 md:px-6",
         // Glass header: translucent, saturated, with a solid fallback.
-        "bg-background/70 backdrop-blur-2xl backdrop-saturate-150",
+        // The blur radius is deliberately modest — this strip is sticky, so its
+        // backdrop is recomputed on every scroll frame and a 40px radius is a
+        // measurable amount of GPU work for a difference nobody can see.
+        "bg-background/80 backdrop-blur-md backdrop-saturate-150 scroll-seam",
         "supports-[not(backdrop-filter:blur(1px))]:bg-background",
       ].join(" ")}
     >

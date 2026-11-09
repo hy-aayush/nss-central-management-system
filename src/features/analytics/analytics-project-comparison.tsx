@@ -20,9 +20,13 @@ interface AnalyticsProjectComparisonProps {
   projects: ProjectAnalyticsSummary[];
 }
 
-export function AnalyticsProjectComparison({ projects }: AnalyticsProjectComparisonProps) {
+export function AnalyticsProjectComparison({
+  projects,
+}: AnalyticsProjectComparisonProps) {
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "volunteers" | "hours" | "turnout">("turnout");
+  const [sortBy, setSortBy] = useState<
+    "name" | "volunteers" | "hours" | "turnout"
+  >("turnout");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const filteredProjects = useMemo(() => {
@@ -58,7 +62,9 @@ export function AnalyticsProjectComparison({ projects }: AnalyticsProjectCompari
           break;
       }
 
-      return sortOrder === "asc" ? (valA as number) - (valB as number) : (valB as number) - (valA as number);
+      return sortOrder === "asc"
+        ? (valA as number) - (valB as number)
+        : (valB as number) - (valA as number);
     });
 
     return list;
@@ -154,7 +160,10 @@ export function AnalyticsProjectComparison({ projects }: AnalyticsProjectCompari
             {filteredProjects.map((proj) => {
               const turnout = proj.attendanceRate ?? 0;
               return (
-                <TableRow key={proj.projectName} className="hover:bg-muted/40 transition-colors">
+                <TableRow
+                  key={proj.projectName}
+                  className="hover:bg-muted/40 transition-colors"
+                >
                   <TableCell>
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
@@ -178,14 +187,20 @@ export function AnalyticsProjectComparison({ projects }: AnalyticsProjectCompari
                     <span className="font-mono font-medium text-foreground text-body-sm">
                       {proj.activeVolunteersCount}
                     </span>
-                    <span className="text-label-xs text-muted-foreground"> / {proj.volunteersCount}</span>
+                    <span className="text-label-xs text-muted-foreground">
+                      {" "}
+                      / {proj.volunteersCount}
+                    </span>
                   </TableCell>
 
                   <TableCell className="text-right">
                     <span className="font-mono text-body-sm text-foreground">
                       {proj.eventsCount}
                     </span>
-                    <span className="text-label-xs text-muted-foreground"> / {proj.meetingsCount}</span>
+                    <span className="text-label-xs text-muted-foreground">
+                      {" "}
+                      / {proj.meetingsCount}
+                    </span>
                   </TableCell>
 
                   <TableCell className="text-right font-mono font-medium text-foreground text-body-sm">
@@ -200,8 +215,8 @@ export function AnalyticsProjectComparison({ projects }: AnalyticsProjectCompari
                             turnout >= 90
                               ? "text-success"
                               : turnout >= 80
-                              ? "text-primary"
-                              : "text-warning"
+                                ? "text-primary"
+                                : "text-warning"
                           }
                         >
                           {turnout.toFixed(1)}%
@@ -214,8 +229,8 @@ export function AnalyticsProjectComparison({ projects }: AnalyticsProjectCompari
                             turnout >= 90
                               ? "bg-success"
                               : turnout >= 80
-                              ? "bg-primary"
-                              : "bg-warning"
+                                ? "bg-primary"
+                                : "bg-warning"
                           }`}
                           style={{ width: `${Math.min(100, turnout)}%` }}
                         />
@@ -231,6 +246,7 @@ export function AnalyticsProjectComparison({ projects }: AnalyticsProjectCompari
 
                   <TableCell className="text-right">
                     <Link
+                      prefetch={false}
                       href={`/projects/${proj.slug}`}
                       className="inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                       title="Inspect project profile"

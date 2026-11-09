@@ -1,34 +1,39 @@
-import { CalendarCheck } from "lucide-react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
 import { PageEyebrow, PageHeader } from "@/components/layout/page-header";
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
-
+import { buttonVariants } from "@/components/ui/button";
+import { getMeetingsSnapshot } from "@/lib/mock-data/cached";
+import { MeetingsStatsHeader } from "@/features/meetings/meetings-stats-header";
+import { MeetingsTable } from "@/features/meetings/meetings-table";
 import { requireOfficeAccess } from "@/lib/auth/actor";
 
 export const instant = false;
 
 export default async function MeetingsPage() {
   await requireOfficeAccess();
+  const { meetings, listItems } = await getMeetingsSnapshot();
+
   return (
     <div className="space-y-6">
       <PageHeader
         badge={<PageEyebrow label="Office operations" meta="Governance" />}
         title="Meetings and minutes"
-        description="Project, central, and builders meetings with roll-call attendance and verified minutes of meeting."
+        description="Project, central and builders meetings with a present-only roll call, a midnight IST lock, and a 100-word minutes record."
+        actions={
+          <Link
+            href="/meetings/new"
+            className={buttonVariants({ size: "sm", className: "gap-1.5" })}
+          >
+            <Plus className="size-3.5" />
+            Schedule meeting
+          </Link>
+        }
       />
 
-      <ModulePlaceholder
-        icon={CalendarCheck}
-        title="Tri-partite meetings lifecycle"
-        description="Project meetings, central meetings, and builders meetings, each with a present-only attendance register and a signed minutes of meeting record."
-        capabilities={[
-          "Schedule project, central, and builders meetings",
-          "Present-only roll call with the same lock rules as events",
-          "Minutes of meeting authoring and sign-off",
-          "Turnout comparison across meeting types",
-        ]}
-        note="Scheduling and attendance controls are not implemented in this frontend-only prototype. No button on this screen is active."
-      />
+      <MeetingsStatsHeader meetings={meetings} />
+
+      <MeetingsTable initialMeetings={listItems} />
     </div>
   );
 }

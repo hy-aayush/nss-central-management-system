@@ -1,10 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-import {
-  DEV_SESSION_COOKIE,
-  isDevLoginEnabled,
-} from "@/lib/auth/dev-login";
+import { DEV_SESSION_COOKIE, isDevLoginEnabled } from "@/lib/auth/dev-login";
 import { readSupabaseConfig } from "@/lib/supabase/config";
 
 /**
@@ -41,6 +38,76 @@ function hasSessionCookie(request: NextRequest): boolean {
     .getAll()
     .some((cookie) => AUTH_COOKIE_PATTERN.test(cookie.name));
 }
+
+/**
+ * Reads the access token's expiry from the stored Supabase session.
+ *
+ * `@supabase/ssr` stores the session as a base64url JSON array (`[0]` is the
+ * access token) under the auth cookie, optionally chunked across `.0`, `.1`…
+ * entries. Only the JWT payload is decoded — nothing is trusted or verified
+ * here; this is purely a "do we need to talk to the auth server yet?" check.
+ *
+ * Returns `null` when the value cannot be read, which callers treat as "refresh
+ * now" (the safe default).
+ */
+function readAccessTokenExpiry(request: NextRequest): number | null {
+  const chunks = request.cookies
+    .getAll()
+    .filter((cookie) => AUTH_COOKIE_PATTERN.test(cookie.name))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (chunks.length === 0) {
+    return null;
+  }
+
+  const raw = chunks.map((cookie) => cookie.value).join("");
+
+  try {
+    const decoded = raw.startsWith("base64-")
+      ? decodeBase64Url(raw.slice("base64-".length))
+      : decodeURIComponent(raw);
+    const session: unknown = JSON.parse(decoded);
+    const accessToken = Array.isArray(session) ? session[0] : null;
+
+    if (typeof accessToken !== "string") {
+      return null;
+    }
+
+    const payload = accessToken.split(".")[1];
+
+    if (!payload) {
+      return null;
+    }
+
+    const claims = JSON.parse(decodeBase64Url(payload)) as { exp?: unknown };
+
+    return typeof claims.exp === "number" ? claims.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+/** base64url → UTF-8 text, without depending on Node's `Buffer`. */
+function decodeBase64Url(value: string): string {
+  const normalised = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalised.padEnd(
+    normalised.length + ((4 - (normalised.length % 4)) % 4),
+    "=",
+  );
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+
+  return new TextDecoder().decode(bytes);
+}
+
+/**
+ * How long before expiry the session is refreshed.
+ *
+ * Supabase's own client refreshes at roughly this margin. Refreshing earlier
+ * than needed costs an auth round trip on a request that did not require one;
+ * refreshing later risks serving a request with an expired token.
+ */
+const REFRESH_MARGIN_MS = 60_000;
 
 function loginRedirect(request: NextRequest): NextResponse {
   const url = request.nextUrl.clone();
@@ -79,6 +146,18 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   if (!config) {
     return loginRedirect(request);
+  }
+
+  /**
+   * Fast path: the access token is still valid for a while, so there is nothing
+   * to refresh and nothing to ask the auth server. Authorization stays where it
+   * belongs — the office layout/page gate still verifies the JWT and resolves
+   * the database assignment on every request.
+   */
+  const expiresAt = readAccessTokenExpiry(request);
+
+  if (expiresAt !== null && expiresAt - Date.now() > REFRESH_MARGIN_MS) {
+    return NextResponse.next();
   }
 
   const response = NextResponse.next({ request });

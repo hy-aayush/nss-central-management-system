@@ -67,6 +67,7 @@ export function ProjectGrid({ projects, summaries = [] }: ProjectGridProps) {
             return (
               <Link
                 key={proj.id}
+                prefetch={false}
                 href={`/projects/${proj.slug}`}
                 className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card/85 p-4 shadow-[var(--elevation-1)] transition-[transform,box-shadow,border-color] duration-300 ease-[var(--ease-out-quart)] hover:-translate-y-0.5 hover:border-border hover:shadow-[var(--elevation-2)]"
               >

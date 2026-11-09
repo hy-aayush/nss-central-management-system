@@ -1,5 +1,161 @@
 # Database Foundation Progress
 
+## Optimisation pass — items 11–22 of 34 (9 Nov 2026)
+
+**Scope:** data-layer granularity, shell payload, paint cost and design-system
+consistency. No route, auth, authorization, schema or dataset change.
+
+### What shipped (11–22)
+
+11. **Per-year hours cache.** `getHoursYearSnapshot(year)` is its own `use cache`
+    entry keyed by the academic year, and the four screens that show header
+    figures now share one `unit-summary` entry instead of building it inside
+    each of their own.
+12. **One table presentation mounted.** The volunteer directory no longer puts a
+    card list and a table in the DOM at once: the table is what the server
+    renders, and the card list is mounted only when the viewport is small.
+13. **Tighter entrance budget.** `page-flow` animates at most the first five
+    sections of a route; everything below is painted without compositing work.
+14. **Dead weight removed.** `shared/data-table.tsx` (unused) and the
+    `@tanstack/react-table`, `@tanstack/react-query` and `date-fns`
+    dependencies are gone, along with their `optimizePackageImports` entries.
+15. **Loading parity.** The office `loading.tsx` now mirrors the real page
+    rhythm (eyebrow, title, description, metric strip, toolbar, bordered rows),
+    so the skeleton-to-page swap moves nothing.
+16. **Proxy only refreshes when it must.** The access token's `exp` is read from
+    the stored session; while it is more than a minute from expiry the proxy
+    skips the auth round trip entirely. Authorization is unchanged — the layout
+    and page gate still verify and resolve access on every request.
+17. **Table chrome aligned.** Volunteers and events now use one header language:
+    11px uppercase micro-labels, `surface-container-low` header band, hairline
+    dividers, quiet row hover and an elevation-1 card instead of ad-hoc
+    borders and shadows.
+18. **Keyboard row context.** Rows carry `focus-within` highlighting, so tabbing
+    through a table reads with the same context as hovering it.
+19. **Palette warmed on idle.** The command palette chunk still stays out of the
+    first payload, but is imported once the browser is idle, so the first
+    Ctrl+K has no wait.
+20. **Notification panel deferred.** The topbar ships the bell and the unread
+    count; the panel body and its icons load on first open.
+21. **Scroll-driven topbar seam.** The sticky header gains a hairline shadow as
+    content passes under it, driven by a scroll timeline on the compositor —
+    no scroll listener, and browsers without scroll timelines keep the plain
+    border.
+22. **Mobile dock feedback.** Dock items press with a 0.94 scale and show a
+    proper focus ring, matching the rest of the interaction language.
+
+### Verified
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | exit 0 |
+| `npx eslint` on app/components/features/lib/hooks | exit 0 |
+| `npm run build` | exit 0, all office routes still dynamic |
+| Computed styles on the volunteer table | header `text-transform: uppercase`, 11px, 0.66px tracking, muted colour, `surface-container-low` band at 60% |
+| Topbar | `animation-name: topbar-seam` applied on the sticky header |
+| Volunteer directory | desktop renders 16 table rows and no card list; mobile renders the card list instead |
+
+### Backlog (23–34)
+
+23. Per-route skeletons for events, hours, volunteers and analytics.
+24. Prefetch a row's detail page on `pointerenter` instead of on viewport entry.
+25. `aria-live` result counts for filtered tables.
+26. Virtualise audit and rollup rows past about fifty.
+27. Move sort field and page size into the URL so a table view is fully shareable.
+28. Lazy-load the `sonner` toast surface (eight panels import it).
+29. One shared table-state hook for all four client tables (filter, sort, page, URL).
+30. Collapse duplicate icon imports and confirm `@base-ui/react` deep imports stay split.
+31. Add `opengraph-image`, a full favicon set and matching theme-colour meta.
+32. A keyboard shortcut sheet (`?`) documenting Ctrl+K, Ctrl+B and table keys.
+33. Section error boundaries with retry and a route back to the dashboard.
+34. Contrast audit of the dark-mode glass levels against WCAG AA.
+
+## Optimisation pass — items 1–10 of 22 (9 Nov 2026)
+
+**Scope:** runtime cost, client payload and interaction smoothness. No route,
+auth, authorization, schema or dataset change.
+
+**Measured baseline** (client JS emitted by `npm run build`, gzipped): 790 KB
+across 63 chunks, of which `motion` alone was a 61 KB chunk loaded by the office
+shell on every page. After items 1–10: **753 KB**, `motion` no longer appears in
+the client graph at all, and recharts (93 KB) is fetched only when a chart
+approaches the viewport.
+
+### The 22-item list
+
+1. ✅ Remove `motion` from the shell — the mobile dock's `layoutId` pill became a CSS fade, dropping the library from every office page.
+2. ✅ Code-split on-demand UI — the three secondary hours tabs, the audit inspector and the role dialog now load as separate chunks on first use.
+3. ✅ Viewport-gated charts — `DeferredChart` mounts recharts only when the card is within 320px of the viewport.
+4. ✅ Font preload trim — only the text face is preloaded; JetBrains Mono is fetched on first use.
+5. ✅ Cheaper glass and deferred paint — sticky/floating surfaces use a smaller blur radius, and `defer-render` (`content-visibility: auto`) skips the first paint of below-the-fold dashboard sections.
+6. ✅ `useDeferredValue` in the volunteers, events and audit tables, so typing never waits for the filter pass.
+7. ✅ Prefetch discipline — 34 data-driven row/detail links are `prefetch={false}`, and six secondary sidebar destinations wait for a real click; each avoided prefetch was a serverless invocation plus a gate query.
+8. ✅ URL sync without a server render — filters write through `history.replaceState` (debounced 250ms) instead of `router.replace`, so typing costs zero requests.
+9. ✅ Database client — `fetch_types: false` removes the per-connection type-introspection round trip; `max_lifetime` recycles pooled connections before Supavisor does.
+10. ✅ Hoisted `Intl.DateTimeFormat` instances — one formatter per format per module instead of one per call site render.
+11. Per-year cache key for the hours ledger (today it builds both years per entry).
+12. Collapse the duplicate mobile/desktop volunteer table into one responsive rendering (both copies are mounted today).
+13. `optimizePackageImports` for `@base-ui/react`, `cmdk` and `sonner`.
+14. Virtualise the audit and hours-approval lists beyond ~50 rows.
+15. Remove unused dependencies and dead files (`@tanstack/react-query`, `cn`, `shadcn`, `ui/calendar.tsx`).
+16. Server-render table rows and hydrate only the interactive cells (the tables are almost entirely static markup).
+17. Session refresh in `proxy.ts` only when the access token is near expiry.
+18. Route-level skeletons that mirror the real layout, so navigation never shifts content.
+19. Batch the gate lookup with the first repository read on routes that will query anyway.
+20. `next/image` (AVIF/WebP) for any raster art added later; the app ships no bitmaps today.
+21. Lazy-load `sonner` and the toast surface — it is imported by eight panels for a few success messages.
+22. Purge the unused `ui/calendar` + `react-day-picker` dependency pair once confirmed dead.
+
+### What the numbers say
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | exit 0 |
+| `npx eslint` on `src/app/(office)`, `src/components`, `src/features`, `src/lib`, `src/hooks` | exit 0 |
+| `npm run build` | exit 0 — 70 pages, office routes still `ƒ` (dynamic) |
+| Client JS (gzip, build output) | 790 KB → 753 KB; the 61 KB `motion` chunk is gone |
+| Server log on `/hours` | the leftover "unstable value `new Date()`" prerender warning is fixed by deriving the academic year inside the cached snapshot |
+| Browser checks | `/hours` opens on the approval tab and the two lazily loaded tabs render (34 rollup rows); the lazily loaded audit inspector opens with its entry; typing in the volunteer search fires **zero** network requests and updates the URL to `?search=ad`; a deep link to that URL restores the filter; both dashboard charts mount only after scrolling to them |
+
+## Motion, caching and payload pass (9 Nov 2026)
+
+**Scope:** presentation/motion polish plus server-side caching of the synthetic
+page payloads. No route, auth, authorization, schema or dataset change.
+
+### What changed
+
+| Area | Work |
+|---|---|
+| Page motion | New `page-flow` utility in `globals.css`: each route's direct children settle in sequence (55ms steps, ≤275ms, `both` fill) and `template.tsx` now uses it instead of one page-wide rise. Speed is unchanged; the page reads top-down instead of popping at once. |
+| Interaction motion | `Button` animates only the properties that change (`duration-150`, brand easing) and presses to `scale(0.985)` instead of jumping a pixel; `Tabs` triggers got eased colour/indicator transitions and panels fade on mount; `MetricStrip` cells shift surface on hover; `lift` only sets `will-change` while hovered and is disabled on non-hover devices (no sticky tap lift). |
+| Overlays | Dialog, popover, select and dropdown-menu entrance/exit went from 100ms to 150–200ms with the brand easing — perceptibly smoother, still well under the 380ms budget. |
+| Global feel | `html` scrolls smoothly for anchors (forced back to `auto` under `prefers-reduced-motion`) and reserves scrollbar gutter to avoid layout shift between short and long pages. |
+| Cached payloads | `src/lib/mock-data/cached.ts` now exposes one `use cache` + `cacheLife("hours")` snapshot per route, each with a `cacheTag` (`dashboard`, `events`, `meetings`, `hours`, `attendance`, `projects`, `roster`, `audit`, `analytics`): dashboard, events list, event detail (by id), meetings list, meeting detail (by id), hours ledger (by year list), attendance, projects, volunteers, team and audit logs. Authorization stays outside every cached scope; arguments are plain ids/years so keys stay small. |
+| Lighter shell | The command palette dialog (`cmdk` + dialog primitives) moved to `command-palette.tsx` and is now a `next/dynamic` (`ssr: false`) chunk fetched on first Ctrl+K / click, instead of riding in every office page's initial JS. |
+| Redundant streaming | The meetings list no longer wraps its client table in a Suspense boundary — the route-level `loading.tsx` already covers it, and the table has no URL dependency, so one fewer streamed segment is sent. |
+
+### Verification (this pass, actual results)
+
+| Command | Result |
+|---|---|
+| `npx tsc --noEmit` | exit 0 |
+| `npx eslint` on `src/app/(office)`, `src/components`, `src/features`, `src/lib` | exit 0 |
+| `npm run build` | exit 0 — 70 pages generated, all office routes still `ƒ` (dynamic), Cache Components + Partial Prefetching enabled |
+| Repeat request timing (dev, `curl` with the test-session cookie) | `/hours` 3.30s cold → 0.90s / 0.92s warm; `/meetings` 1.02s → 0.96s. Warm requests are the access gate plus cache reads only. |
+| Visual check | `/meetings` and `/hours` captured in the Local browser after signing in as the coordinator test account: header, metric strip, filters, tabs and table all render on the design system, and the lazy command palette opens with Ctrl+K. |
+
+### Known limitation observed while verifying
+
+`next dev` intermittently leaves an office route at its loading boundary: the
+server HTML contains the page (and `curl` returns it in ~0.9–3s), but the
+streamed React segments stay in their hidden containers and are never revealed
+in the browser. It reproduces on routes this pass did not touch (e.g. the
+projects page reverted to direct mock-data calls), so it predates these changes
+and needs a separate look — likely a Turbopack dev streaming issue with Cache
+Components, not an app-level bug. `npm run build` and the production route
+manifest are unaffected. A production-mode check is blocked because the
+temporary dev sign-in is deliberately disabled when `NODE_ENV=production`.
+
 ## UI elevation pass — Minimal Liquid Glass v2 (7 Nov 2026)
 
 **Scope:** presentation and interaction layer only. No route, form, auth,

@@ -5,7 +5,15 @@ import type { UserStatus } from "@/types/auth";
 import type { AttendanceStatus, EventStatus } from "@/types/event";
 import type { VolunteerStatus } from "@/types/volunteer";
 import type { AuditOutcome } from "@/types/audit";
-import { CheckCircle2, XCircle, AlertCircle, Clock, ShieldAlert } from "lucide-react";
+import {
+  AlertCircle,
+  CalendarClockIcon,
+  CheckCircle2,
+  Clock,
+  PlayIcon,
+  ShieldAlert,
+  XCircle,
+} from "lucide-react";
 
 export type AnyStatus =
   | VolunteerStatus
@@ -73,6 +81,20 @@ export function StatusBadge({
       colorClass = "bg-info/15 text-info border-info/30";
       dotClass = "bg-info";
       IconComponent = Clock;
+      break;
+
+    case "ONGOING":
+      label = "Ongoing";
+      colorClass = "bg-success/15 text-success border-success/30";
+      dotClass = "bg-success";
+      IconComponent = PlayIcon;
+      break;
+
+    case "RESCHEDULED":
+      label = "Rescheduled";
+      colorClass = "bg-warning/15 text-warning border-warning/30";
+      dotClass = "bg-warning";
+      IconComponent = CalendarClockIcon;
       break;
 
     case "PUBLISHED":
@@ -158,7 +180,7 @@ export function StatusBadge({
       className={cn(
         "inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full transition-colors",
         colorClass,
-        className
+        className,
       )}
       aria-label={props["aria-label"] || `${type} status: ${label}`}
       {...props}

@@ -36,19 +36,22 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
   const [status, setStatus] = useState(event.status);
 
   const isCentral = event.type === "CENTRAL";
-  const primaryWing = event.projectName ?? (event.projects[0]?.projectName || "All Wings");
+  const primaryWing =
+    event.projectName ?? (event.projects[0]?.projectName || "All Wings");
 
   const handleConfirmLock = () => {
     setIsLocked(true);
     toast.success("Attendance Locked Early (Simulated)", {
-      description: "Attendance sheet locked ahead of midnight. Subsequent edits will require an audit correction reason (SRS §11.7).",
+      description:
+        "Attendance sheet locked ahead of midnight. Subsequent edits will require an audit correction reason (SRS §11.7).",
     });
   };
 
   const handleConfirmCancel = () => {
     setStatus("CANCELLED");
     toast.error("Event Cancelled (Simulated)", {
-      description: "Event has been marked as cancelled with an immutable audit entry.",
+      description:
+        "Event has been marked as cancelled with an immutable audit entry.",
     });
   };
 
@@ -58,7 +61,10 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
       <div className="flex items-center justify-between">
         <Link
           href="/events"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-muted-foreground hover:text-foreground")}
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "h-8 px-2 text-muted-foreground hover:text-foreground",
+          )}
         >
           <ArrowLeft className="size-4 mr-1.5" />
           Back to Events Directory
@@ -80,8 +86,12 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
             Share
           </Button>
           <Link
+            prefetch={false}
             href={`/attendance?eventId=${event.id}`}
-            className={cn(buttonVariants({ size: "sm" }), "h-8 text-label-xs shadow-xs")}
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "h-8 text-label-xs shadow-xs",
+            )}
           >
             <UserCheck className="size-3.5 mr-1.5" />
             Mark Attendance Register
@@ -103,8 +113,14 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
                     : "bg-success-container/60 text-success border-success/30"
                 }`}
               >
-                {isCentral ? <Globe2 className="size-3 mr-1 inline" /> : <Building2 className="size-3 mr-1 inline" />}
-                {isCentral ? "Central Organization Event" : `${primaryWing} Wing Project Drive`}
+                {isCentral ? (
+                  <Globe2 className="size-3 mr-1 inline" />
+                ) : (
+                  <Building2 className="size-3 mr-1 inline" />
+                )}
+                {isCentral
+                  ? "Central Organization Event"
+                  : `${primaryWing} Wing Project Drive`}
               </Badge>
 
               <StatusBadge status={status} />
@@ -116,7 +132,10 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
               )}
 
               {isLocked && (
-                <Badge variant="outline" className="text-label-xs bg-warning-container/60 text-warning border-warning/30">
+                <Badge
+                  variant="outline"
+                  className="text-label-xs bg-warning-container/60 text-warning border-warning/30"
+                >
                   <Lock className="size-3 mr-1 inline" />
                   Attendance Locked
                 </Badge>
@@ -142,7 +161,8 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
                     Date &amp; Time (IST)
                   </span>
                   <span className="text-body-sm font-semibold text-foreground">
-                    {formatDateIST(event.startsAt)}, {formatTimeIST(event.startsAt)}
+                    {formatDateIST(event.startsAt)},{" "}
+                    {formatTimeIST(event.startsAt)}
                   </span>
                 </div>
               </div>
@@ -166,7 +186,9 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
                     Service Credit
                   </span>
                   <span className="text-body-sm font-semibold text-foreground">
-                    {event.hours ? `${event.hours} Hours Assigned` : "Pending Approval"}
+                    {event.hours
+                      ? `${event.hours} Hours Assigned`
+                      : "Pending Approval"}
                   </span>
                 </div>
               </div>

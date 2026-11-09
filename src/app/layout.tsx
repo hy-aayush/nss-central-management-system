@@ -6,6 +6,8 @@ import "./globals.css";
 const fontSans = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
+  /* Only the text face is on the critical path. It is preloaded once. */
+  preload: true,
   display: "swap",
   fallback: [
     "-apple-system",
@@ -21,6 +23,12 @@ const fontSans = Inter({
 const fontMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  /**
+   * Monospace is used only by code and tabular IDs, never for the first screen.
+   * Not preloading it removes one high-priority request from every page load;
+   * the face is still fetched the first time an element uses it.
+   */
+  preload: false,
   display: "swap",
   fallback: [
     "ui-monospace",

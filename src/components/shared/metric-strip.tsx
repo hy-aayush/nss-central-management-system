@@ -3,7 +3,8 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export type MetricTone = "default" | "primary" | "success" | "warning" | "danger";
+export type MetricTone =
+  "default" | "primary" | "success" | "warning" | "danger";
 
 export interface MetricItem {
   label: string;
@@ -59,10 +60,7 @@ export function MetricStrip({
       {/* A 1px gap over a border-coloured background draws clean dividers in
           both directions, at every breakpoint, without divide-* edge cases. */}
       <div
-        className={cn(
-          "grid grid-cols-1 gap-px bg-border/55",
-          COLUMNS[columns],
-        )}
+        className={cn("grid grid-cols-1 gap-px bg-border/55", COLUMNS[columns])}
       >
         {items.map((item) => {
           const Icon = item.icon;
@@ -70,7 +68,7 @@ export function MetricStrip({
           return (
             <div
               key={item.label}
-              className="flex flex-col gap-1.5 bg-card p-4"
+              className="flex flex-col gap-1.5 bg-card p-4 transition-colors duration-200 ease-[var(--ease-out-quart)] hover:bg-surface-container-low/40"
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="text-[0.625rem] font-medium tracking-[0.075em] text-muted-foreground uppercase">
@@ -81,7 +79,9 @@ export function MetricStrip({
                     aria-hidden="true"
                     className={cn(
                       "size-3.5 shrink-0",
-                      tone === "default" ? "text-muted-foreground/60" : TONE_VALUE[tone],
+                      tone === "default"
+                        ? "text-muted-foreground/60"
+                        : TONE_VALUE[tone],
                     )}
                   />
                 ) : null}

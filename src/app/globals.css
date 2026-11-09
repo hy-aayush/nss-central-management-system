@@ -578,10 +578,21 @@
     transform var(--duration-base) var(--ease-out-quart),
     box-shadow var(--duration-base) var(--ease-out-quart),
     border-color var(--duration-base) var(--ease-out-quart);
-  will-change: transform;
+  /* `will-change` only while hovered: keeping it on every card permanently
+     would hold a compositor layer for the whole page. */
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--elevation-2);
+    will-change: transform;
+  }
+}
+
+/* Touch devices keep the sticky :hover state after a tap, so the lift is
+   limited to devices that can actually hover. */
+@media (hover: none) {
+  .lift:hover {
+    transform: none;
+    box-shadow: inherit;
   }
 }
 
@@ -698,6 +709,88 @@
   animation-delay: 225ms;
 }
 
+/*
+ * Page flow.
+ *
+ * The first sections of a route settle in sequence after a navigation. The
+ * delays stay under 300ms total so the page is readable immediately and the
+ * animation is purely decorative: nothing waits on it.
+ *
+ * Only the first five children animate. Everything below them is off-screen on
+ * every practical viewport, so animating it would cost compositor work for
+ * something nobody sees — the cap keeps the entrance feeling deliberate instead
+ * of making a long page ripple.
+ */
+@utility page-flow {
+  > *:nth-child(-n + 5) {
+    animation: rise-in var(--duration-slow) var(--ease-out-expo) both;
+  }
+  > *:nth-child(2) {
+    animation-delay: 55ms;
+  }
+  > *:nth-child(3) {
+    animation-delay: 110ms;
+  }
+  > *:nth-child(4) {
+    animation-delay: 165ms;
+  }
+  > *:nth-child(5) {
+    animation-delay: 220ms;
+  }
+}
+
+/*
+ * Scroll-driven topbar elevation.
+ *
+ * A sticky header over scrolling content needs a seam once content passes
+ * under it. Doing that with a scroll listener would mean a per-frame JS read on
+ * the main thread; this uses the scroll timeline instead, so the browser does
+ * it on the compositor. Browsers without scroll timelines simply keep the
+ * static hairline — the enhancement is invisible when unsupported, never broken.
+ */
+@keyframes topbar-seam {
+  from {
+    box-shadow: 0 0 0 0 transparent;
+    border-bottom-color: var(--border);
+  }
+  to {
+    box-shadow: 0 8px 24px -18px oklch(0.25 0.03 265 / 22%);
+    border-bottom-color: var(--border-strong);
+  }
+}
+
+@utility scroll-seam {
+  animation: topbar-seam linear both;
+  animation-timeline: scroll(root block);
+  animation-range: 0 120px;
+}
+
+/*
+ * Row affordance.
+ *
+ * A table row whose primary action is a link should show the same hover context
+ * when the link receives keyboard focus, so tabbing through a table reads as
+ * clearly as pointing at it.
+ */
+@utility row-focus {
+  &:focus-within {
+    background-color: color-mix(in oklab, var(--surface-container-low) 60%, transparent);
+  }
+}
+
+/*
+ * Deferred paint.
+ *
+ * Long pages can opt a below-the-fold block out of the first layout/paint pass;
+ * the browser skips it until it approaches the viewport, then renders normally.
+ * `contain-intrinsic-size` reserves an approximate height so the scrollbar does
+ * not jump when the block is realised.
+ */
+@utility defer-render {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 24rem;
+}
+
 /* Skeleton shimmer */
 @utility skeleton-sheen {
   position: relative;
@@ -732,6 +825,10 @@
   html {
     @apply font-sans;
     -webkit-tap-highlight-color: transparent;
+    /* Anchor jumps (skip link, in-page section links) glide instead of snap.
+       The reduced-motion block below forces this back to `auto`. */
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground antialiased;

@@ -2,7 +2,7 @@ import React from "react";
 
 import { PageEyebrow, PageHeader } from "@/components/layout/page-header";
 import { LoadingState } from "@/components/shared/loading-state";
-import { getDashboardSummary } from "@/lib/mock-data";
+import { getAnalyticsSnapshot } from "@/lib/mock-data/cached";
 import { AnalyticsView } from "@/features/analytics/analytics-view";
 import { requireOfficeAccess } from "@/lib/auth/actor";
 
@@ -10,7 +10,7 @@ export const instant = false;
 
 export default async function AnalyticsPage() {
   await requireOfficeAccess();
-  const summary = getDashboardSummary();
+  const { summary } = await getAnalyticsSnapshot();
 
   return (
     <div className="space-y-6">

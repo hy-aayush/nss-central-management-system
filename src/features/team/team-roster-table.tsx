@@ -56,7 +56,9 @@ export function TeamRosterTable({
   const pageSize = 8;
 
   // Confirm dialog state for suspension
-  const [suspensionTarget, setSuspensionTarget] = useState<RosterEntry | null>(null);
+  const [suspensionTarget, setSuspensionTarget] = useState<RosterEntry | null>(
+    null,
+  );
 
   const filteredEntries = useMemo(() => {
     let list = [...entries];
@@ -67,7 +69,7 @@ export function TeamRosterTable({
         (e) =>
           e.volunteer.name.toLowerCase().includes(q) ||
           e.rollNumber.toLowerCase().includes(q) ||
-          (e.notes && e.notes.toLowerCase().includes(q))
+          (e.notes && e.notes.toLowerCase().includes(q)),
       );
     }
 
@@ -76,7 +78,9 @@ export function TeamRosterTable({
     }
 
     if (selectedStatus !== "ALL") {
-      list = list.filter((e) => (e.status || e.accessStatus) === selectedStatus);
+      list = list.filter(
+        (e) => (e.status || e.accessStatus) === selectedStatus,
+      );
     }
 
     return list;
@@ -84,34 +88,54 @@ export function TeamRosterTable({
 
   const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const paginatedEntries = filteredEntries.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedEntries = filteredEntries.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   const getRoleBadge = (entry: RosterEntry) => {
     switch (entry.role) {
       case "COORDINATOR":
         return (
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 font-semibold gap-1">
+          <Badge
+            variant="outline"
+            className="bg-primary/10 text-primary border-primary/30 font-semibold gap-1"
+          >
             <Shield className="size-3" />
             <span>Coordinator (T-5)</span>
           </Badge>
         );
       case "TECH_TEAM":
         return (
-          <Badge variant="outline" className="bg-success-container/60 text-success border-success/30 font-semibold gap-1">
+          <Badge
+            variant="outline"
+            className="bg-success-container/60 text-success border-success/30 font-semibold gap-1"
+          >
             <Wrench className="size-3" />
-            <span>Tech {entry.techKind || "Team"} (T-{entry.techKind === "MENTOR" ? 4 : 3})</span>
+            <span>
+              Tech {entry.techKind || "Team"} (T-
+              {entry.techKind === "MENTOR" ? 4 : 3})
+            </span>
           </Badge>
         );
       case "PROJECT_REPRESENTATIVE":
         return (
-          <Badge variant="outline" className="bg-info-container/60 text-info border-info/30 gap-1">
+          <Badge
+            variant="outline"
+            className="bg-info-container/60 text-info border-info/30 gap-1"
+          >
             <Building2 className="size-3" />
-            <span>PR: {entry.projectScope?.[0] || entry.volunteer.project} (T-2)</span>
+            <span>
+              PR: {entry.projectScope?.[0] || entry.volunteer.project} (T-2)
+            </span>
           </Badge>
         );
       case "BUILDER":
         return (
-          <Badge variant="outline" className="bg-warning-container/60 text-warning border-warning/30 gap-1">
+          <Badge
+            variant="outline"
+            className="bg-warning-container/60 text-warning border-warning/30 gap-1"
+          >
             <Sparkles className="size-3" />
             <span>Builder: {entry.builderKind || "POC"} (T-1)</span>
           </Badge>
@@ -152,10 +176,16 @@ export function TeamRosterTable({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Roles</SelectItem>
-                <SelectItem value="COORDINATOR">Coordinators (Tier 5)</SelectItem>
+                <SelectItem value="COORDINATOR">
+                  Coordinators (Tier 5)
+                </SelectItem>
                 <SelectItem value="TECH_TEAM">Tech Team (Tiers 4-3)</SelectItem>
-                <SelectItem value="PROJECT_REPRESENTATIVE">Project PRs (Tier 2)</SelectItem>
-                <SelectItem value="BUILDER">Builders &amp; POCs (Tier 1-2)</SelectItem>
+                <SelectItem value="PROJECT_REPRESENTATIVE">
+                  Project PRs (Tier 2)
+                </SelectItem>
+                <SelectItem value="BUILDER">
+                  Builders &amp; POCs (Tier 1-2)
+                </SelectItem>
               </SelectContent>
             </Select>
 
@@ -239,7 +269,10 @@ export function TeamRosterTable({
                 const isActive = status === "ACTIVE";
 
                 return (
-                  <TableRow key={entry.id} className="hover:bg-muted/40 transition-colors">
+                  <TableRow
+                    key={entry.id}
+                    className="hover:bg-muted/40 transition-colors"
+                  >
                     {/* Officer Identity */}
                     <TableCell>
                       <div className="space-y-0.5">
@@ -276,9 +309,13 @@ export function TeamRosterTable({
 
                     {/* Appointing Authority */}
                     <TableCell className="text-label-xs text-muted-foreground">
-                      <span className="text-foreground block">{entry.approvedBy || "Student Coordinator"}</span>
+                      <span className="text-foreground block">
+                        {entry.approvedBy || "Student Coordinator"}
+                      </span>
                       {entry.grantedBy && (
-                        <span className="text-[10px] font-mono">Roll: {entry.grantedBy}</span>
+                        <span className="text-[10px] font-mono">
+                          Roll: {entry.grantedBy}
+                        </span>
                       )}
                     </TableCell>
 
@@ -318,12 +355,17 @@ export function TeamRosterTable({
                               ? "text-muted-foreground hover:text-error"
                               : "text-muted-foreground hover:text-success"
                           }`}
-                          title={isActive ? "Suspend staff access" : "Reinstate access"}
+                          title={
+                            isActive
+                              ? "Suspend staff access"
+                              : "Reinstate access"
+                          }
                         >
                           <UserX className="size-3.5" />
                         </Button>
 
                         <Link
+                          prefetch={false}
                           href={`/volunteers/${entry.rollNumber}`}
                           className="inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
                           title="View volunteer file"
@@ -344,7 +386,8 @@ export function TeamRosterTable({
           <div className="flex items-center justify-between px-4 py-3 border-t border-border/60 bg-muted/20 text-label-xs text-muted-foreground">
             <span>
               Showing {(currentPage - 1) * pageSize + 1} to{" "}
-              {Math.min(currentPage * pageSize, filteredEntries.length)} of {filteredEntries.length} officers
+              {Math.min(currentPage * pageSize, filteredEntries.length)} of{" "}
+              {filteredEntries.length} officers
             </span>
 
             <div className="flex items-center gap-2">
@@ -388,17 +431,26 @@ export function TeamRosterTable({
             ? `Suspending ${suspensionTarget?.volunteer.name} (${suspensionTarget?.rollNumber}) will immediately revoke their ${suspensionTarget?.role} office permissions and block management access. This action will be recorded in the security audit ledger.`
             : `Reinstating ${suspensionTarget?.volunteer.name} (${suspensionTarget?.rollNumber}) will restore their operational permissions on the NSS portal.`
         }
-        confirmLabel={suspensionTarget?.status === "ACTIVE" ? "Suspend Access" : "Reinstate Access"}
-        variant={suspensionTarget?.status === "ACTIVE" ? "destructive" : "default"}
+        confirmLabel={
+          suspensionTarget?.status === "ACTIVE"
+            ? "Suspend Access"
+            : "Reinstate Access"
+        }
+        variant={
+          suspensionTarget?.status === "ACTIVE" ? "destructive" : "default"
+        }
         onConfirm={() => {
           if (suspensionTarget) {
-            const nextStatus = suspensionTarget.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+            const nextStatus =
+              suspensionTarget.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
             onUpdateStatus(suspensionTarget.id, nextStatus);
             toast.success(
-              nextStatus === "SUSPENDED" ? "Staff Access Suspended" : "Staff Access Reinstated",
+              nextStatus === "SUSPENDED"
+                ? "Staff Access Suspended"
+                : "Staff Access Reinstated",
               {
                 description: `Updated status for ${suspensionTarget.volunteer.name} (${suspensionTarget.rollNumber}) to ${nextStatus}. Simulated client state.`,
-              }
+              },
             );
             setSuspensionTarget(null);
           }

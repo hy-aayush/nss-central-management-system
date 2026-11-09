@@ -20,8 +20,12 @@ interface VolunteerProfileHeaderProps {
   volunteer: VolunteerDetail;
 }
 
-export function VolunteerProfileHeader({ volunteer }: VolunteerProfileHeaderProps) {
-  const projColor = (volunteer.project && PROJECT_COLOR_MAP[volunteer.project]?.light) || "bg-primary/10 text-primary";
+export function VolunteerProfileHeader({
+  volunteer,
+}: VolunteerProfileHeaderProps) {
+  const projColor =
+    (volunteer.project && PROJECT_COLOR_MAP[volunteer.project]?.light) ||
+    "bg-primary/10 text-primary";
   const initials = volunteer.name
     .split(" ")
     .map((n) => n[0])
@@ -38,7 +42,8 @@ export function VolunteerProfileHeader({ volunteer }: VolunteerProfileHeaderProp
           className={buttonVariants({
             variant: "ghost",
             size: "sm",
-            className: "gap-1 text-xs text-muted-foreground hover:text-foreground -ml-2",
+            className:
+              "gap-1 text-xs text-muted-foreground hover:text-foreground -ml-2",
           })}
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -46,7 +51,12 @@ export function VolunteerProfileHeader({ volunteer }: VolunteerProfileHeaderProp
         </Link>
 
         <div className="flex items-center gap-2">
-          <StatusBadge status={volunteer.status} type="volunteer" showDot className="text-xs px-2.5 py-0.5" />
+          <StatusBadge
+            status={volunteer.status}
+            type="volunteer"
+            showDot
+            className="text-xs px-2.5 py-0.5"
+          />
           {volunteer.redFlagsCount > 0 && (
             <Badge variant="destructive" className="gap-1 text-xs">
               <ShieldAlert className="h-3 w-3" />
@@ -72,7 +82,10 @@ export function VolunteerProfileHeader({ volunteer }: VolunteerProfileHeaderProp
                   {volunteer.name}
                 </h1>
                 {volunteer.officeRole && (
-                  <Badge variant="outline" className="text-xs font-semibold py-0.5 px-2 bg-primary/5 border-primary/30 text-primary">
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold py-0.5 px-2 bg-primary/5 border-primary/30 text-primary"
+                  >
                     <Sparkles className="h-3 w-3 mr-1" />
                     {volunteer.officeRole}
                   </Badge>
@@ -80,11 +93,26 @@ export function VolunteerProfileHeader({ volunteer }: VolunteerProfileHeaderProp
               </div>
 
               <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap font-mono">
-                <span>Roll: <strong className="text-foreground">{volunteer.rollNumber}</strong></span>
+                <span>
+                  Roll:{" "}
+                  <strong className="text-foreground">
+                    {volunteer.rollNumber}
+                  </strong>
+                </span>
                 <span>•</span>
-                <span>Batch: <strong className="text-foreground">{volunteer.batchYear}</strong></span>
+                <span>
+                  Batch:{" "}
+                  <strong className="text-foreground">
+                    {volunteer.batchYear}
+                  </strong>
+                </span>
                 <span>•</span>
-                <span>Academic Year: <strong className="text-foreground">{volunteer.year}th Year</strong></span>
+                <span>
+                  Academic Year:{" "}
+                  <strong className="text-foreground">
+                    {volunteer.year}th Year
+                  </strong>
+                </span>
               </div>
             </div>
           </div>
@@ -92,24 +120,35 @@ export function VolunteerProfileHeader({ volunteer }: VolunteerProfileHeaderProp
           {/* Project & Domain Quick Badges */}
           <div className="flex flex-col md:items-end gap-2 self-stretch md:self-auto pt-2 md:pt-0 border-t md:border-t-0 border-border/50">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Assigned Wing:</span>
+              <span className="text-xs text-muted-foreground">
+                Assigned Wing:
+              </span>
               {volunteer.project ? (
                 <Link
+                  prefetch={false}
                   href={`/projects/${volunteer.project.toLowerCase()}`}
                   className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold transition-opacity hover:opacity-80 ${projColor}`}
                 >
                   {volunteer.project}
                 </Link>
               ) : (
-                <span className="text-xs text-muted-foreground italic">Unassigned</span>
+                <span className="text-xs text-muted-foreground italic">
+                  Unassigned
+                </span>
               )}
             </div>
 
             {volunteer.domains.length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] text-muted-foreground">Domains:</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Domains:
+                </span>
                 {volunteer.domains.map((d) => (
-                  <Badge key={d} variant="secondary" className="text-[10px] font-mono">
+                  <Badge
+                    key={d}
+                    variant="secondary"
+                    className="text-[10px] font-mono"
+                  >
                     {d.replace("_", " ")}
                   </Badge>
                 ))}
@@ -128,7 +167,9 @@ export function VolunteerProfileHeader({ volunteer }: VolunteerProfileHeaderProp
           <div className="flex items-center gap-2 text-muted-foreground">
             <Phone className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>{volunteer.phone}</span>
-            <span className="text-[10px] text-muted-foreground/60 italic">(Staff Only)</span>
+            <span className="text-[10px] text-muted-foreground/60 italic">
+              (Staff Only)
+            </span>
           </div>
 
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -138,7 +179,10 @@ export function VolunteerProfileHeader({ volunteer }: VolunteerProfileHeaderProp
 
           <div className="flex items-center gap-2 text-muted-foreground">
             <Building className="h-3.5 w-3.5 text-primary shrink-0" />
-            <span>Hostel: <strong className="text-foreground">{volunteer.hostel}</strong></span>
+            <span>
+              Hostel:{" "}
+              <strong className="text-foreground">{volunteer.hostel}</strong>
+            </span>
             <span>•</span>
             <Droplet className="h-3 w-3 text-error shrink-0" />
             <span>{volunteer.bloodGroup}</span>

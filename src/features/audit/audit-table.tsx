@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useDeferredValue, useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import {
   Search,
   ShieldAlert,
@@ -31,8 +32,19 @@ import {
 } from "@/components/ui/table";
 import { formatDateIST, formatTimeIST } from "@/lib/time";
 import { PROJECT_NAMES } from "@/types/project";
-import { AuditDetailDialog } from "./audit-detail-dialog";
 import type { AuditLogEntry } from "@/types/audit";
+
+/**
+ * The inspector dialog is only useful after a row click, so its chunk is
+ * fetched on that click instead of with the audit table. `AuditDetailDialog`
+ * is imported lazily and only mounted while an entry is selected, which keeps
+ * the dialog primitives out of the route's first payload.
+ */
+const AuditDetailDialog = dynamic(
+  () =>
+    import("./audit-detail-dialog").then((module) => module.AuditDetailDialog),
+  { ssr: false },
+);
 
 interface AuditTableProps {
   initialLogs: AuditLogEntry[];
@@ -48,14 +60,20 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
   const [page, setPage] = useState(1);
   const pageSize = 8;
 
-  const [inspectingEntry, setInspectingEntry] = useState<AuditLogEntry | null>(null);
+  const [inspectingEntry, setInspectingEntry] = useState<AuditLogEntry | null>(
+    null,
+  );
+
+  // Input stays instant; the audit set can be large, so its filter pass runs on
+  // a deferred copy of the query.
+  const deferredSearch = useDeferredValue(search);
 
   // Filtered dataset
   const filteredLogs = useMemo(() => {
     let list = [...initialLogs];
 
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
+    if (deferredSearch.trim()) {
+      const q = deferredSearch.toLowerCase().trim();
       list = list.filter(
         (l) =>
           (l.actorName && l.actorName.toLowerCase().includes(q)) ||
@@ -64,7 +82,7 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
           (l.targetName && l.targetName.toLowerCase().includes(q)) ||
           (l.summary && l.summary.toLowerCase().includes(q)) ||
           (l.reason && l.reason.toLowerCase().includes(q)) ||
-          (l.entityLabel && l.entityLabel.toLowerCase().includes(q))
+          (l.entityLabel && l.entityLabel.toLowerCase().includes(q)),
       );
     }
 
@@ -89,7 +107,7 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
         (l) =>
           l.action === "EMERGENCY_ACCESS_GRANT" ||
           l.action === "EMERGENCY_ACCESS_REVOKE" ||
-          l.reason?.toLowerCase().includes("emergency")
+          l.reason?.toLowerCase().includes("emergency"),
       );
     }
 
@@ -97,11 +115,22 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
     list.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
     return list;
-  }, [initialLogs, search, selectedAction, selectedEntity, selectedProject, selectedOutcome, onlyEmergency]);
+  }, [
+    initialLogs,
+    deferredSearch,
+    selectedAction,
+    selectedEntity,
+    selectedProject,
+    selectedOutcome,
+    onlyEmergency,
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const paginatedLogs = filteredLogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   // Unique actions for dropdown
   const uniqueActions = useMemo(() => {
@@ -324,9 +353,14 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
                           {entry.actorName || "Automated System"}
                         </span>
                         <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          {entry.actorRoll && <span className="font-mono">{entry.actorRoll}</span>}
+                          {entry.actorRoll && (
+                            <span className="font-mono">{entry.actorRoll}</span>
+                          )}
                           {entry.effectiveRole && (
-                            <Badge variant="outline" className="px-1 py-0 h-4 text-[9px] uppercase">
+                            <Badge
+                              variant="outline"
+                              className="px-1 py-0 h-4 text-[9px] uppercase"
+                            >
                               {entry.effectiveRole}
                             </Badge>
                           )}
@@ -355,7 +389,8 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
                           )}
                         </div>
                         <span className="text-[11px] text-muted-foreground block truncate max-w-xs">
-                          {entry.entityType}: {entry.entityLabel || entry.entityId}
+                          {entry.entityType}:{" "}
+                          {entry.entityLabel || entry.entityId}
                         </span>
                       </div>
                     </TableCell>
@@ -363,7 +398,9 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
                     {/* Summary / Reason */}
                     <TableCell className="max-w-xs">
                       <div className="space-y-0.5">
-                        <p className="text-body-sm text-foreground line-clamp-1">{entry.summary}</p>
+                        <p className="text-body-sm text-foreground line-clamp-1">
+                          {entry.summary}
+                        </p>
                         {entry.reason && (
                           <p className="text-[11px] text-muted-foreground italic line-clamp-1">
                             &ldquo;{entry.reason}&rdquo;
@@ -413,7 +450,8 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
           <div className="flex items-center justify-between px-4 py-3 border-t border-border/60 bg-muted/20 text-label-xs text-muted-foreground">
             <span>
               Showing {(currentPage - 1) * pageSize + 1} to{" "}
-              {Math.min(currentPage * pageSize, filteredLogs.length)} of {filteredLogs.length} entries
+              {Math.min(currentPage * pageSize, filteredLogs.length)} of{" "}
+              {filteredLogs.length} entries
             </span>
 
             <div className="flex items-center gap-2">
@@ -443,12 +481,15 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
         )}
       </Card>
 
-      {/* Inspect Detail Modal */}
-      <AuditDetailDialog
-        open={inspectingEntry !== null}
-        onOpenChange={(open) => !open && setInspectingEntry(null)}
-        entry={inspectingEntry}
-      />
+      {/* Inspect Detail Modal — mounted on demand, so its chunk is fetched
+          only once someone actually inspects a log entry. */}
+      {inspectingEntry ? (
+        <AuditDetailDialog
+          open
+          onOpenChange={(open) => !open && setInspectingEntry(null)}
+          entry={inspectingEntry}
+        />
+      ) : null}
     </div>
   );
 }

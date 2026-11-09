@@ -42,6 +42,28 @@ export interface HoursAdjustment {
   createdAt: string;
 }
 
+/** One row of the hours-approval table: a COMPLETED, non-imported event. */
+export interface HoursApprovalRow {
+  eventId: number;
+  title: string;
+  startsAt: string;
+  categoryId: number | null;
+  categoryName: string | null;
+  categoryDefaultHours: number;
+  presentCount: number;
+  hours: number | null;
+  approved: boolean;
+  approvedBy: string | null;
+  approvedAt: string | null;
+}
+
+/** Last-recompute bookkeeping for one academic year. */
+export interface HoursRecomputeState {
+  academicYear: number;
+  lastRecomputedAt: string | null;
+  volunteers: number;
+}
+
 export interface VolunteerYearHours {
   rollNumber: string;
   academicYear: number;

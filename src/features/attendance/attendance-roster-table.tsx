@@ -35,7 +35,12 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { AttendanceCorrectionDialog } from "./attendance-correction-dialog";
 import { AttendanceStatsBar } from "./attendance-stats-bar";
 import { AttendanceHistoryPanel } from "./attendance-history-panel";
-import type { AttendanceCorrection, AttendanceStatus, EventParticipant, EventRecord } from "@/types/event";
+import type {
+  AttendanceCorrection,
+  AttendanceStatus,
+  EventParticipant,
+  EventRecord,
+} from "@/types/event";
 import type { AttendanceCorrectionFormValues } from "./attendance-schemas";
 
 interface AttendanceRosterTableProps {
@@ -50,17 +55,22 @@ export function AttendanceRosterTable({
   initialCorrections,
 }: AttendanceRosterTableProps) {
   // Local mutable state for interactive simulation
-  const [participants, setParticipants] = useState<EventParticipant[]>(initialParticipants);
-  const [corrections, setCorrections] = useState<AttendanceCorrection[]>(initialCorrections);
+  const [participants, setParticipants] =
+    useState<EventParticipant[]>(initialParticipants);
+  const [corrections, setCorrections] =
+    useState<AttendanceCorrection[]>(initialCorrections);
   const [isLocked, setIsLocked] = useState(event.isAttendanceLocked);
 
   // Search and filters
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "ALL">(
+    "ALL",
+  );
   const [sourceFilter, setSourceFilter] = useState<string>("ALL");
 
   // Dialog states
-  const [correctionParticipant, setCorrectionParticipant] = useState<EventParticipant | null>(null);
+  const [correctionParticipant, setCorrectionParticipant] =
+    useState<EventParticipant | null>(null);
   const [correctionDialogOpen, setCorrectionDialogOpen] = useState(false);
   const [bulkAbsentDialogOpen, setBulkAbsentDialogOpen] = useState(false);
   const [bulkPresentDialogOpen, setBulkPresentDialogOpen] = useState(false);
@@ -73,7 +83,7 @@ export function AttendanceRosterTable({
       list = list.filter(
         (p) =>
           p.volunteer.name.toLowerCase().includes(q) ||
-          p.volunteer.rollNumber.toLowerCase().includes(q)
+          p.volunteer.rollNumber.toLowerCase().includes(q),
       );
     }
     if (statusFilter !== "ALL") {
@@ -86,12 +96,19 @@ export function AttendanceRosterTable({
   }, [participants, search, statusFilter, sourceFilter]);
 
   // Derived counts for StatsBar
-  const presentCount = participants.filter((p) => p.status === "PRESENT").length;
+  const presentCount = participants.filter(
+    (p) => p.status === "PRESENT",
+  ).length;
   const absentCount = participants.filter((p) => p.status === "ABSENT").length;
-  const excusedCount = participants.filter((p) => p.status === "EXCUSED").length;
+  const excusedCount = participants.filter(
+    (p) => p.status === "EXCUSED",
+  ).length;
 
   // Status marking handler
-  const handleMarkStatus = (participant: EventParticipant, newStatus: AttendanceStatus) => {
+  const handleMarkStatus = (
+    participant: EventParticipant,
+    newStatus: AttendanceStatus,
+  ) => {
     if (participant.status === newStatus) return;
 
     if (isLocked) {
@@ -111,8 +128,8 @@ export function AttendanceRosterTable({
               markedBy: "2105404",
               markedAt: new Date().toISOString(),
             }
-          : p
-      )
+          : p,
+      ),
     );
 
     toast.success(`Marked ${participant.volunteer.name} as ${newStatus}`, {
@@ -132,8 +149,8 @@ export function AttendanceRosterTable({
               markedBy: "2105404",
               markedAt: new Date().toISOString(),
             }
-          : p
-      )
+          : p,
+      ),
     );
 
     // 2. Add correction record
@@ -164,7 +181,7 @@ export function AttendanceRosterTable({
         status: "PRESENT" as AttendanceStatus,
         markedBy: "2105404",
         markedAt: new Date().toISOString(),
-      }))
+      })),
     );
     toast.success("Bulk Operation Complete", {
       description: "Marked all roster participants as PRESENT (Simulated).",
@@ -181,8 +198,8 @@ export function AttendanceRosterTable({
               status: "ABSENT" as AttendanceStatus,
               markedBy: "2105404",
               markedAt: new Date().toISOString(),
-            }
-      )
+            },
+      ),
     );
     toast.info("Bulk Operation Complete", {
       description: "Marked all remaining volunteers as ABSENT (Simulated).",
@@ -221,7 +238,12 @@ export function AttendanceRosterTable({
 
           {/* Filters & Actions */}
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as AttendanceStatus | "ALL")}>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) =>
+                setStatusFilter(v as AttendanceStatus | "ALL")
+              }
+            >
               <SelectTrigger className="w-[130px] h-9.5 bg-background border-border text-label-sm">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
@@ -291,7 +313,9 @@ export function AttendanceRosterTable({
             <div className="flex items-center gap-2">
               <Lock className="size-4 shrink-0" />
               <span>
-                <strong>Attendance is Locked:</strong> Roll call marking has closed. Clicking any status opens an audited correction dialog requiring a valid reason (SRS §11.7).
+                <strong>Attendance is Locked:</strong> Roll call marking has
+                closed. Clicking any status opens an audited correction dialog
+                requiring a valid reason (SRS §11.7).
               </span>
             </div>
             <Button
@@ -300,7 +324,8 @@ export function AttendanceRosterTable({
               onClick={() => {
                 setIsLocked(false);
                 toast.info("Attendance Unlocked (Coordinator Override)", {
-                  description: "Attendance marking re-enabled for session staff.",
+                  description:
+                    "Attendance marking re-enabled for session staff.",
                 });
               }}
               className="h-7 text-[11px] shrink-0 border-warning/30 text-warning"
@@ -316,24 +341,34 @@ export function AttendanceRosterTable({
             <TableHeader className="bg-muted/40">
               <TableRow>
                 <TableHead className="w-[60px] text-center">#</TableHead>
-                <TableHead className="w-[32%]">Student Name &amp; Roll</TableHead>
+                <TableHead className="w-[32%]">
+                  Student Name &amp; Roll
+                </TableHead>
                 <TableHead className="w-[18%]">Wing Affiliation</TableHead>
                 <TableHead className="w-[15%]">Enrolment Source</TableHead>
                 <TableHead className="w-[15%] text-center">Status</TableHead>
-                <TableHead className="w-[20%] text-right">Quick Roll Call</TableHead>
+                <TableHead className="w-[20%] text-right">
+                  Quick Roll Call
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredParticipants.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={6}
+                    className="h-32 text-center text-muted-foreground"
+                  >
                     No participants found matching the query.
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredParticipants.map((p, idx) => {
                   return (
-                    <TableRow key={p.volunteer.rollNumber} className="hover:bg-muted/20">
+                    <TableRow
+                      key={p.volunteer.rollNumber}
+                      className="hover:bg-muted/20"
+                    >
                       <TableCell className="text-center font-mono text-label-xs text-muted-foreground">
                         {idx + 1}
                       </TableCell>
@@ -341,6 +376,7 @@ export function AttendanceRosterTable({
                       <TableCell>
                         <div className="space-y-0.5">
                           <Link
+                            prefetch={false}
                             href={`/volunteers/${p.volunteer.rollNumber}`}
                             className="font-medium text-foreground hover:text-primary transition-colors text-body-sm block"
                           >
@@ -363,27 +399,40 @@ export function AttendanceRosterTable({
                             p.source === "FCFS"
                               ? "bg-primary/10 text-primary border-primary/25"
                               : p.source === "AUTO"
-                              ? "bg-info-container/60 text-info border-info/30"
-                              : "bg-warning-container/60 text-warning border-warning/30"
+                                ? "bg-info-container/60 text-info border-info/30"
+                                : "bg-warning-container/60 text-warning border-warning/30"
                           }`}
                         >
-                          {p.source === "FCFS" ? "FCFS Roster" : p.source === "AUTO" ? "Host Auto" : "Walk-in"}
+                          {p.source === "FCFS"
+                            ? "FCFS Roster"
+                            : p.source === "AUTO"
+                              ? "Host Auto"
+                              : "Walk-in"}
                         </Badge>
                       </TableCell>
 
                       <TableCell className="text-center">
                         {p.status === "PRESENT" ? (
-                          <Badge variant="outline" className="bg-success-container/60 text-success border-success/30 text-[11px]">
+                          <Badge
+                            variant="outline"
+                            className="bg-success-container/60 text-success border-success/30 text-[11px]"
+                          >
                             <CheckCircle2 className="size-3 mr-1" />
                             Present
                           </Badge>
                         ) : p.status === "EXCUSED" ? (
-                          <Badge variant="outline" className="bg-warning-container/60 text-warning border-warning/30 text-[11px]">
+                          <Badge
+                            variant="outline"
+                            className="bg-warning-container/60 text-warning border-warning/30 text-[11px]"
+                          >
                             <Clock className="size-3 mr-1" />
                             Excused
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-error-container/60 text-error border-error/30 text-[11px]">
+                          <Badge
+                            variant="outline"
+                            className="bg-error-container/60 text-error border-error/30 text-[11px]"
+                          >
                             <XCircle className="size-3 mr-1" />
                             Absent
                           </Badge>
@@ -395,7 +444,9 @@ export function AttendanceRosterTable({
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             size="sm"
-                            variant={p.status === "PRESENT" ? "default" : "outline"}
+                            variant={
+                              p.status === "PRESENT" ? "default" : "outline"
+                            }
                             onClick={() => handleMarkStatus(p, "PRESENT")}
                             className={`h-7 px-2.5 text-[11px] font-semibold transition-all ${
                               p.status === "PRESENT"
@@ -409,7 +460,9 @@ export function AttendanceRosterTable({
 
                           <Button
                             size="sm"
-                            variant={p.status === "ABSENT" ? "default" : "outline"}
+                            variant={
+                              p.status === "ABSENT" ? "default" : "outline"
+                            }
                             onClick={() => handleMarkStatus(p, "ABSENT")}
                             className={`h-7 px-2.5 text-[11px] font-semibold transition-all ${
                               p.status === "ABSENT"
@@ -423,7 +476,9 @@ export function AttendanceRosterTable({
 
                           <Button
                             size="sm"
-                            variant={p.status === "EXCUSED" ? "default" : "outline"}
+                            variant={
+                              p.status === "EXCUSED" ? "default" : "outline"
+                            }
                             onClick={() => handleMarkStatus(p, "EXCUSED")}
                             className={`h-7 px-2.5 text-[11px] font-semibold transition-all ${
                               p.status === "EXCUSED"

@@ -4,7 +4,7 @@ import { PageEyebrow, PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { VolunteerStatsBar } from "@/features/volunteers/volunteer-stats-bar";
 import { VolunteerTable } from "@/features/volunteers/volunteer-table";
-import { getVolunteers, getDashboardSummary } from "@/lib/mock-data";
+import { getVolunteersSnapshot } from "@/lib/mock-data/cached";
 import { Inbox, UserPlus } from "lucide-react";
 
 import { requireOfficeAccess } from "@/lib/auth/actor";
@@ -20,8 +20,7 @@ export const metadata = {
 
 export default async function VolunteersPage() {
   await requireOfficeAccess();
-  const { items: allVolunteers } = getVolunteers();
-  const summary = getDashboardSummary();
+  const { volunteers: allVolunteers, summary } = await getVolunteersSnapshot();
 
   const total = summary.volunteers.total;
   const active = summary.volunteers.active;

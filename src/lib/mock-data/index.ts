@@ -13,6 +13,27 @@ import {
 } from "./attendance";
 import { MOCK_DASHBOARD_SUMMARY, MOCK_METRIC_CARDS } from "./analytics";
 import { MOCK_EVENTS, MOCK_MEETINGS } from "./events";
+import {
+  MOCK_ADJUSTMENT_TYPES,
+  MOCK_EVENT_CATEGORIES,
+  MOCK_HOURS_ADJUSTMENTS,
+  MOCK_HOURS_RECOMPUTE,
+  MOCK_VOLUNTEER_YEAR_HOURS,
+  getAdjustmentTypes,
+  getEventCategories,
+  getHoursAdjustments,
+  getHoursApprovalRows,
+  getHoursRecomputeState,
+  getVolunteerYearHours,
+} from "./hours";
+import {
+  MOCK_MEETING_ATTENDANCE,
+  getMeetingAttendance,
+  getMeetingAudienceRows,
+  getMeetingCounts,
+  getMeetingListItems,
+  isOfficeBearer,
+} from "./meetings";
 import { MOCK_DOMAINS, MOCK_PROJECTS } from "./projects";
 import { MOCK_ROSTER_ENTRIES, MOCK_STAFF_MEMBERS, MOCK_STAFF_USERS } from "./staff";
 import { MOCK_VOLUNTEERS } from "./volunteers";
@@ -24,10 +45,34 @@ import type { RosterEntry, User } from "@/types/auth";
 import type { DashboardSummary, MetricCardData } from "@/types/analytics";
 import type { Volunteer, VolunteerDetail, VolunteerFilterState } from "@/types/volunteer";
 
+export type {
+  MeetingAudienceRow,
+  MeetingAudienceStatus,
+  MeetingCounts,
+  MeetingListItem,
+} from "./meetings";
+
 // Re-export raw mock datasets
 export {
   MOCK_VOLUNTEERS,
   MOCK_PROJECTS,
+  MOCK_ADJUSTMENT_TYPES,
+  MOCK_EVENT_CATEGORIES,
+  MOCK_HOURS_ADJUSTMENTS,
+  MOCK_HOURS_RECOMPUTE,
+  MOCK_MEETING_ATTENDANCE,
+  MOCK_VOLUNTEER_YEAR_HOURS,
+  getAdjustmentTypes,
+  getEventCategories,
+  getHoursAdjustments,
+  getHoursApprovalRows,
+  getHoursRecomputeState,
+  getMeetingAttendance,
+  getMeetingAudienceRows,
+  getMeetingCounts,
+  getMeetingListItems,
+  getVolunteerYearHours,
+  isOfficeBearer,
   MOCK_DOMAINS,
   MOCK_EVENTS,
   MOCK_MEETINGS,

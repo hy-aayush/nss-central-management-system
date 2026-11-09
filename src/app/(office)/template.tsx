@@ -27,6 +27,8 @@ export default async function OfficeTemplate({
   await requireOfficeAccess();
 
   // A single, fast content entrance. It is pure CSS so it survives streaming
-  // and collapses to nothing under `prefers-reduced-motion`.
-  return <div className="animate-rise">{children}</div>;
+  // and collapses to nothing under `prefers-reduced-motion`. Direct children
+  // settle in sequence (`page-flow`) so a navigation reads top-down instead of
+  // the whole page popping at once.
+  return <div className="page-flow">{children}</div>;
 }

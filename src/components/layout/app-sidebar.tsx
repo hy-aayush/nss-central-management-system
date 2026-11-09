@@ -132,7 +132,12 @@ export function AppSidebar({ actor }: { actor: SidebarActor }) {
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
-                      render={<Link href={item.href} />}
+                      render={
+                        <Link
+                          href={item.href}
+                          prefetch={item.prefetch ?? undefined}
+                        />
+                      }
                       isActive={isActive}
                       tooltip={item.title}
                       className={cn(
@@ -151,7 +156,9 @@ export function AppSidebar({ actor }: { actor: SidebarActor }) {
                       <Icon
                         className={cn(
                           "size-4 shrink-0 transition-colors duration-200",
-                          isActive ? "text-primary" : "text-muted-foreground/80",
+                          isActive
+                            ? "text-primary"
+                            : "text-muted-foreground/80",
                         )}
                       />
                       {!isCollapsed && (

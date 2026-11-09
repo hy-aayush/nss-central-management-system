@@ -4,7 +4,8 @@ import { ArrowLeft, Calendar } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
-import { MOCK_EVENTS, getEventById, getEventParticipants } from "@/lib/mock-data";
+import { MOCK_EVENTS } from "@/lib/mock-data";
+import { getEventSnapshot } from "@/lib/mock-data/cached";
 import { EventDetailHero } from "@/features/events/event-detail-hero";
 import { EventDetailTabs } from "@/features/events/event-detail-tabs";
 import { requireOfficeAccess } from "@/lib/auth/actor";
@@ -25,9 +26,11 @@ export const instant = false;
 export default async function EventDetailPage({ params }: EventPageProps) {
   await requireOfficeAccess();
   const { id } = await params;
-  const event = getEventById(id);
+  // Cached per event id (SRS 16.6): the roster and totals do not change for a
+  // viewer, so a repeat visit costs one gate query and a cache read.
+  const snapshot = await getEventSnapshot(id);
 
-  if (!event) {
+  if (!snapshot) {
     return (
       <div className="space-y-6">
         <Link href="/events" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
@@ -48,7 +51,7 @@ export default async function EventDetailPage({ params }: EventPageProps) {
     );
   }
 
-  const participants = getEventParticipants(event.id);
+  const { event, participants } = snapshot;
 
   return (
     <div className="space-y-6">

@@ -2,7 +2,7 @@ import React from "react";
 
 import { PageEyebrow, PageHeader } from "@/components/layout/page-header";
 import { LoadingState } from "@/components/shared/loading-state";
-import { getRosterEntries } from "@/lib/mock-data";
+import { getTeamSnapshot } from "@/lib/mock-data/cached";
 import { TeamManager } from "@/features/team/team-manager";
 import { requireOfficeAccess } from "@/lib/auth/actor";
 
@@ -10,7 +10,7 @@ export const instant = false;
 
 export default async function TeamPage() {
   await requireOfficeAccess();
-  const entries = getRosterEntries();
+  const { entries } = await getTeamSnapshot();
 
   return (
     <div className="space-y-6">

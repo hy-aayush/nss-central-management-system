@@ -36,7 +36,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDateIST } from "@/lib/time";
-import type { EventRecord, EventParticipant, AttendanceStatus } from "@/types/event";
+import type {
+  EventRecord,
+  EventParticipant,
+  AttendanceStatus,
+} from "@/types/event";
 
 interface EventDetailTabsProps {
   event: EventRecord;
@@ -46,7 +50,9 @@ interface EventDetailTabsProps {
 export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
   const [activeTab, setActiveTab] = useState("participants");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "ALL">(
+    "ALL",
+  );
 
   // Filtered participant list
   const filteredParticipants = useMemo(() => {
@@ -56,7 +62,7 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
       list = list.filter(
         (p) =>
           p.volunteer.name.toLowerCase().includes(q) ||
-          p.volunteer.rollNumber.toLowerCase().includes(q)
+          p.volunteer.rollNumber.toLowerCase().includes(q),
       );
     }
     if (statusFilter !== "ALL") {
@@ -67,10 +73,15 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
 
   // Derived stats
   const totalEnrolled = participants.length;
-  const presentCount = participants.filter((p) => p.status === "PRESENT").length;
+  const presentCount = participants.filter(
+    (p) => p.status === "PRESENT",
+  ).length;
   const absentCount = participants.filter((p) => p.status === "ABSENT").length;
-  const excusedCount = participants.filter((p) => p.status === "EXCUSED").length;
-  const turnoutPercent = totalEnrolled > 0 ? ((presentCount / totalEnrolled) * 100).toFixed(1) : "—";
+  const excusedCount = participants.filter(
+    (p) => p.status === "EXCUSED",
+  ).length;
+  const turnoutPercent =
+    totalEnrolled > 0 ? ((presentCount / totalEnrolled) * 100).toFixed(1) : "—";
 
   return (
     <div className="space-y-4">
@@ -109,7 +120,12 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as AttendanceStatus | "ALL")}>
+              <Select
+                value={statusFilter}
+                onValueChange={(v) =>
+                  setStatusFilter(v as AttendanceStatus | "ALL")
+                }
+              >
                 <SelectTrigger className="w-[140px] h-9 bg-card border-border text-label-sm">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
@@ -122,8 +138,12 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
               </Select>
 
               <Link
+                prefetch={false}
                 href={`/attendance?eventId=${event.id}`}
-                className={cn(buttonVariants({ size: "sm" }), "h-9 text-label-xs shadow-xs")}
+                className={cn(
+                  buttonVariants({ size: "sm" }),
+                  "h-9 text-label-xs shadow-xs",
+                )}
               >
                 <UserCheck className="size-3.5 mr-1.5" />
                 Take Roll Call
@@ -146,17 +166,24 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
               <TableBody>
                 {filteredParticipants.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={5}
+                      className="h-32 text-center text-muted-foreground"
+                    >
                       No participants match the selected filters.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredParticipants.map((p) => {
                     return (
-                      <TableRow key={p.volunteer.rollNumber} className="hover:bg-muted/30">
+                      <TableRow
+                        key={p.volunteer.rollNumber}
+                        className="hover:bg-muted/30"
+                      >
                         <TableCell className="py-3">
                           <div className="space-y-0.5">
                             <Link
+                              prefetch={false}
                               href={`/volunteers/${p.volunteer.rollNumber}`}
                               className="font-medium text-foreground hover:text-primary transition-colors text-body-sm block"
                             >
@@ -179,27 +206,40 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
                               p.source === "FCFS"
                                 ? "bg-primary/10 text-primary border-primary/25"
                                 : p.source === "AUTO"
-                                ? "bg-info-container/60 text-info border-info/30"
-                                : "bg-warning-container/60 text-warning border-warning/30"
+                                  ? "bg-info-container/60 text-info border-info/30"
+                                  : "bg-warning-container/60 text-warning border-warning/30"
                             }`}
                           >
-                            {p.source === "FCFS" ? "FCFS Roster" : p.source === "AUTO" ? "Host Auto-Add" : "Walk-in"}
+                            {p.source === "FCFS"
+                              ? "FCFS Roster"
+                              : p.source === "AUTO"
+                                ? "Host Auto-Add"
+                                : "Walk-in"}
                           </Badge>
                         </TableCell>
 
                         <TableCell className="py-3">
                           {p.status === "PRESENT" ? (
-                            <Badge variant="outline" className="bg-success-container/60 text-success border-success/30 text-[11px]">
+                            <Badge
+                              variant="outline"
+                              className="bg-success-container/60 text-success border-success/30 text-[11px]"
+                            >
                               <CheckCircle2 className="size-3 mr-1" />
                               Present
                             </Badge>
                           ) : p.status === "EXCUSED" ? (
-                            <Badge variant="outline" className="bg-warning-container/60 text-warning border-warning/30 text-[11px]">
+                            <Badge
+                              variant="outline"
+                              className="bg-warning-container/60 text-warning border-warning/30 text-[11px]"
+                            >
                               <Clock className="size-3 mr-1" />
                               Excused
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-error-container/60 text-error border-error/30 text-[11px]">
+                            <Badge
+                              variant="outline"
+                              className="bg-error-container/60 text-error border-error/30 text-[11px]"
+                            >
                               <XCircle className="size-3 mr-1" />
                               Absent
                             </Badge>
@@ -208,10 +248,11 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
 
                         <TableCell className="py-3 text-right">
                           <Link
+                            prefetch={false}
                             href={`/volunteers/${p.volunteer.rollNumber}`}
                             className={cn(
                               buttonVariants({ variant: "ghost", size: "sm" }),
-                              "h-7.5 px-2 text-label-xs text-primary"
+                              "h-7.5 px-2 text-label-xs text-primary",
                             )}
                           >
                             Profile
@@ -234,7 +275,8 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
                 Project Wing Quota Allocations
               </h3>
               <p className="text-body-sm text-muted-foreground mt-0.5">
-                Per-project slot capacities and year-wise quotas configured for this event drive (SRS §11.3).
+                Per-project slot capacities and year-wise quotas configured for
+                this event drive (SRS §11.3).
               </p>
             </div>
 
@@ -246,7 +288,9 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
                     <TableHead>Role / Wing Type</TableHead>
                     <TableHead>Approval</TableHead>
                     <TableHead className="text-center">Total Slots</TableHead>
-                    <TableHead className="text-center">2nd / 3rd / 4th Year Caps</TableHead>
+                    <TableHead className="text-center">
+                      2nd / 3rd / 4th Year Caps
+                    </TableHead>
                     <TableHead className="text-right">Filled Slots</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -257,7 +301,10 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
                         {slot.projectName}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={slot.isHost ? "default" : "outline"} className="text-[10px]">
+                        <Badge
+                          variant={slot.isHost ? "default" : "outline"}
+                          className="text-[10px]"
+                        >
                           {slot.isHost ? "Host Wing" : "Collaborating"}
                         </Badge>
                       </TableCell>
@@ -277,7 +324,8 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
                         {slot.slotsTotal ?? "Open"}
                       </TableCell>
                       <TableCell className="text-center text-label-xs text-muted-foreground">
-                        {slot.capYear2 ?? "—"} / {slot.capYear3 ?? "—"} / {slot.capYear4 ?? "—"}
+                        {slot.capYear2 ?? "—"} / {slot.capYear3 ?? "—"} /{" "}
+                        {slot.capYear4 ?? "—"}
                       </TableCell>
                       <TableCell className="text-right font-semibold text-primary">
                         {slot.filled}
@@ -294,8 +342,12 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
         <TabsContent value="attendance" className="space-y-4 pt-2">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="p-4 bg-card border-border">
-              <p className="text-label-xs uppercase tracking-wider text-muted-foreground">Total Enrolled</p>
-              <p className="text-headline-md font-bold text-foreground mt-1">{totalEnrolled}</p>
+              <p className="text-label-xs uppercase tracking-wider text-muted-foreground">
+                Total Enrolled
+              </p>
+              <p className="text-headline-md font-bold text-foreground mt-1">
+                {totalEnrolled}
+              </p>
             </Card>
 
             <Card className="p-4 bg-card border-border">
@@ -308,14 +360,18 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
             </Card>
 
             <Card className="p-4 bg-card border-border">
-              <p className="text-label-xs uppercase tracking-wider text-error">Absent</p>
+              <p className="text-label-xs uppercase tracking-wider text-error">
+                Absent
+              </p>
               <p className="text-headline-md font-bold text-error mt-1">
                 {absentCount}
               </p>
             </Card>
 
             <Card className="p-4 bg-card border-border">
-              <p className="text-label-xs uppercase tracking-wider text-warning">Excused</p>
+              <p className="text-label-xs uppercase tracking-wider text-warning">
+                Excused
+              </p>
               <p className="text-headline-md font-bold text-warning mt-1">
                 {excusedCount}
               </p>
@@ -323,29 +379,47 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
           </div>
 
           <Card className="p-6 bg-card border-border space-y-4">
-            <h3 className="text-headline-sm font-semibold text-foreground">Turnout Percentage &amp; Demographics</h3>
+            <h3 className="text-headline-sm font-semibold text-foreground">
+              Turnout Percentage &amp; Demographics
+            </h3>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-4 rounded-xl bg-muted/30">
               <div className="text-center sm:text-left space-y-1">
                 <span className="text-label-xs text-muted-foreground uppercase tracking-wider">
                   Verified Attendance Rate
                 </span>
-                <p className="text-3xl font-bold text-primary">{turnoutPercent}%</p>
-                <p className="text-label-xs text-muted-foreground">Office bearers excluded from penalty counters</p>
+                <p className="text-3xl font-bold text-primary">
+                  {turnoutPercent}%
+                </p>
+                <p className="text-label-xs text-muted-foreground">
+                  Office bearers excluded from penalty counters
+                </p>
               </div>
 
               {event.genderPresent && (
                 <div className="flex items-center gap-4 text-label-sm">
                   <div className="text-center">
-                    <span className="text-muted-foreground block text-label-xs">Male</span>
-                    <span className="font-semibold text-foreground">{event.genderPresent.male}</span>
+                    <span className="text-muted-foreground block text-label-xs">
+                      Male
+                    </span>
+                    <span className="font-semibold text-foreground">
+                      {event.genderPresent.male}
+                    </span>
                   </div>
                   <div className="text-center">
-                    <span className="text-muted-foreground block text-label-xs">Female</span>
-                    <span className="font-semibold text-foreground">{event.genderPresent.female}</span>
+                    <span className="text-muted-foreground block text-label-xs">
+                      Female
+                    </span>
+                    <span className="font-semibold text-foreground">
+                      {event.genderPresent.female}
+                    </span>
                   </div>
                   <div className="text-center">
-                    <span className="text-muted-foreground block text-label-xs">Other</span>
-                    <span className="font-semibold text-foreground">{event.genderPresent.other}</span>
+                    <span className="text-muted-foreground block text-label-xs">
+                      Other
+                    </span>
+                    <span className="font-semibold text-foreground">
+                      {event.genderPresent.other}
+                    </span>
                   </div>
                 </div>
               )}
@@ -356,18 +430,22 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
         {/* Tab 4: Governance & Audit Trail */}
         <TabsContent value="governance" className="space-y-4 pt-2">
           <Card className="p-6 bg-card border-border space-y-4">
-            <h3 className="text-headline-sm font-semibold text-foreground">Audit &amp; Lifecycle Records</h3>
-            
+            <h3 className="text-headline-sm font-semibold text-foreground">
+              Audit &amp; Lifecycle Records
+            </h3>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-body-sm">
               <div className="p-3.5 rounded-lg bg-muted/30 border border-border space-y-1">
                 <span className="text-label-xs uppercase tracking-wider text-muted-foreground block font-medium">
                   Created By
                 </span>
                 <span className="font-semibold text-foreground">
-                  {event.createdBy?.name || "System Admin"} ({event.createdBy?.rollNumber || "2105999"})
+                  {event.createdBy?.name || "System Admin"} (
+                  {event.createdBy?.rollNumber || "2105999"})
                 </span>
                 <p className="text-label-xs text-muted-foreground">
-                  Role: {event.createdByRole || "TECH_TEAM"} • Created on {formatDateIST(event.createdAt)}
+                  Role: {event.createdByRole || "TECH_TEAM"} • Created on{" "}
+                  {formatDateIST(event.createdAt)}
                 </p>
               </div>
 
@@ -376,10 +454,13 @@ export function EventDetailTabs({ event, participants }: EventDetailTabsProps) {
                   Edit Budget Status (SRS §11.2)
                 </span>
                 <span className="font-semibold text-foreground">
-                  {event.editsLeft !== null ? `${event.editsLeft} Edits Remaining` : "Exempt Viewer (Full Authority)"}
+                  {event.editsLeft !== null
+                    ? `${event.editsLeft} Edits Remaining`
+                    : "Exempt Viewer (Full Authority)"}
                 </span>
                 <p className="text-label-xs text-muted-foreground">
-                  Reschedule Count: {event.rescheduleCount} • Finalized: {event.isFinalized ? "Yes" : "No"}
+                  Reschedule Count: {event.rescheduleCount} • Finalized:{" "}
+                  {event.isFinalized ? "Yes" : "No"}
                 </p>
               </div>
 

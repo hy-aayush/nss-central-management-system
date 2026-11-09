@@ -3,7 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -52,7 +58,8 @@ export function VolunteerHistoryTabs({
         <TabsList className="bg-muted/50 p-1">
           <TabsTrigger value="events" className="gap-1.5 text-xs">
             <CalendarDays className="h-3.5 w-3.5" />
-            Event Participation ({events.attended.length + events.upcomingOrRegistered.length})
+            Event Participation (
+            {events.attended.length + events.upcomingOrRegistered.length})
           </TabsTrigger>
           <TabsTrigger value="attendance" className="gap-1.5 text-xs">
             <Users2 className="h-3.5 w-3.5" />
@@ -70,7 +77,8 @@ export function VolunteerHistoryTabs({
 
         {/* ---------------- Tab 1: Event Participation ---------------- */}
         <TabsContent value="events" className="space-y-4 pt-3">
-          {events.attended.length === 0 && events.upcomingOrRegistered.length === 0 ? (
+          {events.attended.length === 0 &&
+          events.upcomingOrRegistered.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
               title="No Event History"
@@ -88,7 +96,8 @@ export function VolunteerHistoryTabs({
                       Completed &amp; Verified Event Drives
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      Past drives where volunteer attendance was verified and credited to service hours.
+                      Past drives where volunteer attendance was verified and
+                      credited to service hours.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -100,11 +109,16 @@ export function VolunteerHistoryTabs({
                         >
                           <div className="space-y-0.5 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="outline" className="text-[10px] font-mono">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] font-mono"
+                              >
                                 {e.type}
                               </Badge>
                               <span className="font-semibold text-foreground hover:text-primary transition-colors">
-                                <Link href={`/events/${e.id}`}>{e.title}</Link>
+                                <Link prefetch={false} href={`/events/${e.id}`}>
+                                  {e.title}
+                                </Link>
                               </span>
                             </div>
                             <div className="flex items-center gap-3 text-muted-foreground flex-wrap text-[11px]">
@@ -121,7 +135,12 @@ export function VolunteerHistoryTabs({
                             <span className="font-mono font-bold text-primary">
                               +{e.allocatedHours ?? 4} hrs
                             </span>
-                            <StatusBadge status={e.status} type="event" showDot className="text-[10px] py-0 px-1.5" />
+                            <StatusBadge
+                              status={e.status}
+                              type="event"
+                              showDot
+                              className="text-[10px] py-0 px-1.5"
+                            />
                           </div>
                         </div>
                       ))}
@@ -139,7 +158,8 @@ export function VolunteerHistoryTabs({
                       Upcoming &amp; Scheduled Rosters
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      Confirmed registrations for scheduled central or project drives.
+                      Confirmed registrations for scheduled central or project
+                      drives.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -151,10 +171,14 @@ export function VolunteerHistoryTabs({
                         >
                           <div className="space-y-0.5 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="secondary" className="text-[10px] font-mono">
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] font-mono"
+                              >
                                 FCFS Registered
                               </Badge>
                               <Link
+                                prefetch={false}
                                 href={`/events/${e.id}`}
                                 className="font-semibold text-foreground hover:text-primary transition-colors"
                               >
@@ -162,7 +186,10 @@ export function VolunteerHistoryTabs({
                               </Link>
                             </div>
                             <div className="flex items-center gap-3 text-muted-foreground flex-wrap text-[11px]">
-                              <span>{formatDateIST(e.startsAt)} at {formatTimeIST(e.startsAt)}</span>
+                              <span>
+                                {formatDateIST(e.startsAt)} at{" "}
+                                {formatTimeIST(e.startsAt)}
+                              </span>
                               <span>•</span>
                               <span>{e.venue}</span>
                             </div>
@@ -172,7 +199,12 @@ export function VolunteerHistoryTabs({
                             <span className="font-mono text-[11px] text-muted-foreground">
                               Est: {e.allocatedHours ?? 4} hrs
                             </span>
-                            <StatusBadge status={e.status} type="event" showDot className="text-[10px] py-0 px-1.5" />
+                            <StatusBadge
+                              status={e.status}
+                              type="event"
+                              showDot
+                              className="text-[10px] py-0 px-1.5"
+                            />
                           </div>
                         </div>
                       ))}
@@ -220,10 +252,16 @@ export function VolunteerHistoryTabs({
                           </span>
                         </div>
                         <div className="flex items-center gap-3 text-muted-foreground flex-wrap text-[11px]">
-                          <span>{formatDateIST(m.date)} at {m.startTime}</span>
+                          <span>
+                            {formatDateIST(m.date)} at {m.startTime}
+                          </span>
                           <span>•</span>
                           <span>{m.venue}</span>
-                          {m.mom && <span className="italic text-muted-foreground/80">&quot;{m.mom}&quot;</span>}
+                          {m.mom && (
+                            <span className="italic text-muted-foreground/80">
+                              &quot;{m.mom}&quot;
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -255,7 +293,8 @@ export function VolunteerHistoryTabs({
                 Service Hours Ledger Summary
               </CardTitle>
               <CardDescription className="text-xs">
-                Verified community service hours breakdown per University NSS accreditation guidelines.
+                Verified community service hours breakdown per University NSS
+                accreditation guidelines.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0 space-y-4 text-xs">
@@ -265,15 +304,25 @@ export function VolunteerHistoryTabs({
                   <div className="text-xl font-bold font-mono text-primary mt-0.5">
                     {volunteer.allocatedHours} hrs
                   </div>
-                  <span className="text-[11px] text-muted-foreground">Credited toward 120 hr requirement</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Credited toward 120 hr requirement
+                  </span>
                 </div>
 
                 <div className="p-3 rounded-lg border border-border/60 bg-muted/20">
                   <span className="text-muted-foreground">Completion Rate</span>
                   <div className="text-xl font-bold font-mono text-foreground mt-0.5">
-                    {Math.min(100, Number(((volunteer.allocatedHours / 120) * 100).toFixed(1)))}%
+                    {Math.min(
+                      100,
+                      Number(
+                        ((volunteer.allocatedHours / 120) * 100).toFixed(1),
+                      ),
+                    )}
+                    %
                   </div>
-                  <span className="text-[11px] text-muted-foreground">Of minimum degree requirement</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Of minimum degree requirement
+                  </span>
                 </div>
 
                 <div className="p-3 rounded-lg border border-border/60 bg-muted/20">
@@ -281,7 +330,9 @@ export function VolunteerHistoryTabs({
                   <div className="text-xl font-bold font-mono text-warning mt-0.5">
                     0 hrs
                   </div>
-                  <span className="text-[11px] text-muted-foreground">All submitted sessions reviewed</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    All submitted sessions reviewed
+                  </span>
                 </div>
               </div>
 
@@ -293,9 +344,11 @@ export function VolunteerHistoryTabs({
                   </strong>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>From Assigned Project ({volunteer.project}) Drives:</span>
+                  <span>
+                    From Assigned Project ({volunteer.project}) Drives:
+                  </span>
                   <strong className="font-mono text-foreground">
-                    {Math.round(volunteer.allocatedHours * 0.40)} hrs
+                    {Math.round(volunteer.allocatedHours * 0.4)} hrs
                   </strong>
                 </div>
                 <div className="flex items-center justify-between">
@@ -325,7 +378,8 @@ export function VolunteerHistoryTabs({
                   Immutable Record Audit Trail
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Administrative changes, status modifications, and note edits for this volunteer.
+                  Administrative changes, status modifications, and note edits
+                  for this volunteer.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
@@ -337,10 +391,15 @@ export function VolunteerHistoryTabs({
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-1.5 font-medium text-foreground">
-                          <Badge variant="outline" className="text-[10px] font-mono">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-mono"
+                          >
                             {log.action}
                           </Badge>
-                          <span>{log.actorName ?? log.actorRoll ?? "System"}</span>
+                          <span>
+                            {log.actorName ?? log.actorRoll ?? "System"}
+                          </span>
                           {log.effectiveRole && (
                             <span className="text-muted-foreground text-[10px]">
                               ({log.effectiveRole})

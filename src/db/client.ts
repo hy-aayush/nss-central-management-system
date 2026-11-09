@@ -32,6 +32,15 @@ export type Database = PostgresJsDatabase<typeof schema>;
  * pooler slot while an instance is cold. `connect_timeout` prevents a stalled
  * connection attempt from hanging a request for the platform default.
  *
+ * `fetch_types: false` removes the type-introspection query postgres-js
+ * otherwise issues the first time a connection is used. The schema columns this
+ * app reads are all text/boolean/timestamp/int, which postgres-js handles
+ * natively, so the extra round trip (one per cold instance, against a pooled
+ * connection with a finite budget) buys nothing.
+ *
+ * `max_lifetime` recycles a pooled connection before Supavisor does, so an
+ * instance never holds a slot the pooler has already retired.
+ *
  * These values must not be changed without updating `docs/DATABASE.md` and the
  * SRS. Do not add a larger pool here to "make it faster".
  */
@@ -40,6 +49,8 @@ const POOL_OPTIONS = {
   max: 1,
   idle_timeout: 20,
   connect_timeout: 10,
+  fetch_types: false,
+  max_lifetime: 60 * 10,
 } as const;
 
 /**

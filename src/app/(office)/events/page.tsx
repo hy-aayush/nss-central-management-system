@@ -5,7 +5,7 @@ import { Building2, Globe2 } from "lucide-react";
 import { PageEyebrow, PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { LoadingState } from "@/components/shared/loading-state";
-import { getEvents } from "@/lib/mock-data";
+import { getEventsSnapshot } from "@/lib/mock-data/cached";
 import { EventsStatsHeader } from "@/features/events/events-stats-header";
 import { EventsTable } from "@/features/events/events-table";
 import { requireOfficeAccess } from "@/lib/auth/actor";
@@ -14,7 +14,9 @@ export const instant = false;
 
 export default async function EventsPage() {
   await requireOfficeAccess();
-  const { items: events } = getEvents();
+  // Cached synthetic payload (one hour): the schedule is identical for every
+  // office member, so re-deriving it per request only burns function time.
+  const { events } = await getEventsSnapshot();
 
   return (
     <div className="space-y-6">

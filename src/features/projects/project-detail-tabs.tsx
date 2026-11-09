@@ -3,7 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -87,26 +93,43 @@ export function ProjectDetailTabs({
                   <TableRow>
                     <TableHead>Student Volunteer</TableHead>
                     <TableHead className="w-[120px]">Roll No.</TableHead>
-                    <TableHead className="w-[100px] text-center">Year</TableHead>
+                    <TableHead className="w-[100px] text-center">
+                      Year
+                    </TableHead>
                     <TableHead>Creative Domains</TableHead>
-                    <TableHead className="w-[110px] text-right">Hours</TableHead>
-                    <TableHead className="w-[110px] text-right">Turnout</TableHead>
-                    <TableHead className="w-[100px] text-center">Status</TableHead>
-                    <TableHead className="w-[70px] text-right">Action</TableHead>
+                    <TableHead className="w-[110px] text-right">
+                      Hours
+                    </TableHead>
+                    <TableHead className="w-[110px] text-right">
+                      Turnout
+                    </TableHead>
+                    <TableHead className="w-[100px] text-center">
+                      Status
+                    </TableHead>
+                    <TableHead className="w-[70px] text-right">
+                      Action
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {volunteers.map((vol) => (
-                    <TableRow key={vol.rollNumber} className="hover:bg-muted/40 transition-colors group">
+                    <TableRow
+                      key={vol.rollNumber}
+                      className="hover:bg-muted/40 transition-colors group"
+                    >
                       <TableCell className="font-medium">
                         <Link
+                          prefetch={false}
                           href={`/volunteers/${vol.rollNumber}`}
                           className="hover:text-primary transition-colors block"
                         >
                           <div className="font-semibold text-foreground flex items-center gap-1.5">
                             {vol.name}
                             {vol.officeRole && (
-                              <Badge variant="outline" className="text-[10px] py-0 px-1 font-normal">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] py-0 px-1 font-normal"
+                              >
                                 {vol.officeRole}
                               </Badge>
                             )}
@@ -117,7 +140,9 @@ export function ProjectDetailTabs({
                         </Link>
                       </TableCell>
 
-                      <TableCell className="font-mono text-xs">{vol.rollNumber}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {vol.rollNumber}
+                      </TableCell>
 
                       <TableCell className="text-center font-mono text-xs">
                         Year {vol.year}
@@ -125,11 +150,17 @@ export function ProjectDetailTabs({
 
                       <TableCell>
                         {vol.domains.length === 0 ? (
-                          <span className="text-xs text-muted-foreground italic">General</span>
+                          <span className="text-xs text-muted-foreground italic">
+                            General
+                          </span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {vol.domains.map((d) => (
-                              <Badge key={d} variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
+                              <Badge
+                                key={d}
+                                variant="secondary"
+                                className="text-[10px] font-mono px-1.5 py-0"
+                              >
                                 {d.replace("_", " ")}
                               </Badge>
                             ))}
@@ -146,16 +177,23 @@ export function ProjectDetailTabs({
                       </TableCell>
 
                       <TableCell className="text-center">
-                        <StatusBadge status={vol.status} type="volunteer" showDot className="text-[10px] py-0 px-2" />
+                        <StatusBadge
+                          status={vol.status}
+                          type="volunteer"
+                          showDot
+                          className="text-[10px] py-0 px-2"
+                        />
                       </TableCell>
 
                       <TableCell className="text-right">
                         <Link
+                          prefetch={false}
                           href={`/volunteers/${vol.rollNumber}`}
                           className={buttonVariants({
                             variant: "ghost",
                             size: "sm",
-                            className: "h-7 w-7 p-0 opacity-70 group-hover:opacity-100",
+                            className:
+                              "h-7 w-7 p-0 opacity-70 group-hover:opacity-100",
                           })}
                           aria-label={`View ${vol.name}'s profile`}
                         >
@@ -180,7 +218,11 @@ export function ProjectDetailTabs({
               action={
                 <Link
                   href="/events/project/new"
-                  className={buttonVariants({ variant: "outline", size: "sm", className: "text-xs" })}
+                  className={buttonVariants({
+                    variant: "outline",
+                    size: "sm",
+                    className: "text-xs",
+                  })}
                 >
                   Create Project Drive
                 </Link>
@@ -194,7 +236,8 @@ export function ProjectDetailTabs({
                   Outreach Drives &amp; Initiatives
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Field execution events hosted or co-organized by Project {project.name}.
+                  Field execution events hosted or co-organized by Project{" "}
+                  {project.name}.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
@@ -206,17 +249,23 @@ export function ProjectDetailTabs({
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className="text-[10px] font-mono">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-mono"
+                          >
                             {e.type}
                           </Badge>
                           <Link
+                            prefetch={false}
                             href={`/events/${e.id}`}
                             className="font-semibold text-sm text-foreground hover:text-primary transition-colors"
                           >
                             {e.title}
                           </Link>
                         </div>
-                        <p className="text-muted-foreground line-clamp-1">{e.description}</p>
+                        <p className="text-muted-foreground line-clamp-1">
+                          {e.description}
+                        </p>
                         <div className="flex items-center gap-3 text-muted-foreground flex-wrap text-[11px]">
                           <span>{formatDateIST(e.startsAt)}</span>
                           <span>•</span>
@@ -231,7 +280,12 @@ export function ProjectDetailTabs({
                         <span className="font-mono text-xs font-semibold text-primary">
                           {e.allocatedHours ?? 4} hrs
                         </span>
-                        <StatusBadge status={e.status} type="event" showDot className="text-[10px] py-0 px-2" />
+                        <StatusBadge
+                          status={e.status}
+                          type="event"
+                          showDot
+                          className="text-[10px] py-0 px-2"
+                        />
                       </div>
                     </div>
                   ))}
@@ -272,10 +326,14 @@ export function ProjectDetailTabs({
                           <Badge variant="outline" className="text-[10px]">
                             {m.type}
                           </Badge>
-                          <span className="font-semibold text-foreground">{m.agenda}</span>
+                          <span className="font-semibold text-foreground">
+                            {m.agenda}
+                          </span>
                         </div>
                         <div className="flex items-center gap-3 text-muted-foreground flex-wrap text-[11px]">
-                          <span>{formatDateIST(m.date)} at {m.startTime}</span>
+                          <span>
+                            {formatDateIST(m.date)} at {m.startTime}
+                          </span>
                           <span>•</span>
                           <span>{m.venue}</span>
                         </div>
@@ -321,7 +379,8 @@ export function ProjectDetailTabs({
               <CardContent className="pt-0 space-y-2.5 text-xs">
                 {domainSpecialists.length === 0 ? (
                   <p className="text-muted-foreground italic py-4 text-center">
-                    No volunteers currently assigned to specialized creative domains.
+                    No volunteers currently assigned to specialized creative
+                    domains.
                   </p>
                 ) : (
                   domainSpecialists.map((v) => (
@@ -331,6 +390,7 @@ export function ProjectDetailTabs({
                     >
                       <div>
                         <Link
+                          prefetch={false}
                           href={`/volunteers/${v.rollNumber}`}
                           className="font-medium text-foreground hover:text-primary transition-colors"
                         >
@@ -342,7 +402,11 @@ export function ProjectDetailTabs({
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {v.domains.map((d) => (
-                          <Badge key={d} variant="secondary" className="text-[10px] font-mono">
+                          <Badge
+                            key={d}
+                            variant="secondary"
+                            className="text-[10px] font-mono"
+                          >
                             {d.replace("_", " ")}
                           </Badge>
                         ))}
@@ -389,7 +453,9 @@ export function ProjectDetailTabs({
                     <span>Average Service Hours / Volunteer:</span>
                     <strong className="font-mono text-primary">
                       {volunteers.length > 0
-                        ? Math.round(project.totalHoursLogged / volunteers.length)
+                        ? Math.round(
+                            project.totalHoursLogged / volunteers.length,
+                          )
                         : 0}{" "}
                       hrs
                     </strong>
@@ -397,7 +463,9 @@ export function ProjectDetailTabs({
                   <div className="flex items-center justify-between text-muted-foreground">
                     <span>Turnout Reliability:</span>
                     <strong className="font-mono text-success">
-                      {summary?.attendanceRate ? `${summary.attendanceRate}%` : "91.2%"}
+                      {summary?.attendanceRate
+                        ? `${summary.attendanceRate}%`
+                        : "91.2%"}
                     </strong>
                   </div>
                 </div>
