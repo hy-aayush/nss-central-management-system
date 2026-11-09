@@ -10,13 +10,12 @@ import {
   LazyMonthlyTrendsChart,
 } from "@/components/dashboard/dashboard-charts";
 import { requireOfficeAccess } from "@/lib/auth/actor";
-import { academicYearLabel, formatDateIST, formatTimeIST } from "@/lib/time";
 import { UpcomingEventsCard } from "@/components/dashboard/upcoming-events-card";
 import { RecentAttendanceCard } from "@/components/dashboard/recent-attendance-card";
 import { ProjectDistributionCard } from "@/components/dashboard/project-distribution-card";
 import { RecentAuditCard } from "@/components/dashboard/recent-audit-card";
 import { QuickActionsCard } from "@/components/dashboard/quick-actions-card";
-import { getDashboardSnapshot } from "@/lib/mock-data/cached";
+import { getDashboardOverview } from "@/lib/mock-data/cached";
 import {
   Users,
   Clock,
@@ -39,52 +38,31 @@ export default async function DashboardPage() {
   // Page-level gate: a layout alone can be bypassed by PPR streaming, so the
   // private page never renders (or serialises its data) before this check.
   const access = await requireOfficeAccess();
-  // Server-side retrieval of synthetic mock datasets through typed query helpers
-  // Cached, request-independent synthetic snapshot (`use cache`, one hour).
+  // One cached read: the dataset *and* the filter/format/sort work behind the
+  // hero all come from the same hourly cache window instead of being recomputed
+  // on every request.
   const {
-    summary,
-    metricCards,
-    events,
-    meetings,
-    projects,
-    auditLogs,
-    attendanceRecords,
-    attendanceSummaries,
-  } = await getDashboardSnapshot();
-
-  const upcomingEvents = events.filter((event) =>
-    ["SCHEDULED", "PUBLISHED", "RESCHEDULED", "ONGOING"].includes(event.status),
-  );
-  const upcomingMeetings = meetings.filter((meeting) =>
-    ["SCHEDULED", "RESCHEDULED", "ONGOING"].includes(meeting.status),
-  );
-
-  const nextOperation = [
-    ...upcomingEvents.map((event) => ({
-      title: event.title,
-      when: `${formatDateIST(event.startsAt)} · ${formatTimeIST(event.startsAt)}`,
-      venue: event.venue,
-      href: `/events/${event.id}`,
-      kind: event.type === "CENTRAL" ? "Central event" : "Project event",
-      at: new Date(event.startsAt).getTime(),
-    })),
-    ...upcomingMeetings.map((meeting) => ({
-      title: meeting.agenda,
-      when: `${formatDateIST(`${meeting.date}T${meeting.startTime}:00+05:30`)} · ${formatTimeIST(`${meeting.date}T${meeting.startTime}:00+05:30`)}`,
-      venue: meeting.venue,
-      href: "/meetings",
-      kind: `${meeting.type.toLowerCase()} meeting`,
-      at: new Date(`${meeting.date}T${meeting.startTime}:00+05:30`).getTime(),
-    })),
-  ]
-    .filter((operation) => Number.isFinite(operation.at))
-    .sort((a, b) => a.at - b.at)[0];
+    snapshot: {
+      summary,
+      metricCards,
+      events,
+      meetings,
+      projects,
+      auditLogs,
+      attendanceRecords,
+      attendanceSummaries,
+    },
+    upcomingEvents,
+    upcomingMeetings,
+    nextOperation,
+    academicYear,
+  } = await getDashboardOverview();
 
   return (
     <div className="space-y-7">
       <DashboardHero
         name={access.volunteer.name}
-        academicYear={academicYearLabel(summary.lastUpdated)}
+        academicYear={academicYear}
         sessionLabel={`Session ${summary.academicYear}`}
         activeVolunteers={summary.volunteers.active}
         upcomingCount={upcomingEvents.length + upcomingMeetings.length}

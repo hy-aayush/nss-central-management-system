@@ -14,7 +14,7 @@ import {
   ArrowLeft,
   Share2,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,7 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
 
   const handleConfirmLock = () => {
     setIsLocked(true);
-    toast.success("Attendance Locked Early (Simulated)", {
+    notify("success", "Attendance Locked Early (Simulated)", {
       description:
         "Attendance sheet locked ahead of midnight. Subsequent edits will require an audit correction reason (SRS §11.7).",
     });
@@ -49,7 +49,7 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
 
   const handleConfirmCancel = () => {
     setStatus("CANCELLED");
-    toast.error("Event Cancelled (Simulated)", {
+    notify("error", "Event Cancelled (Simulated)", {
       description:
         "Event has been marked as cancelled with an immutable audit entry.",
     });
@@ -77,7 +77,7 @@ export function EventDetailHero({ event }: EventDetailHeroProps) {
             onClick={() => {
               if (navigator.clipboard) {
                 navigator.clipboard.writeText(window.location.href);
-                toast.success("Link copied to clipboard");
+                notify("success", "Link copied to clipboard");
               }
             }}
             className="h-8 text-label-xs"

@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Calendar, Building2, TrendingUp, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import {
+  Download,
+  Calendar,
+  Building2,
+  TrendingUp,
+  Sparkles,
+} from "lucide-react";
+import { notify } from "@/lib/notify";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -53,9 +59,7 @@ export function AnalyticsView({ summary }: AnalyticsViewProps) {
     ]);
     const csv = [header, ...rows]
       .map((row) =>
-        row
-          .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
-          .join(","),
+        row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","),
       )
       .join("\n");
 
@@ -68,7 +72,7 @@ export function AnalyticsView({ summary }: AnalyticsViewProps) {
     link.click();
     URL.revokeObjectURL(url);
 
-    toast.success("Project summary exported", {
+    notify("success", "Project summary exported", {
       description: `${rows.length} rows · synthetic data only · bounded export`,
     });
   };
@@ -125,7 +129,11 @@ export function AnalyticsView({ summary }: AnalyticsViewProps) {
       <AnalyticsDefinitions />
 
       {/* Interactive Tabs Section */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
         <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-border/60 bg-card/70 p-1 backdrop-blur-sm">
           <TabsTrigger value="projects" className="gap-1.5 text-[0.6875rem]">
             <Building2 className="size-3.5" />

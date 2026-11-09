@@ -33,10 +33,10 @@ export interface NavItem {
   /** Extra terms that should match this destination in the command menu. */
   keywords?: string[];
   /**
-   * Set to `false` for destinations that are rarely opened (reports and admin
-   * screens). Their links then wait for a real click instead of speculatively
-   * fetching a private RSC payload, which on this app also means an access-gate
-   * database query and a serverless invocation per prefetch.
+   * Only the five hottest destinations prefetch. Every other link waits for a
+   * real click, because a prefetch here is a private RSC payload plus an
+   * access-gate database query and a serverless invocation. Aiming at a link
+   * still warms it through `useIntentPrefetch`.
    */
   prefetch?: boolean;
 }
@@ -97,6 +97,7 @@ export const NAV_SECTIONS: NavSection[] = [
         title: "Meetings",
         href: "/meetings",
         icon: CalendarCheck,
+        prefetch: false,
         description: "Project, central, and builders meetings with MOM",
         keywords: ["minutes", "mom", "governance"],
       },

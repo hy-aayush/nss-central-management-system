@@ -8,7 +8,7 @@ import {
   RefreshCw,
   TriangleAlert,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -91,7 +91,8 @@ export function HoursApprovalPanel({
       ),
     );
 
-    toast.success(
+    notify(
+      "success",
       `Approved ${selected.size} event${selected.size === 1 ? "" : "s"}`,
       {
         description:
@@ -104,7 +105,7 @@ export function HoursApprovalPanel({
   const handleRecompute = () => {
     const now = new Date().toISOString();
     setRecomputeAt(now);
-    toast.success("Hours recomputed", {
+    notify("success", "Hours recomputed", {
       description: `${volunteerCount} volunteer rollups updated for ${academicYear}; allocated hours refreshed in the same transaction.`,
     });
   };

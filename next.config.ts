@@ -14,6 +14,15 @@ const nextConfig: NextConfig = {
    * small (SRS 16.6 bundle budget).
    */
   experimental: {
+    /**
+     * Deliberately *not* using `experimental.inlineCss`: measured on this app the
+     * built sheet is ~189 KB and Next duplicates it (once in `<style>`, once in
+     * the RSC payload), so the login document grew to 838 KB / 132.6 KB gzip
+     * against 56 KB with a cached `<link>`. The docs' own guidance is to skip
+     * inlining when returning visitors are common and the bundle is large — a
+     * signed-in office portal is both. The immutable hashed sheet is cached once
+     * and reused across every route instead.
+     */
     optimizePackageImports: [
       "lucide-react",
       "recharts",

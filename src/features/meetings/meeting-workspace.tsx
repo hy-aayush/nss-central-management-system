@@ -16,7 +16,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -126,7 +126,7 @@ export function MeetingWorkspace({
 
   const handleStart = () => {
     updateStatus("ONGOING", { startedAt: new Date().toISOString() });
-    toast.success("Meeting started", {
+    notify("success", "Meeting started", {
       description: "Roll call is open until midnight IST tomorrow.",
     });
     setTab("attendance");
@@ -134,7 +134,7 @@ export function MeetingWorkspace({
 
   const handleEnd = () => {
     updateStatus("COMPLETED", { endedAt: new Date().toISOString() });
-    toast.success("Meeting completed", {
+    notify("success", "Meeting completed", {
       description:
         "Minutes can be written now; the register still closes at midnight IST.",
     });
@@ -144,7 +144,7 @@ export function MeetingWorkspace({
     updateStatus("CANCELLED", {
       cancellationReason: reason ?? "Cancelled by a Coordinator.",
     });
-    toast.info("Meeting cancelled", {
+    notify("info", "Meeting cancelled", {
       description: "The reason is kept on the meeting record.",
     });
   };
@@ -170,9 +170,13 @@ export function MeetingWorkspace({
       ),
     );
 
-    toast.success(`${row.volunteer.name} marked ${nextStatus.toLowerCase()}`, {
-      description: `Roll ${rollNumber} updated. Absent rows are simply removed.`,
-    });
+    notify(
+      "success",
+      `${row.volunteer.name} marked ${nextStatus.toLowerCase()}`,
+      {
+        description: `Roll ${rollNumber} updated. Absent rows are simply removed.`,
+      },
+    );
   };
 
   const handleConfirmCorrection = (values: MeetingCorrectionValues) => {
@@ -198,7 +202,7 @@ export function MeetingWorkspace({
       ...current,
     ]);
 
-    toast.success("Correction recorded", {
+    notify("success", "Correction recorded", {
       description: `${rollNumber}: ${values.oldStatus} → ${values.newStatus}.`,
     });
   };
@@ -210,7 +214,7 @@ export function MeetingWorkspace({
         status: "PRESENT" as MeetingAudienceStatus,
       })),
     );
-    toast.success("Everyone marked present", {
+    notify("success", "Everyone marked present", {
       description: `${rows.length} audience rows updated.`,
     });
   };
@@ -218,7 +222,7 @@ export function MeetingWorkspace({
   const handleToggleLock = () => {
     setIsLocked((current) => {
       const next = !current;
-      toast.info(next ? "Register locked" : "Register unlocked", {
+      notify("info", next ? "Register locked" : "Register unlocked", {
         description: next
           ? "Further changes need an audited correction with a reason."
           : "Direct marking is possible again until the next lock.",
@@ -236,7 +240,7 @@ export function MeetingWorkspace({
       if (mom === null) return current;
       return Math.max(current - 1, 0);
     });
-    toast.success("Minutes saved", {
+    notify("success", "Minutes saved", {
       description:
         "Stored with the meeting. The word limit is enforced before saving.",
     });

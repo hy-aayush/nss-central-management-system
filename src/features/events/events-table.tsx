@@ -4,6 +4,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useUrlSync } from "@/hooks/use-url-sync";
+import { useIntentPrefetch } from "@/hooks/use-intent-prefetch";
 import {
   Calendar,
   Clock,
@@ -36,12 +37,35 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableCaption,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatDateIST, formatTimeIST } from "@/lib/time";
 import type { EventRecord, EventType, EventStatus } from "@/types/event";
 import type { ProjectName } from "@/types/project";
 import { PROJECT_NAMES } from "./event-schemas";
+import {
+  readDirection,
+  readEnum,
+  readPage,
+  readPageSize,
+  readSort,
+  readText,
+} from "@/lib/table-params";
+
+/** Allow-lists for URL state; they mirror the controls rendered below. */
+const EVENT_TYPES = ["CENTRAL", "PROJECT"] as const;
+const EVENT_STATUSES = [
+  "DRAFT",
+  "SCHEDULED",
+  "PUBLISHED",
+  "RESCHEDULED",
+  "COMPLETED",
+  "CANCELLED",
+  "ARCHIVED",
+  "ONGOING",
+] as const;
+const EVENT_PAGE_SIZES = [10, 20, 40] as const;
 
 interface EventsTableProps {
   initialEvents: EventRecord[];
@@ -50,23 +74,34 @@ interface EventsTableProps {
 export function EventsTable({ initialEvents }: EventsTableProps) {
   const searchParams = useSearchParams();
   const syncUrl = useUrlSync();
+  // Row links warm on hover/focus, not on scroll (see the hook).
+  const intentPrefetch = useIntentPrefetch();
 
   // Search & Filter state synced with URL search params
-  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [search, setSearch] = useState(readText(searchParams, "search"));
   const [typeFilter, setTypeFilter] = useState<EventType | "ALL">(
-    (searchParams.get("type") as EventType) || "ALL",
+    readEnum<EventType>(searchParams, "type", EVENT_TYPES, "ALL"),
   );
   const [statusFilter, setStatusFilter] = useState<EventStatus | "ALL">(
-    (searchParams.get("status") as EventStatus) || "ALL",
+    readEnum<EventStatus>(searchParams, "status", EVENT_STATUSES, "ALL"),
   );
   const [projectFilter, setProjectFilter] = useState<ProjectName | "ALL">(
-    (searchParams.get("project") as ProjectName) || "ALL",
+    readEnum<ProjectName>(searchParams, "project", PROJECT_NAMES, "ALL"),
   );
-  const [page, setPage] = useState(Number(searchParams.get("page") || 1));
-  const [sortBy, setSortBy] = useState<"date" | "title" | "attendance">("date");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-
-  const pageSize = 10;
+  const [page, setPage] = useState(readPage(searchParams));
+  const [sortBy, setSortBy] = useState<"date" | "title" | "attendance">(
+    readSort<"date" | "title" | "attendance">(
+      searchParams,
+      ["date", "title", "attendance"],
+      "date",
+    ),
+  );
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
+    readDirection(searchParams, "desc"),
+  );
+  const [pageSize, setPageSize] = useState(
+    readPageSize(searchParams, EVENT_PAGE_SIZES, 10),
+  );
 
   // Typing updates the input first; the filter/sort pass follows on a deferred
   // copy so the field never waits for the table work.
@@ -178,12 +213,20 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
   };
 
   const toggleSort = (field: "date" | "title" | "attendance") => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(field);
-      setSortOrder("desc");
-    }
+    const nextOrder: "asc" | "desc" =
+      sortBy === field ? (sortOrder === "asc" ? "desc" : "asc") : "desc";
+    setSortBy(field);
+    setSortOrder(nextOrder);
+    updateFilters({
+      sort: field === "date" ? null : field,
+      dir: nextOrder === "desc" ? null : "asc",
+    });
+  };
+
+  const handlePageSizeChange = (next: number) => {
+    setPageSize(next);
+    setPage(1);
+    updateFilters({ size: next === 10 ? null : String(next), page: "1" });
   };
 
   return (
@@ -274,7 +317,7 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
 
       {/* Results Count & Sort Indicators */}
       <div className="flex items-center justify-between text-label-sm text-muted-foreground px-1">
-        <span>
+        <span role="status" aria-live="polite" aria-atomic="true">
           Showing {filteredEvents.length === 0 ? 0 : (page - 1) * pageSize + 1}–
           {Math.min(page * pageSize, filteredEvents.length)} of{" "}
           {filteredEvents.length} events
@@ -305,6 +348,9 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
       {/* Desktop Table View */}
       <div className="hidden overflow-hidden rounded-xl border border-border/70 bg-card shadow-[var(--elevation-1)] md:block">
         <Table>
+          <TableCaption className="sr-only">
+            Events, sorted by {sortBy} {sortOrder === "asc" ? "ascending" : "descending"}
+          </TableCaption>
           <TableHeader className="bg-surface-container-low/60">
             <TableRow>
               <TableHead className="h-9 w-[38%] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
@@ -367,6 +413,7 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
                         <div className="flex items-center gap-2 flex-wrap">
                           <Link
                             prefetch={false}
+                            {...intentPrefetch(`/events/${event.id}`)}
                             href={`/events/${event.id}`}
                             className="font-medium text-foreground hover:text-primary transition-colors text-body-sm line-clamp-1"
                           >
@@ -572,12 +619,27 @@ export function EventsTable({ initialEvents }: EventsTableProps) {
       </div>
 
       {/* Pagination Controls */}
-      {totalPages > 1 && (
+      {(totalPages > 1 || pageSize !== 10) && (
         <div className="flex items-center justify-between border-t border-border pt-4">
           <p className="text-label-sm text-muted-foreground">
             Page {page} of {totalPages}
           </p>
           <div className="flex items-center gap-1.5">
+            <label className="mr-1 flex items-center gap-1.5 text-label-xs text-muted-foreground">
+              Rows
+              <select
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                aria-label="Rows per page"
+                className="h-8 rounded-md border border-input bg-background px-2 text-label-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {EVENT_PAGE_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
             <Button
               variant="outline"
               size="sm"

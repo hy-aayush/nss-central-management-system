@@ -14,7 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -444,7 +444,8 @@ export function TeamRosterTable({
             const nextStatus =
               suspensionTarget.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
             onUpdateStatus(suspensionTarget.id, nextStatus);
-            toast.success(
+            notify(
+              "success",
               nextStatus === "SUSPENDED"
                 ? "Staff Access Suspended"
                 : "Staff Access Reinstated",

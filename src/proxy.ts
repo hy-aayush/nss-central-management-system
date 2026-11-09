@@ -25,11 +25,24 @@ const PUBLIC_PATHS = new Set(["/login", "/access-denied"]);
 
 const AUTH_COOKIE_PATTERN = /^sb-.+-auth-token(\.\d+)?$/;
 
+const METADATA_PATHS = new Set([
+  "/opengraph-image",
+  "/twitter-image",
+  "/icon",
+  "/apple-icon",
+  "/manifest.webmanifest",
+  "/robots.txt",
+]);
+
 function isPublicPath(pathname: string): boolean {
   return (
     PUBLIC_PATHS.has(pathname) ||
     pathname.startsWith("/auth/") ||
-    pathname === "/auth"
+    pathname === "/auth" ||
+    // Generated metadata files carry no private data, and crawlers that build a
+    // link preview cannot hold a session. Without this the OpenGraph card would
+    // answer with a login redirect.
+    METADATA_PATHS.has(pathname)
   );
 }
 

@@ -1,18 +1,48 @@
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+const MOBILE_BREAKPOINT = "(max-width: 767px)"
 
-export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(false)
+/**
+ * Reads a media query as an external store.
+ *
+ * The previous version kept the answer in `useState` and filled it from an
+ * effect, which meant every consumer rendered twice on mount and subscribed
+ * with its own listener. `useSyncExternalStore` reads the current value
+ * synchronously, shares one listener per query, and lets the server render the
+ * desktop answer without a hydration mismatch.
+ */
+function mediaQueryStore(query: string) {
+  let mql: MediaQueryList | null = null
+  const listeners = new Set<() => void>()
 
-  React.useEffect(() => {
-    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-    const update = () => setIsMobile(mediaQuery.matches)
+  const subscribe = (listener: () => void) => {
+    if (!mql) mql = window.matchMedia(query)
+    listeners.add(listener)
+    const notify = () => {
+      for (const entry of listeners) entry()
+    }
+    mql.addEventListener("change", notify)
 
-    update()
-    mediaQuery.addEventListener("change", update)
-    return () => mediaQuery.removeEventListener("change", update)
-  }, [])
+    return () => {
+      listeners.delete(listener)
+      if (listeners.size === 0) mql?.removeEventListener("change", notify)
+    }
+  }
 
-  return isMobile
+  const getSnapshot = () => {
+    if (!mql) mql = window.matchMedia(query)
+    return mql.matches
+  }
+
+  return { subscribe, getSnapshot }
+}
+
+const mobileStore = mediaQueryStore(MOBILE_BREAKPOINT)
+
+export function useIsMobile(): boolean {
+  return React.useSyncExternalStore(
+    mobileStore.subscribe,
+    mobileStore.getSnapshot,
+    () => false,
+  )
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +12,7 @@ import {
   Hammer,
   MapPin,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,6 +38,7 @@ const AUDIENCE_HINT: Record<MeetingFormValues["type"], string> = {
 
 export function MeetingForm() {
   const router = useRouter();
+  const formRef = useUnsavedChanges();
 
   const form = useForm<MeetingFormValues>({
     resolver: zodResolver(meetingSchema),
@@ -62,7 +64,7 @@ export function MeetingForm() {
           ? "Central meeting"
           : "Builders meeting";
 
-    toast.success("Meeting scheduled", {
+    notify("success", "Meeting scheduled", {
       description: `${label} on ${values.date} at ${values.startTime}. ${
         values.startNow
           ? "It starts immediately, so attendance is already open."
@@ -76,7 +78,11 @@ export function MeetingForm() {
 
   return (
     <Card className="border-border bg-card p-6 shadow-xs">
-      <form onSubmit={form.handleSubmit(submit)} className="space-y-6">
+      <form
+        ref={formRef}
+        onSubmit={form.handleSubmit(submit)}
+        className="space-y-6"
+      >
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-label-sm font-medium">

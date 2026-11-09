@@ -136,6 +136,7 @@ export function AppSidebar({ actor }: { actor: SidebarActor }) {
                         <Link
                           href={item.href}
                           prefetch={item.prefetch ?? undefined}
+                          aria-current={isActive ? "page" : undefined}
                         />
                       }
                       isActive={isActive}

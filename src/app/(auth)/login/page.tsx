@@ -68,6 +68,9 @@ export default async function LoginPage({
   const next = sanitizeReturnTo(params.next);
   const errorCode = typeof params.error === "string" ? params.error : null;
   const configured = isSupabaseConfigured();
+  // A bad test credential is a field problem, not a page problem: it belongs
+  // under the inputs where the person is looking, not in a banner above them.
+  const credentialError = errorCode === "dev" ? ERROR_MESSAGES.dev : null;
 
   // TEMPORARY: one example account per office role, for the dev sign-in form.
   // `devLoginAccounts()` is empty in production and when dev login is disabled.
@@ -186,7 +189,7 @@ export default async function LoginPage({
               (@kiit.ac.in).
             </p>
 
-            {errorCode && ERROR_MESSAGES[errorCode] ? (
+            {errorCode && errorCode !== "dev" && ERROR_MESSAGES[errorCode] ? (
               <p
                 role="alert"
                 className="mt-4 rounded-lg border border-destructive/25 bg-error-container/50 px-3 py-2 text-[0.75rem] leading-relaxed text-on-error-container"
@@ -235,6 +238,10 @@ export default async function LoginPage({
                       name="username"
                       autoComplete="username"
                       placeholder="2328051"
+                      aria-invalid={credentialError ? true : undefined}
+                      aria-describedby={
+                        credentialError ? "dev-credential-error" : undefined
+                      }
                       required
                     />
                   </label>
@@ -246,9 +253,22 @@ export default async function LoginPage({
                       name="password"
                       type="password"
                       autoComplete="current-password"
+                      aria-invalid={credentialError ? true : undefined}
+                      aria-describedby={
+                        credentialError ? "dev-credential-error" : undefined
+                      }
                       required
                     />
                   </label>
+                  {credentialError ? (
+                    <p
+                      id="dev-credential-error"
+                      role="alert"
+                      className="rounded-md border border-destructive/25 bg-error-container/40 px-2.5 py-1.5 text-[0.6875rem] leading-relaxed text-on-error-container"
+                    >
+                      {credentialError}
+                    </p>
+                  ) : null}
                   <Button
                     type="submit"
                     variant="outline"

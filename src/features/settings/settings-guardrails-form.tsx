@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Sliders, Save, Info } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,9 @@ export function SettingsGuardrailsForm() {
     setSaving(true);
     setTimeout(() => {
       setSaving(false);
-      toast.success("Operational Guardrails Saved", {
-        description: "Updated soft-rules policies (S-01 through S-09). Simulated client state in Part 1.",
+      notify("success", "Operational Guardrails Saved", {
+        description:
+          "Updated soft-rules policies (S-01 through S-09). Simulated client state in Part 1.",
       });
     }, 400);
   };
@@ -38,11 +39,15 @@ export function SettingsGuardrailsForm() {
             Soft Rules &amp; Operational Guardrails (SRS §3.2)
           </h3>
           <p className="text-body-sm text-muted-foreground">
-            Default operational boundaries. Coordinators can override any soft rule with written justification.
+            Default operational boundaries. Coordinators can override any soft
+            rule with written justification.
           </p>
         </div>
 
-        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-label-xs self-start sm:self-auto">
+        <Badge
+          variant="outline"
+          className="bg-primary/10 text-primary border-primary/20 text-label-xs self-start sm:self-auto"
+        >
           9 Guardrails Active
         </Badge>
       </div>
@@ -52,10 +57,17 @@ export function SettingsGuardrailsForm() {
           {/* S-02: FCFS Lock Duration */}
           <div className="p-4 rounded-xl bg-muted/20 border border-border/60 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-label-xs font-semibold text-foreground font-mono">S-02</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">FCFS Window</span>
+              <span className="text-label-xs font-semibold text-foreground font-mono">
+                S-02
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                FCFS Window
+              </span>
             </div>
-            <Label htmlFor="fcfsDuration" className="text-label-sm font-medium text-foreground block">
+            <Label
+              htmlFor="fcfsDuration"
+              className="text-label-sm font-medium text-foreground block"
+            >
               Default FCFS Window (Minutes)
             </Label>
             <Input
@@ -68,17 +80,25 @@ export function SettingsGuardrailsForm() {
               className="h-8.5 bg-background border-border font-mono text-body-sm"
             />
             <p className="text-[11px] text-muted-foreground">
-              Closes automatically at <code>fcfs_lock_at</code>. Coordinator can reopen or insert walk-ins.
+              Closes automatically at <code>fcfs_lock_at</code>. Coordinator can
+              reopen or insert walk-ins.
             </p>
           </div>
 
           {/* S-03: Max Collaborators */}
           <div className="p-4 rounded-xl bg-muted/20 border border-border/60 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-label-xs font-semibold text-foreground font-mono">S-03</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Collaboration</span>
+              <span className="text-label-xs font-semibold text-foreground font-mono">
+                S-03
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                Collaboration
+              </span>
             </div>
-            <Label htmlFor="maxCollab" className="text-label-sm font-medium text-foreground block">
+            <Label
+              htmlFor="maxCollab"
+              className="text-label-sm font-medium text-foreground block"
+            >
               Max Collaborating Wings
             </Label>
             <Input
@@ -91,17 +111,25 @@ export function SettingsGuardrailsForm() {
               className="h-8.5 bg-background border-border font-mono text-body-sm"
             />
             <p className="text-[11px] text-muted-foreground">
-              1 host + max 2 collaborators (3 wings max). Coordinator override required for 4+ wing mega drives.
+              1 host + max 2 collaborators (3 wings max). Coordinator override
+              required for 4+ wing mega drives.
             </p>
           </div>
 
           {/* S-05: MOM Editing Window */}
           <div className="p-4 rounded-xl bg-muted/20 border border-border/60 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-label-xs font-semibold text-foreground font-mono">S-05</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Minutes of Meeting</span>
+              <span className="text-label-xs font-semibold text-foreground font-mono">
+                S-05
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                Minutes of Meeting
+              </span>
             </div>
-            <Label htmlFor="momWindowDays" className="text-label-sm font-medium text-foreground block">
+            <Label
+              htmlFor="momWindowDays"
+              className="text-label-sm font-medium text-foreground block"
+            >
               MOM Submission Window (Days)
             </Label>
             <Input
@@ -114,17 +142,25 @@ export function SettingsGuardrailsForm() {
               className="h-8.5 bg-background border-border font-mono text-body-sm"
             />
             <p className="text-[11px] text-muted-foreground">
-              Meeting minutes lock 7 days after conclusion. Revision requires coordinator budget approval.
+              Meeting minutes lock 7 days after conclusion. Revision requires
+              coordinator budget approval.
             </p>
           </div>
 
           {/* S-06: Edit Budget */}
           <div className="p-4 rounded-xl bg-muted/20 border border-border/60 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-label-xs font-semibold text-foreground font-mono">S-06</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Edit Budget</span>
+              <span className="text-label-xs font-semibold text-foreground font-mono">
+                S-06
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                Edit Budget
+              </span>
             </div>
-            <Label htmlFor="editBudget" className="text-label-sm font-medium text-foreground block">
+            <Label
+              htmlFor="editBudget"
+              className="text-label-sm font-medium text-foreground block"
+            >
               Subsequent Edits Allowed
             </Label>
             <Input
@@ -137,17 +173,25 @@ export function SettingsGuardrailsForm() {
               className="h-8.5 bg-background border-border font-mono text-body-sm"
             />
             <p className="text-[11px] text-muted-foreground">
-              PRs and Builders are granted 2 saved edits after initial creation before requiring coordinator unlocks.
+              PRs and Builders are granted 2 saved edits after initial creation
+              before requiring coordinator unlocks.
             </p>
           </div>
 
           {/* S-08: Consecutive Absence Review */}
           <div className="p-4 rounded-xl bg-muted/20 border border-border/60 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-label-xs font-semibold text-foreground font-mono">S-08</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Absence Review</span>
+              <span className="text-label-xs font-semibold text-foreground font-mono">
+                S-08
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                Absence Review
+              </span>
             </div>
-            <Label htmlFor="absenceThreshold" className="text-label-sm font-medium text-foreground block">
+            <Label
+              htmlFor="absenceThreshold"
+              className="text-label-sm font-medium text-foreground block"
+            >
               Consecutive Absence Alert (Meets)
             </Label>
             <Input
@@ -160,17 +204,25 @@ export function SettingsGuardrailsForm() {
               className="h-8.5 bg-background border-border font-mono text-body-sm"
             />
             <p className="text-[11px] text-muted-foreground">
-              2 unexcused meeting absences trigger review by Coordinator for suspension or red flag placement.
+              2 unexcused meeting absences trigger review by Coordinator for
+              suspension or red flag placement.
             </p>
           </div>
 
           {/* S-09: Minimum Domain Lead Tenure */}
           <div className="p-4 rounded-xl bg-muted/20 border border-border/60 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-label-xs font-semibold text-foreground font-mono">S-09</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Domain Lead Rule</span>
+              <span className="text-label-xs font-semibold text-foreground font-mono">
+                S-09
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                Domain Lead Rule
+              </span>
             </div>
-            <Label htmlFor="domainTenureHours" className="text-label-sm font-medium text-foreground block">
+            <Label
+              htmlFor="domainTenureHours"
+              className="text-label-sm font-medium text-foreground block"
+            >
               Min Hours for Domain Lead
             </Label>
             <Input
@@ -183,7 +235,8 @@ export function SettingsGuardrailsForm() {
               className="h-8.5 bg-background border-border font-mono text-body-sm"
             />
             <p className="text-[11px] text-muted-foreground">
-              &gt;40 service hours and 3+ months active membership required to qualify as creative Domain Lead.
+              &gt;40 service hours and 3+ months active membership required to
+              qualify as creative Domain Lead.
             </p>
           </div>
         </div>
@@ -193,13 +246,21 @@ export function SettingsGuardrailsForm() {
           <div className="flex items-center gap-2 text-label-xs text-muted-foreground">
             <Info className="size-4 text-primary shrink-0" />
             <span>
-              All rule parameter changes are recorded permanently in the security audit ledger with officer ID.
+              All rule parameter changes are recorded permanently in the
+              security audit ledger with officer ID.
             </span>
           </div>
 
-          <Button type="submit" disabled={saving} size="sm" className="gap-1.5 shadow-xs">
+          <Button
+            type="submit"
+            disabled={saving}
+            size="sm"
+            className="gap-1.5 shadow-xs"
+          >
             <Save className="size-3.5" />
-            <span>{saving ? "Updating..." : "Save Guardrail Configuration"}</span>
+            <span>
+              {saving ? "Updating..." : "Save Guardrail Configuration"}
+            </span>
           </Button>
         </div>
       </form>

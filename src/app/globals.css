@@ -166,7 +166,7 @@
   --on-success-container: oklch(0.28 0.070 175);
 
   /* Status: Warning (soft amber) */
-  --warning: oklch(0.60 0.115 70);
+  --warning: oklch(0.57 0.115 70);
   --warning-foreground: oklch(0.20 0.030 70);
   --warning-container: oklch(0.960 0.038 75);
   --on-warning-container: oklch(0.34 0.075 70);
@@ -779,6 +779,20 @@
 }
 
 /*
+ * Row virtualization without a windowing dependency.
+ *
+ * `content-visibility: auto` lets the browser skip layout and paint for rows
+ * that are outside the scrollport, so a long ledger scrolls at the cost of the
+ * rows actually on screen. `contain-intrinsic-size` reserves the row height so
+ * the scrollbar stays stable before a row is realised. Applied to the row
+ * element itself, so the table's column model is untouched.
+ */
+@utility row-virtual {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3rem;
+}
+
+/*
  * Deferred paint.
  *
  * Long pages can opt a below-the-fold block out of the first layout/paint pass;
@@ -927,5 +941,68 @@
   }
   .lift:hover {
     transform: none;
+  }
+  /* A sheen frozen at its final keyframe reads as a broken skeleton, so the
+     reduced-motion state gets a flat tint instead of a stopped animation. */
+  .skeleton-sheen::after {
+    display: none;
+  }
+}
+
+/* Grid focus ring.
+   Table cells are reachable with the arrow keys but sit at tabIndex -1, so the
+   ring has to be drawn on the cell itself rather than on a child control. An
+   inset outline keeps the row height from shifting when focus lands. */
+[data-slot="table-cell"]:focus-visible,
+[data-slot="table-head"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+/* Reduced Transparency.
+   The translucent topbar, dock and cards exist to let content show through the
+   blur. Once the reader has asked the system for less transparency, that
+   trade-off is not theirs to make: the surfaces go opaque and the blur is
+   dropped, which is also cheaper to paint. */
+@media (prefers-reduced-transparency: reduce) {
+  /* Matches every backdrop-blur utility, including the arbitrary `[2px]` and
+     `xs` variants, without listing them: the class token itself is the hook. */
+  [class*="backdrop-blur"] {
+    --tw-backdrop-blur: blur(0px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  [data-slot="sidebar"],
+  header.sticky,
+  nav[aria-label="Mobile navigation"] {
+    background-color: var(--card);
+  }
+}
+
+/* Forced Colours.
+   Windows high-contrast replaces the palette with system colours; translucent
+   fills, gradient hairlines and coloured dots disappear or turn into noise.
+   Keep the structure, hand the colours to the system, and make the selected
+   row and current navigation item explicit with a border instead of a tint. */
+@media (forced-colors: active) {
+  [data-slot="card"],
+  [data-slot="stat-card"],
+  [data-slot="badge"],
+  [data-slot="button"] {
+    border: 1px solid CanvasText;
+  }
+
+  [aria-current="page"],
+  [data-state="selected"],
+  [aria-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  /* Gradient hairlines and shimmer overlays carry no meaning here. */
+  .topbar-seam::after,
+  .skeleton-sheen::after {
+    display: none;
   }
 }

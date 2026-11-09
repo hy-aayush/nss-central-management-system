@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarDays, Clock, Plus, Search, Users } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -228,14 +228,15 @@ export function TaggedHoursPanel({
     setOpen(false);
 
     if (created.length === 0) {
-      toast.warning("Nothing added", {
+      notify("warning", "Nothing added", {
         description:
           "Every selected volunteer already has this tag for that day and event.",
       });
       return;
     }
 
-    toast.success(
+    notify(
+      "success",
       `${created.length} adjustment${created.length === 1 ? "" : "s"} added`,
       {
         description:

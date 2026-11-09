@@ -10,7 +10,7 @@ import {
   Clock,
   Lock,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,7 +132,7 @@ export function AttendanceRosterTable({
       ),
     );
 
-    toast.success(`Marked ${participant.volunteer.name} as ${newStatus}`, {
+    notify("success", `Marked ${participant.volunteer.name} as ${newStatus}`, {
       description: `Roll ${participant.volunteer.rollNumber} updated (Simulated).`,
     });
   };
@@ -168,7 +168,7 @@ export function AttendanceRosterTable({
 
     setCorrections((prev) => [newRecord, ...prev]);
 
-    toast.success(`Audited Correction Applied`, {
+    notify("success", `Audited Correction Applied`, {
       description: `Roll ${values.rollNumber} amended from ${values.oldStatus} to ${values.newStatus} with audit justification.`,
     });
   };
@@ -183,7 +183,7 @@ export function AttendanceRosterTable({
         markedAt: new Date().toISOString(),
       })),
     );
-    toast.success("Bulk Operation Complete", {
+    notify("success", "Bulk Operation Complete", {
       description: "Marked all roster participants as PRESENT (Simulated).",
     });
   };
@@ -201,7 +201,7 @@ export function AttendanceRosterTable({
             },
       ),
     );
-    toast.info("Bulk Operation Complete", {
+    notify("info", "Bulk Operation Complete", {
       description: "Marked all remaining volunteers as ABSENT (Simulated).",
     });
   };
@@ -323,7 +323,7 @@ export function AttendanceRosterTable({
               size="sm"
               onClick={() => {
                 setIsLocked(false);
-                toast.info("Attendance Unlocked (Coordinator Override)", {
+                notify("info", "Attendance Unlocked (Coordinator Override)", {
                   description:
                     "Attendance marking re-enabled for session staff.",
                 });

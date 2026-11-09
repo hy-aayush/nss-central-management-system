@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useUrlSync } from "@/hooks/use-url-sync";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useIntentPrefetch } from "@/hooks/use-intent-prefetch";
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableCaption,
 } from "@/components/ui/table";
 import {
   Search,
@@ -32,6 +34,13 @@ import {
 import type { VolunteerDetail } from "@/types/volunteer";
 import type { ProjectName, CreativeDomain } from "@/types/project";
 import { PROJECT_COLOR_MAP } from "@/lib/constants";
+import {
+  readDirection,
+  readPage,
+  readPageSize,
+  readSort,
+  readText,
+} from "@/lib/table-params";
 
 interface VolunteerTableProps {
   initialVolunteers: VolunteerDetail[];
@@ -72,6 +81,27 @@ const YEARS = [
   { value: "4", label: "4th Year" },
 ];
 
+type SortField =
+  | "name"
+  | "rollNumber"
+  | "allocatedHours"
+  | "attendanceRateEvents";
+
+/** The only page sizes the select offers, and the only ones URL state accepts. */
+const VOLUNTEER_PAGE_SIZES = [8, 16, 32] as const;
+
+type TableQuery = {
+  search: string;
+  project: string;
+  domain: string;
+  status: string;
+  year: string;
+  page: number;
+  sort: SortField;
+  asc: boolean;
+  size: number;
+};
+
 export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -82,14 +112,23 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
   // after mount. Previously both were always in the DOM, so every row was
   // serialised, hydrated and laid out twice.
   const isMobile = useIsMobile();
+  // Rows are not prefetched on sight; aiming at one warms it (see the hook).
+  const intentPrefetch = useIntentPrefetch();
 
   // URL state synchronization
-  const searchParam = searchParams.get("search") ?? "";
-  const projectParam = searchParams.get("project") ?? "ALL";
-  const domainParam = searchParams.get("domain") ?? "ALL";
-  const statusParam = searchParams.get("status") ?? "ALL";
-  const yearParam = searchParams.get("year") ?? "ALL";
-  const pageParam = parseInt(searchParams.get("page") ?? "1", 10);
+  const searchParam = readText(searchParams, "search");
+  const projectParam = readText(searchParams, "project", "ALL");
+  const domainParam = readText(searchParams, "domain", "ALL");
+  const statusParam = readText(searchParams, "status", "ALL");
+  const yearParam = readText(searchParams, "year", "ALL");
+  const pageParam = readPage(searchParams);
+  const sizeParam = readPageSize(searchParams, VOLUNTEER_PAGE_SIZES, 8);
+  const initialSort = readSort<SortField>(
+    searchParams,
+    ["name", "rollNumber", "allocatedHours", "attendanceRateEvents"],
+    "name",
+  );
+  const initialAsc = readDirection(searchParams, "asc") === "asc";
 
   // Local interactive filter state
   const [search, setSearch] = React.useState(searchParam);
@@ -98,70 +137,99 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
   const [status, setStatus] = React.useState(statusParam);
   const [year, setYear] = React.useState(yearParam);
   const [currentPage, setCurrentPage] = React.useState(pageParam);
-  const [pageSize] = React.useState(8);
+  const [pageSize, setPageSize] = React.useState(sizeParam);
 
   // Sorting
-  const [sortField, setSortField] = React.useState<
-    "name" | "rollNumber" | "allocatedHours" | "attendanceRateEvents"
-  >("name");
-  const [sortAsc, setSortAsc] = React.useState(true);
+  const [sortField, setSortField] = React.useState<SortField>(initialSort);
+  const [sortAsc, setSortAsc] = React.useState(initialAsc);
 
-  // Filters are applied from local state; the URL is updated behind them purely
-  // so a filtered view can be shared. That write is debounced and does not go
-  // through the router, so typing never triggers a server render or a second
-  // access-gate query (see useUrlSync).
-  const updateUrlParams = React.useCallback(
-    (
-      newSearch: string,
-      newProj: string,
-      newDom: string,
-      newStat: string,
-      newYr: string,
-      newPg: number,
-    ) => {
+  // Filters and view state live in local state; the URL is updated behind them
+  // purely so a filtered, sorted view can be shared or restored. That write is
+  // debounced and does not go through the router, so typing never triggers a
+  // server render or a second access-gate query (see useUrlSync). One `commit`
+  // merges a partial view over the current one, so every control persists the
+  // whole view instead of its own column of arguments.
+  const view = {
+    search,
+    project,
+    domain,
+    status,
+    year,
+    page: currentPage,
+    sort: sortField,
+    asc: sortAsc,
+    size: pageSize,
+  };
+
+  const commit = React.useCallback(
+    (next: Partial<TableQuery>) => {
+      const merged = { ...view, ...next };
       const params = new URLSearchParams();
-      if (newSearch) params.set("search", newSearch);
-      if (newProj !== "ALL") params.set("project", newProj);
-      if (newDom !== "ALL") params.set("domain", newDom);
-      if (newStat !== "ALL") params.set("status", newStat);
-      if (newYr !== "ALL") params.set("year", newYr);
-      if (newPg > 1) params.set("page", String(newPg));
+      if (merged.search) params.set("search", merged.search);
+      if (merged.project !== "ALL") params.set("project", merged.project);
+      if (merged.domain !== "ALL") params.set("domain", merged.domain);
+      if (merged.status !== "ALL") params.set("status", merged.status);
+      if (merged.year !== "ALL") params.set("year", merged.year);
+      if (merged.page > 1) params.set("page", String(merged.page));
+      if (merged.sort !== "name") params.set("sort", merged.sort);
+      if (!merged.asc) params.set("dir", "desc");
+      if (merged.size !== 8) params.set("size", String(merged.size));
 
       const query = params.toString();
       syncUrl(query ? `${pathname}?${query}` : pathname);
     },
-    [pathname, syncUrl],
+    // `view` is rebuilt on every render from the state above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      pathname,
+      syncUrl,
+      search,
+      project,
+      domain,
+      status,
+      year,
+      currentPage,
+      sortField,
+      sortAsc,
+      pageSize,
+    ],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearch(val);
     setCurrentPage(1);
-    updateUrlParams(val, project, domain, status, year, 1);
+    commit({ search: val, page: 1 });
   };
 
   const handleProjectChange = (val: string) => {
     setProject(val);
     setCurrentPage(1);
-    updateUrlParams(search, val, domain, status, year, 1);
+    commit({ project: val, page: 1 });
   };
 
   const handleDomainChange = (val: string) => {
     setDomain(val);
     setCurrentPage(1);
-    updateUrlParams(search, project, val, status, year, 1);
+    commit({ domain: val, page: 1 });
   };
 
   const handleStatusChange = (val: string) => {
     setStatus(val);
     setCurrentPage(1);
-    updateUrlParams(search, project, domain, val, year, 1);
+    commit({ status: val, page: 1 });
   };
 
   const handleYearChange = (val: string) => {
     setYear(val);
     setCurrentPage(1);
-    updateUrlParams(search, project, domain, status, val, 1);
+    commit({ year: val, page: 1 });
+  };
+
+  const handlePageSizeChange = (val: number) => {
+    setPageSize(val);
+    setCurrentPage(1);
+    commit({ size: val, page: 1 });
   };
 
   const resetFilters = () => {
@@ -256,13 +324,17 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
   const startIndex = (pageIndex - 1) * pageSize;
   const paginated = sorted.slice(startIndex, startIndex + pageSize);
 
-  const toggleSort = (field: typeof sortField) => {
-    if (sortField === field) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortField(field);
-      setSortAsc(true);
-    }
+  // Mirrors the visible arrow so a screen reader announces "sorted ascending"
+  // on the column that is actually ordering the rows.
+  const sortDirection = (field: SortField) =>
+    sortField === field ? (sortAsc ? "ascending" : "descending") : "none";
+
+  const toggleSort = (field: SortField) => {
+    const nextAsc = sortField === field ? !sortAsc : true;
+    setSortField(field);
+    setSortAsc(nextAsc);
+    setCurrentPage(1);
+    commit({ sort: field, asc: nextAsc, page: 1 });
   };
 
   return (
@@ -375,7 +447,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
 
       {/* Results Count & Active Filters Indicator */}
       <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-        <span>
+        <span role="status" aria-live="polite" aria-atomic="true">
           Showing{" "}
           <strong className="font-mono text-foreground">
             {paginated.length}
@@ -414,9 +486,15 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
           {/* Desktop Table View */}
           <div className="hidden overflow-hidden rounded-xl border border-border/70 bg-card shadow-[var(--elevation-1)] md:block">
             <Table>
+              <TableCaption className="sr-only">
+                Volunteer directory, sorted by {sortField} {sortAsc ? "ascending" : "descending"}
+              </TableCaption>
               <TableHeader className="bg-surface-container-low/60">
                 <TableRow>
-                  <TableHead className="h-9 w-[240px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                  <TableHead
+                    aria-sort={sortDirection("name")}
+                    className="h-9 w-[240px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase"
+                  >
                     <button
                       onClick={() => toggleSort("name")}
                       className="flex items-center gap-1 rounded-sm text-[0.6875rem] font-semibold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease-out-quart)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
@@ -425,7 +503,10 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="h-9 w-[120px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                  <TableHead
+                    aria-sort={sortDirection("rollNumber")}
+                    className="h-9 w-[120px] text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase"
+                  >
                     <button
                       onClick={() => toggleSort("rollNumber")}
                       className="flex items-center gap-1 rounded-sm text-[0.6875rem] font-semibold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease-out-quart)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
@@ -443,7 +524,10 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                   <TableHead className="h-9 w-[90px] text-center text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
                     Year
                   </TableHead>
-                  <TableHead className="h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                  <TableHead
+                    aria-sort={sortDirection("allocatedHours")}
+                    className="h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase"
+                  >
                     <button
                       onClick={() => toggleSort("allocatedHours")}
                       className="ml-auto inline-flex items-center gap-1 rounded-sm text-[0.6875rem] font-semibold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease-out-quart)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
@@ -452,7 +536,10 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                       <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                  <TableHead
+                    aria-sort={sortDirection("attendanceRateEvents")}
+                    className="h-9 w-[110px] text-right text-[0.6875rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase"
+                  >
                     <button
                       onClick={() => toggleSort("attendanceRateEvents")}
                       className="ml-auto inline-flex items-center gap-1 rounded-sm text-[0.6875rem] font-semibold tracking-[0.06em] uppercase transition-colors duration-150 ease-[var(--ease-out-quart)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
@@ -478,12 +565,13 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                   return (
                     <TableRow
                       key={vol.rollNumber}
-                      className="row-focus group transition-colors duration-150 ease-[var(--ease-out-quart)] hover:bg-surface-container-low/50"
+                      className="row-virtual row-focus group transition-colors duration-150 ease-[var(--ease-out-quart)] hover:bg-surface-container-low/50"
                     >
                       {/* Name & Role */}
                       <TableCell className="font-medium">
                         <Link
                           prefetch={false}
+                          {...intentPrefetch(`/volunteers/${vol.rollNumber}`)}
                           href={`/volunteers/${vol.rollNumber}`}
                           className="hover:text-primary transition-colors block"
                         >
@@ -585,6 +673,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                         <Link
                           prefetch={false}
                           href={`/volunteers/${vol.rollNumber}`}
+                          {...intentPrefetch(`/volunteers/${vol.rollNumber}`)}
                           className={buttonVariants({
                             variant: "ghost",
                             size: "sm",
@@ -693,7 +782,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
           ) : null}
 
           {/* Pagination Controls */}
-          {totalPages > 1 && (
+          {(totalPages > 1 || pageSize !== 8) && (
             <div className="flex items-center justify-between pt-2 px-1">
               <span className="text-xs text-muted-foreground">
                 Page{" "}
@@ -707,20 +796,28 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
               </span>
 
               <div className="flex items-center gap-2">
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  Rows
+                  <select
+                    value={pageSize}
+                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                    aria-label="Rows per page"
+                    className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {VOLUNTEER_PAGE_SIZES.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
                     const newPage = Math.max(1, pageIndex - 1);
                     setCurrentPage(newPage);
-                    updateUrlParams(
-                      search,
-                      project,
-                      domain,
-                      status,
-                      year,
-                      newPage,
-                    );
+                    commit({ page: newPage });
                   }}
                   disabled={pageIndex <= 1}
                   className="h-8 gap-1 text-xs"
@@ -734,14 +831,7 @@ export function VolunteerTable({ initialVolunteers }: VolunteerTableProps) {
                   onClick={() => {
                     const newPage = Math.min(totalPages, pageIndex + 1);
                     setCurrentPage(newPage);
-                    updateUrlParams(
-                      search,
-                      project,
-                      domain,
-                      status,
-                      year,
-                      newPage,
-                    );
+                    commit({ page: newPage });
                   }}
                   disabled={pageIndex >= totalPages}
                   className="h-8 gap-1 text-xs"

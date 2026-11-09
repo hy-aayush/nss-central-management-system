@@ -1,5 +1,374 @@
 # Database Foundation Progress
 
+## Optimisation pass — items 55–74 of 94 (9 Nov 2026)
+
+**Scope:** accessibility of the data grids, a measured style-sheet audit, field
+level errors, field metrics, and the tooling that keeps the previous passes from
+regressing. Still no route, auth, authorization, schema or dataset change.
+
+### What shipped (55–74)
+
+55. **Style-sheet audit, shipped as a tool.** `scripts/css-audit.mjs` reads the
+    emitted CSS and reports raw/gzip size, top-level blocks, brace groups,
+    custom-property declarations and `.dark` occurrences. Measured: **189.0 KB
+    raw / 29.9 KB gzip across 2 files**, 2,096 brace groups, 669 custom-property
+    declarations (48.2 KB raw), 74 `.dark` occurrences. The sheet is all used
+    utilities — the only duplication is Tailwind's own hex + `@supports
+    (color:lab())` token pairs (~7 KB raw), which is framework output, not ours.
+    No design-changing cut was shipped to manufacture a smaller number.
+56. **Reduced transparency and forced colours.** `prefers-reduced-transparency:
+    reduce` neutralises every `backdrop-blur` utility (via the class token, so
+    the arbitrary `[2px]` variant is covered) and makes the fixed chrome opaque;
+    `forced-colors: active` gives cards, badges and buttons a system border and
+    marks the current/selected row with `Highlight` instead of a tint.
+58. **Field-level error on the sign-in form.** A rejected test credential is now
+    rendered under the inputs with `aria-invalid` and `aria-describedby` on both
+    fields, instead of a page banner above the form.
+63. **Field metrics without a dependency.** `src/lib/vitals.ts` observes LCP,
+    CLS, the longest event and TTFB from `PerformanceObserver`, and posts one
+    beacon on `pagehide` to `/api/vitals`, which validates, clamps and logs a
+    single line. `VitalsReporter` loads it on idle so measuring never delays the
+    page. The event metric is named `longestEvent`, not INP, because that is what
+    it actually measures.
+64. **`useIsMobile` as an external store.** The hook now reads the media query
+    through `useSyncExternalStore` with one shared listener, instead of
+    `useState` filled from an effect (two renders per consumer on mount).
+65. **Arrow-key grid navigation.** `Table` handles Arrow/Home/End between cells
+    and only when the cell itself holds focus, so a press inside a button or an
+    input keeps its native meaning. Cells are `tabIndex={-1}`, Tab still leaves
+    the table, and an inset `:focus-visible` ring shows where the cursor is.
+67. **One percent formatter.** `src/lib/format.ts#formatPercent` replaces three
+    inline `toFixed(1)}%` call sites, so a rate cannot read 90.4% in one card and
+    90% in another, and whole numbers lose their `.0`.
+69. **Unsaved-changes guard.** `useUnsavedChanges` arms on the first `input` on
+    the form (one native listener, no per-keystroke re-render) and covers both
+    exits: `beforeunload` for reloads and OS-level navigation, a capture-phase
+    click listener for in-app links. Wired into both event forms and the meeting
+    form; submitting disarms it.
+72. **Table semantics.** `scope="col"` on every header, a screen-reader-only
+    `<caption>` naming each table and its current sort, and `aria-sort` on the
+    volunteer directory's four sortable columns.
+73. **Capped intent prefetch.** The row-prefetch hook got a token bucket (2
+    tokens, 600 ms refill): a pointer sweep down a table warms the first couple
+    of rows instead of starting a private render per row it crosses.
+74. **One verification command.** `npm run verify` chains `typecheck`, `lint`,
+    `contrast` and `budget`; `budget` now refuses to measure a development build
+    (no `BUILD_ID`), so the number it prints is always a deployment's.
+
+### Verified as already satisfied
+
+57. **Cache lifetimes documented.** Every cached read uses the `hours` preset,
+    which for this Next version is stale 5 min / revalidate 1 h / expire 1 day;
+    the table and the rules for choosing it now sit at the top of
+    `src/lib/mock-data/cached.ts`.
+59. **No server mutations to make optimistic.** Attendance, hours approval and
+    corrections already settle in local state and confirm with `notify()`; there
+    is no round trip to hide, so `useOptimistic` would add API without changing
+    what anyone sees.
+60. **`staleTimes` cannot outlive a session.** Authenticated documents are served
+    `Cache-Control: no-store`, so they are ineligible for the back/forward cache;
+    sign-out is a POST that returns a 303 with `Clear-Site-Data: "cache"` and the
+    session cookie deleted, replacing the document and discarding the client
+    router cache.
+61. **Fonts already tuned.** `next/font` with `latin` subsets, `display: "swap"`,
+    only the sans face preloaded, and metric-matched fallbacks (the default) — so
+    there is no invisible-text gap and the mono face is not on the critical path.
+62. **No raster images.** There is not a single `<img>` in the app; avatars are
+    initials and every icon is an inline SVG. Nothing to size or lazy-load.
+66. **Detail routes have empty states.** Unknown ids and empty histories already
+    render `EmptyState` on volunteers, events, projects and meetings.
+68. **The palette has nothing to abort.** Its index is 13 static navigation
+    entries filtered synchronously (built from `MAIN_NAV_ITEMS`, item 53); there
+    is no fetch or scan that a worker could move off the main thread.
+70. **Access paths are indexed; queries name their columns.** `projects.slug` is
+    unique, `volunteers(project_id, status)` and `volunteers(status)` cover the
+    directory's filter, `volunteer_domains(domain)` covers domain filtering and
+    the assignment table carries a partial active index. Seed queries already
+    select explicit columns.
+71. **Nothing to invalidate yet.** No mutation writes to a store, so there is no
+    write path to hang `revalidateTag` on; every cached read is already tagged
+    (`dashboard`, `events`, `meetings`, `hours`, `roster`, `unit-summary`, …) for
+    the day a repository does.
+
+### Verified
+
+| Check | Result |
+|---|---|
+| `npm run verify` | exit 0 — typecheck, lint, contrast audit, JS budget |
+| `npm run build` | exit 0, all office routes dynamic, `/opengraph-image` static |
+| `npm run budget` | 788.5 KB gzip across 85 chunks, 31.5 KB under the 820 KB ceiling |
+| `node scripts/css-audit.mjs` | 189.0 KB raw / 29.9 KB gzip, 2,096 brace groups, 74 `.dark` occurrences |
+| `/volunteers` HTML | 9 `scope="col"`, 83 `tabindex="-1"`, `aria-sort` = 1 ascending + 3 none, sr-only caption |
+| Grid navigation | ArrowDown moved focus from row 0 to row 1 in the same column; End moved to the last cell of the row |
+| `/login?error=dev` | 2 `aria-invalid="true"`, error wired via `aria-describedby` |
+| `/api/vitals` | 204 with a session, 403 for a foreign `Origin`, one log line per beacon |
+| Browser beacon | recorded on `pagehide` with path, TTFB and connection type |
+
+**Limits.** Item 55's honest result is a measurement plus a tool, not a smaller
+file: the sheet is 29.9 KB gzip of used utilities, and the only remaining
+structural duplication is generated by Tailwind. Items 59, 68 and 71 are
+reported as not applicable rather than as passes — this build has no server
+mutation path to be optimistic about, abort, or invalidate.
+
+### Backlog (75–94)
+
+75. Persist the vitals beacons with a retention window, and read p75 per route
+    instead of a single log line.
+76. Budget HTML document weight the way client JS is budgeted.
+77. Split the style sheet per surface (shell vs. data tables) if it crosses a
+    gzip ceiling.
+78. A Playwright smoke test for the shell, the auth redirect and one table.
+79. Key the unit summary cache by academic year instead of one shared tag.
+80. `j`/`k` shortcuts on the audit ledger, documented in the shortcut sheet.
+81. Replace the remaining `useState` + effect pairs the audit found with
+    `useSyncExternalStore`.
+82. Per-table column visibility, persisted in the URL like sort and size.
+83. A typed query contract for the DB era, so filters cannot drift from indexes.
+84. Warm the next page on idle once the last row is in view.
+85. Announce sort changes to screen readers for tables that sort from a toolbar.
+86. Forced-colours pass over the charts (SVG fills to system colours).
+87. Capture section-boundary errors to a log route with the digest attached.
+88. Keep form drafts across an accidental reload with `sessionStorage`.
+89. Debounce table search with IME composition awareness.
+90. A chunk-level bundle diff on every change, reported against the budget.
+91. First-load asset budget: fail the build above a stated byte limit.
+92. A dark-mode contrast audit to match the light-mode one.
+93. Document the access-gate invariants as a checklist for future routes.
+94. Move the loading skeletons' shapes into one descriptor shared with the real
+    layouts, so the two cannot drift.
+
+## Optimisation pass — items 35–54 of 74 (9 Nov 2026)
+
+**Scope:** streaming shape, per-route skeletons, one query-parameter contract,
+cheaper caches and a measured bundle budget. No route, auth, authorization,
+schema or dataset change.
+
+### What shipped (35–54)
+
+35. **Headers stream first.** `/hours` and `/analytics` render eyebrow, title,
+    description and actions immediately; the data-dependent panels sit behind
+    `<Suspense fallback={<PanelSkeleton />}>` in a child async component, so a
+    slow dataset no longer delays the part of the page that never waited for it.
+36. **Detail-route skeletons.** `DetailRouteSkeleton` joins the shared skeleton
+    module and volunteers, events, projects and meetings each get a `loading.tsx`
+    that mirrors their hero/summary/body proportions.
+37. **Icon imports audited.** Already satisfied: `optimizePackageImports` has
+    listed `lucide-react` since the first pass, so named imports resolve to a
+    single deep module rather than the barrel.
+38. **Synthetic-data notice is dependency-free.** The pill inlines its flask SVG
+    as markup, so the shell no longer pulls an icon for a static sentence.
+39. **Supabase preconnect.** The root layout emits
+    `<link rel="preconnect" href="…supabase.co" crossorigin>` only when the public
+    config exists, so the TLS handshake overlaps HTML parsing instead of
+    starting after hydration.
+40. **Tab panels stay deferred.** Already satisfied: the hours tab panel bodies
+    are `next/dynamic` imports, so only the active ledger's chunk is requested.
+41. **Prefetch budget.** Meetings dropped out of the always-prefetch set; five
+    destinations (dashboard, volunteers, events, attendance, hours) prefetch, the
+    rest warm on intent only.
+42. **One validated query-parameter reader.** `src/lib/table-params.ts` owns
+    `readText`, `readEnum`, `readPage`, `readPageSize`, `readSort` and
+    `readDirection`: every value is clamped to an allow-list (page size, sort key,
+    direction, page ≥ 1), so a hand-edited URL can no longer make a table render
+    an unbounded or nonsensical view. Volunteers, events and audit use it.
+43. **Paint containment on the big tables.** `row-virtual` now covers the audit
+    and volunteer rows as well as the rollup, so off-screen rows skip layout and
+    paint without changing the column model.
+44. **Icon duplication checked.** Already satisfied by the same
+    `optimizePackageImports` entry as 37; the per-route chunks share one lucide
+    module.
+45. **Client-JS budget in the repo.** `scripts/js-budget.mjs` (via `npm run
+    budget`) gzips every `.next/static` chunk and fails the run above the budget
+    (`--budget=` or `JS_BUDGET_KB` to override). It prints the five heaviest
+    chunks so growth is attributable.
+46. **Dashboard from one cached read.** `getDashboardOverview()` returns the
+    snapshot plus the upcoming events and meetings, the next operation and the
+    academic-year label, so the hero's filter/format/sort work happens inside the
+    hourly cache window instead of on every request.
+47. **Dock built from the nav config.** The four mobile destinations plus "More"
+    are now looked up in `MAIN_NAV_ITEMS` instead of duplicated, so labels, icons
+    and active rules cannot drift between the sidebar, the palette and the dock.
+48. **Reduced motion reaches the sheen.** The global
+    `prefers-reduced-motion: reduce` block now also hides `.skeleton-sheen::after`,
+    so the loading shimmer is gone rather than merely unanimated.
+49. **No sidebar flash.** The office layout reads the `sidebar_state` cookie and
+    passes it as `defaultOpen`, so a collapsed sidebar is server-rendered
+    collapsed instead of snapping shut after hydration.
+50. **Critical-CSS inlining measured, then rejected.** `experimental.inlineCss`
+    was enabled, built and measured: the sheet is 188,872 B and Next duplicates
+    it (once in `<style>`, once in the RSC payload), so the login document reached
+    838 KB / 132.6 KB gzip. With a cached `<link>` the same document is 52,080 B /
+    7.6 KB gzip and the sheet is fetched once, immutable, for every route. The
+    flag is off and the reasoning is recorded in `next.config.ts`.
+51. **Error boundaries retry in place.** Already satisfied: every section
+    boundary resets only its own segment and offers a dashboard escape hatch, and
+    surfaces the digest for log correlation.
+52. **Landmarks and current page.** Sidebar links and dock links carry
+    `aria-current="page"` (the breadcrumb and both nav landmarks are labelled), so
+    assistive technology reports position without reading the page.
+53. **Palette index from config.** Already satisfied: the command palette
+    iterates `MAIN_NAV_ITEMS`, so a new destination appears without editing a
+    second list.
+54. **Minute-aligned clock.** `ist-clock.tsx` builds its `Intl.DateTimeFormat`
+    once at module scope and schedules the next tick on the next minute boundary
+    rather than every second, so an idle shell wakes 60× less often.
+
+### Verified
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | exit 0 |
+| `npx eslint` on app/components/features/lib/hooks/proxy/scripts | exit 0 |
+| `npm run build` | exit 0, all office routes still dynamic, `/opengraph-image` still static |
+| `npm run budget` | 786.5 KB gzip across 85 chunks, within the 820 KB budget |
+| Login document, production build | 52,080 B / 7.6 KB gzip, zero `<style>` tags, two cached `<link rel="stylesheet">` |
+| Inlined-CSS variant, production build | 838,154 B / 132.6 KB gzip for the same page — hence the revert |
+| Preconnect | `<link rel="preconnect" href="https://…supabase.co" crossorigin="anonymous">` present in `/dashboard` HTML |
+| `aria-current="page"` | two occurrences in `/dashboard` HTML (sidebar + dock) |
+| Routes (dev, test session) | `/login` `/dashboard` `/hours` `/analytics` `/volunteers` `/volunteers/2105101` `/audit` all 200 |
+| `/opengraph-image` (prod server) | 200, `image/png`, 56,038 B |
+
+**Limits.** 51 and 50 are reported as they are rather than as passes: the error
+boundary still replaces its segment instead of holding stale data behind a
+banner (an RSC error boundary cannot keep the last successful tree), and CSS
+inlining was deliberately not shipped. The CSS sheet itself is 189 KB and has
+not been pruned yet — that is item 55.
+
+Visual verification was also blocked this round. In the packaged Chromium the
+development server never reveals its streamed segments — every office route stays
+on the `loading.tsx` fallback with the real tree parked in hidden `[id^="S:"]`
+containers, and the console settles with only HMR logs. The same behaviour
+reproduces on unmodified `HEAD` (verified by stashing this batch), so it is a
+dev-mode/overlay problem, not a regression from 35–54; server-rendered HTML for
+all thirteen routes was checked with `curl` instead. The client DOM still
+confirms the dock, `aria-current`, the dashboard hero and its data-quality card.
+
+### Backlog (55–74)
+
+55. Audit the 189 KB style sheet: rule count per layer, unused dark variants,
+    duplicated tokens; target a measurable reduction.
+56. `prefers-reduced-transparency` and forced-colours support for the blurred
+    topbar, dock and cards.
+57. Document and tune the cache TTLs per dataset (`cacheLife`), and measure the
+    hit rate of the hourly window instead of assuming it.
+58. Typed field errors from server actions, rendered inline on the field instead
+    of as a toast summary.
+59. `useOptimistic` for attendance marking and hours approval, so a row settles
+    immediately and reverts visibly on failure.
+60. Revisit `staleTimes` with the access gate in mind: prove that no client
+    cache can serve an authorized tree to a signed-out user.
+61. Font audit: subset, `display`, and `size-adjust` metrics so headings do not
+    shift when the webfont arrives.
+62. Image audit: explicit dimensions for every avatar/logo, `next/image` where a
+    real source exists, none of it causing layout shift.
+63. A ~1 KB `web-vitals` reporter posting LCP/INP/CLS to one route, so "smooth"
+    is measured rather than asserted.
+64. Replace remaining `matchMedia`/`resize` effects with CSS media queries or
+    `useSyncExternalStore`.
+65. Roving-tabindex arrow-key navigation through the large tables, with the
+    focused cell announced.
+66. Empty-state parity for the detail routes: skeletons exist, "nothing here"
+    screens do not.
+67. Collapse duplicate formatters (`percent`, short dates, initials) into one
+    module so numbers cannot disagree between panels.
+68. Move command-palette indexing into a worker and abort stale searches.
+69. A dirty-form guard (`beforeunload` + in-app confirm) that does not re-render
+    on every keystroke.
+70. Query hygiene: explicit column lists instead of `select *`, plus an index
+    review for the columns the office actually filters on.
+71. Tag-based invalidation (`revalidateTag`) after mutations, so a dashboard edit
+    shows up without waiting for the TTL.
+72. Table semantics: captions, `scope` on header cells and `aria-sort` on the
+    sorted column.
+73. Capped hover prefetch in the sidebar, so a sweep down the nav cannot start
+    eleven server renders.
+74. One `npm run verify` that chains typecheck, lint, budget and contrast, so the
+    checks in this document are one command.
+
+## Optimisation pass — items 23–34 of 54 (9 Nov 2026)
+
+**Scope:** first-paint honesty, feedback, shareable views, resilience and
+accessibility. No route, auth, authorization, schema or dataset change.
+
+### What shipped (23–34)
+
+23. **Per-route skeletons.** `src/components/shared/route-skeleton.tsx` mirrors the
+    list/analytics page rhythm, and events, hours, volunteers and analytics each
+    get their own `loading.tsx` instead of inheriting the generic office one.
+24. **Prefetch on intent.** `useIntentPrefetch` warms a row's detail route on
+    pointer enter, focus or touch, once per href. Scrolling a 950-row directory
+    still issues no server render; aiming at a row does.
+25. **Announced result counts.** The volunteer and event result summaries are
+    `role="status" aria-live="polite"`, so filtering is reported to a screen
+    reader instead of changing silently.
+26. **Paint-level row virtualization.** `row-virtual` (`content-visibility: auto`
+    + `contain-intrinsic-size`) is applied to the year-rollup rows: off-screen
+    rows skip layout and paint, the column model is untouched, and no windowing
+    dependency was added.
+27. **Shareable table views.** Volunteers persist sort, direction and page size;
+    events persist sort, direction and page size. Both restore them from the URL
+    on load and keep the address bar in step without a router navigation.
+28. **Toast surface on demand.** `notify()` imports `sonner` on the first call and
+    mounts `<LazyToaster>` at that moment. Before this, no surface was mounted at
+    all, so every one of the 34 notifications in the app was silently dropped.
+29. **Shared table query hook.** `useTableQuery` mirrors a table's query state into
+    the URL with a debounced `history.replaceState`; the audit ledger now uses it,
+    so an investigation view is bookmarked and restored exactly (q, action,
+    entity, wing, outcome, emergency, page).
+30. **One notification stack.** The unused second toast implementation
+    (`components/ui/toast.tsx`, base-ui toast primitives) was deleted; `@base-ui`
+    stays deep-imported, so its per-primitive splits are unchanged.
+31. **Link previews.** A generated `opengraph-image` (1200x630, brand-consistent)
+    plus Twitter card metadata. The proxy now treats generated metadata files as
+    public, otherwise the card answered crawlers with a login redirect.
+32. **Shortcut sheet.** `?` (or Ctrl/Cmd + `/`) opens a lazily fetched shortcuts
+    dialog covering the palette, sidebar, focus and escape behaviour.
+33. **Section error boundaries.** A shared `SectionError` (retry, back to dashboard,
+    console reference) is wired into eleven office sections, so a failed panel no
+    longer takes the whole shell down.
+34. **Contrast audit.** `scripts/contrast-audit.mjs` converts the theme tokens to
+    sRGB and checks every text pair. It caught light-mode `--warning` at 4.04:1 on
+    cards; the token is now `oklch(0.57 0.115 70)` and all audited pairs pass AA.
+
+### Verified
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | exit 0 |
+| `npx eslint src/app src/components src/features src/lib src/hooks src/proxy.ts` | exit 0 |
+| `npm run build` | exit 0, `/opengraph-image` prerendered, office routes still dynamic |
+| Emitted client JS | 784 KB gz across 84 chunks (11 route-local 1.4 KB error boundaries, 2.3 KB shortcut sheet, 8.2 KB notify wrapper) |
+| `/opengraph-image` | 200 `image/png`, 56 KB, visually checked |
+| Toast | saving guardrails raises a toast and mounts `[data-sonner-toaster]`; `/dashboard` has no toaster in the DOM until then |
+| `?` | opens the sheet (dispatched keydown); `Esc` closes it |
+| Audit URL | typing `emergency` produced `?q=emergency` and filtered rows |
+| Volunteers URL | `?sort=allocatedHours&dir=desc&size=16` restored 118/110/104 hrs order and a 16-row page size |
+| Year rollup | `content-visibility: auto` on rows, visible rows still 57px tall, no layout break |
+| `node scripts/contrast-audit.mjs` | exit 0, all text pairs pass AA |
+
+### Backlog (35–54)
+
+35. Route-level Suspense per panel, so one slow panel cannot hold the header.
+36. `loading.tsx` for the detail routes, matching their hero layouts.
+37. Sprite the icon set instead of shipping hundreds of inline SVG paths.
+38. Inline the synthetic-data notice in the shell HTML and stop hydrating it.
+39. Preconnect to the Supabase origin once the session is known.
+40. Defer mounting the audit and rollup tables until their tab is visible.
+41. Prefetch only the five hottest navigation destinations.
+42. Replace remaining `useSearchParams` reads with one shared reader.
+43. `contain: layout paint` plus a fixed row height on the large tables.
+44. Local icon module to stop per-route lucide chunk duplication.
+45. A bundle-budget check in CI using the same gzip measurement script.
+46. Memoize dashboard derivations on ids only, not object identity.
+47. Four dock items plus a "More" sheet on small screens.
+48. Honour `prefers-reduced-motion` in the skeleton shimmer.
+49. Cookie-based theme and sidebar state, no post-hydration flash.
+50. Inline critical CSS for the sign-in page.
+51. Stale-while-error: keep the last good data visible behind a retry banner.
+52. Landmark and `aria-current` audit for screen-reader navigation.
+53. Build the palette index from the navigation config instead of a literal list.
+54. Minute-granularity IST clock instead of a per-second tick.
+
 ## Optimisation pass — items 11–22 of 34 (9 Nov 2026)
 
 **Scope:** data-layer granularity, shell payload, paint cost and design-system

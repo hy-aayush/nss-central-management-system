@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ShieldAlert, AlertTriangle, Power, Lock } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,14 +19,15 @@ export function SettingsEmergencyCard() {
   const handleConfirm = () => {
     setKillSwitchActive(!killSwitchActive);
     setDialogOpen(false);
-    toast.warning(
+    notify(
+      "warning",
       !killSwitchActive
         ? "Emergency Kill Switch Activated (Simulated)"
         : "Emergency Kill Switch Deactivated (Simulated)",
       {
         description:
           "Circuit breaker simulation toggled. Backend database circuit breakers and RLS enforcement activate upon database integration.",
-      }
+      },
     );
   };
 
@@ -39,7 +40,8 @@ export function SettingsEmergencyCard() {
             Emergency Mode &amp; Circuit Breakers
           </h3>
           <p className="text-body-sm text-muted-foreground">
-            Emergency kill switch controls and task-specific emergency packs (SRS §4.9).
+            Emergency kill switch controls and task-specific emergency packs
+            (SRS §4.9).
           </p>
         </div>
 
@@ -58,7 +60,14 @@ export function SettingsEmergencyCard() {
           <span>Part 1 Architecture Notice: Operational Circuit Breakers</span>
         </div>
         <p className="text-label-xs leading-relaxed">
-          Emergency mode and kill switches shown here are frontend architectural demonstrations. <strong>Do not claim that kill switches, quota checks, or emergency mode work until the production backend and database exist.</strong> Actual circuit breaker enforcement relies on PostgreSQL row-level security and middleware policies currently scheduled for Part 2.
+          Emergency mode and kill switches shown here are frontend architectural
+          demonstrations.{" "}
+          <strong>
+            Do not claim that kill switches, quota checks, or emergency mode
+            work until the production backend and database exist.
+          </strong>{" "}
+          Actual circuit breaker enforcement relies on PostgreSQL row-level
+          security and middleware policies currently scheduled for Part 2.
         </p>
       </div>
 
@@ -83,7 +92,8 @@ export function SettingsEmergencyCard() {
           </div>
 
           <p className="text-label-xs text-muted-foreground leading-relaxed">
-            Immediately locks all active FCFS queues organization-wide in case of database surge or unexpected traffic spike.
+            Immediately locks all active FCFS queues organization-wide in case
+            of database surge or unexpected traffic spike.
           </p>
 
           <Button
@@ -94,7 +104,11 @@ export function SettingsEmergencyCard() {
             className="w-full text-label-xs h-8.5 gap-1.5"
           >
             <Power className="size-3.5" />
-            <span>{killSwitchActive ? "Restore Normal FCFS Queues" : "Trip FCFS Emergency Lock"}</span>
+            <span>
+              {killSwitchActive
+                ? "Restore Normal FCFS Queues"
+                : "Trip FCFS Emergency Lock"}
+            </span>
           </Button>
         </div>
 
@@ -105,13 +119,18 @@ export function SettingsEmergencyCard() {
               <Lock className="size-4 text-primary" />
               Emergency Access Scope Delegation
             </span>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4.5 bg-muted/40 text-muted-foreground">
+            <Badge
+              variant="outline"
+              className="text-[10px] px-1.5 py-0 h-4.5 bg-muted/40 text-muted-foreground"
+            >
               Max 24h
             </Badge>
           </div>
 
           <p className="text-label-xs text-muted-foreground leading-relaxed">
-            Short-lived grants for single tasks (e.g. <code>EVENT_ATTENDANCE</code>, <code>MEETING_RUN</code>). Automatically deprovisioned upon duration expiry.
+            Short-lived grants for single tasks (e.g.{" "}
+            <code>EVENT_ATTENDANCE</code>, <code>MEETING_RUN</code>).
+            Automatically deprovisioned upon duration expiry.
           </p>
 
           <Button
@@ -119,7 +138,7 @@ export function SettingsEmergencyCard() {
             variant="outline"
             size="sm"
             onClick={() =>
-              toast.info("Emergency Pack Delegation", {
+              notify("info", "Emergency Pack Delegation", {
                 description:
                   "Delegation wizard will link with backend ActorContext resolver in Part 2.",
               })
@@ -135,13 +154,19 @@ export function SettingsEmergencyCard() {
       <ConfirmDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        title={killSwitchActive ? "Restore FCFS Registration?" : "Trip FCFS Circuit Breaker?"}
+        title={
+          killSwitchActive
+            ? "Restore FCFS Registration?"
+            : "Trip FCFS Circuit Breaker?"
+        }
         description={
           killSwitchActive
             ? "Restoring FCFS queues will resume registration windows for published upcoming events."
             : "Tripping the circuit breaker simulates an emergency shutdown of all FCFS rush registrations across all 9 wings. This action is audited."
         }
-        confirmLabel={killSwitchActive ? "Restore Normal" : "Trip Circuit Breaker"}
+        confirmLabel={
+          killSwitchActive ? "Restore Normal" : "Trip Circuit Breaker"
+        }
         variant={killSwitchActive ? "default" : "destructive"}
         onConfirm={handleConfirm}
       />

@@ -4,16 +4,19 @@ import { Calendar } from "lucide-react";
 
 import { PageEyebrow, PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui/button";
-import { LoadingState } from "@/components/shared/loading-state";
+import { PanelSkeleton } from "@/components/shared/route-skeleton";
 import { getHoursSnapshot } from "@/lib/mock-data/cached";
 import { HoursView } from "@/features/hours/hours-view";
 import { requireOfficeAccess } from "@/lib/auth/actor";
 
 export const instant = false;
 
-export default async function HoursPage() {
-  await requireOfficeAccess();
-
+/**
+ * The header renders from the access gate alone and flushes immediately; the
+ * ledger streams in behind it. One slow table can no longer hold the whole
+ * screen blank, and the skeleton lands where the table will.
+ */
+async function HoursLedger() {
   // One cached payload for both years: the ledger is synthetic and identical
   // for every member, so the request only pays for the access gate. The current
   // academic year is derived inside that cached payload (see cached.ts).
@@ -29,6 +32,25 @@ export default async function HoursPage() {
     events,
     volunteerCount,
   } = await getHoursSnapshot();
+
+  return (
+    <HoursView
+      approvalRowsByYear={approvalRowsByYear}
+      recomputeByYear={recomputeByYear}
+      adjustments={adjustments}
+      tags={tags}
+      rollups={rollups}
+      volunteers={volunteers}
+      events={events}
+      years={years}
+      defaultYear={currentYear}
+      volunteerCount={volunteerCount}
+    />
+  );
+}
+
+export default async function HoursPage() {
+  await requireOfficeAccess();
 
   return (
     <div className="space-y-6">
@@ -51,19 +73,10 @@ export default async function HoursPage() {
         }
       />
 
-      <React.Suspense fallback={<LoadingState message="Loading the hours ledger…" />}>
-        <HoursView
-          approvalRowsByYear={approvalRowsByYear}
-          recomputeByYear={recomputeByYear}
-          adjustments={adjustments}
-          tags={tags}
-          rollups={rollups}
-          volunteers={volunteers}
-          events={events}
-          years={years}
-          defaultYear={currentYear}
-          volunteerCount={volunteerCount}
-        />
+      <React.Suspense
+        fallback={<PanelSkeleton label="Loading the hours ledger…" rows={6} />}
+      >
+        <HoursLedger />
       </React.Suspense>
     </div>
   );

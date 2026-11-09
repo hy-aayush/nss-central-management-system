@@ -1,7 +1,10 @@
 "use client";
 
 import { useDeferredValue, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import { useTableQuery } from "@/hooks/use-table-query";
+import { readPage, readText } from "@/lib/table-params";
 import {
   Search,
   ShieldAlert,
@@ -29,6 +32,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableCaption,
 } from "@/components/ui/table";
 import { formatDateIST, formatTimeIST } from "@/lib/time";
 import { PROJECT_NAMES } from "@/types/project";
@@ -51,14 +55,49 @@ interface AuditTableProps {
 }
 
 export function AuditTable({ initialLogs }: AuditTableProps) {
-  const [search, setSearch] = useState("");
-  const [selectedAction, setSelectedAction] = useState<string>("ALL");
-  const [selectedEntity, setSelectedEntity] = useState<string>("ALL");
-  const [selectedProject, setSelectedProject] = useState<string>("ALL");
-  const [selectedOutcome, setSelectedOutcome] = useState<string>("ALL");
-  const [onlyEmergency, setOnlyEmergency] = useState(false);
-  const [page, setPage] = useState(1);
+  const searchParams = useSearchParams();
+
+  const [search, setSearch] = useState(readText(searchParams, "q"));
+  const [selectedAction, setSelectedAction] = useState<string>(
+    readText(searchParams, "action", "ALL"),
+  );
+  const [selectedEntity, setSelectedEntity] = useState<string>(
+    readText(searchParams, "entity", "ALL"),
+  );
+  const [selectedProject, setSelectedProject] = useState<string>(
+    readText(searchParams, "wing", "ALL"),
+  );
+  const [selectedOutcome, setSelectedOutcome] = useState<string>(
+    readText(searchParams, "outcome", "ALL"),
+  );
+  const [onlyEmergency, setOnlyEmergency] = useState(
+    searchParams.get("emergency") === "1",
+  );
+  const [page, setPage] = useState(readPage(searchParams));
   const pageSize = 8;
+
+  // The audit view is the one an investigator wants to hand to someone else, so
+  // its filters live in the URL (shared hook, debounced, no router render).
+  useTableQuery(
+    {
+      q: "",
+      action: "ALL",
+      entity: "ALL",
+      wing: "ALL",
+      outcome: "ALL",
+      emergency: "",
+      page: "1",
+    },
+    {
+      q: search,
+      action: selectedAction,
+      entity: selectedEntity,
+      wing: selectedProject,
+      outcome: selectedOutcome,
+      emergency: onlyEmergency ? "1" : "",
+      page: String(page),
+    },
+  );
 
   const [inspectingEntry, setInspectingEntry] = useState<AuditLogEntry | null>(
     null,
@@ -272,6 +311,9 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
       {/* Audit Table */}
       <Card className="p-0 bg-card border-border shadow-xs overflow-hidden">
         <Table>
+          <TableCaption className="sr-only">
+            Audit ledger, newest first
+          </TableCaption>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-border/80">
               <TableHead className="w-44">
@@ -331,7 +373,7 @@ export function AuditTable({ initialLogs }: AuditTableProps) {
                   <TableRow
                     key={entry.id}
                     onClick={() => setInspectingEntry(entry)}
-                    className="hover:bg-muted/40 transition-colors cursor-pointer group"
+                    className="row-virtual hover:bg-muted/40 transition-colors cursor-pointer group"
                   >
                     {/* Timestamp */}
                     <TableCell className="text-label-xs text-muted-foreground">

@@ -3,7 +3,85 @@
 import * as React from "react"
 import { cn } from "cn"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+/**
+ * Arrow-key navigation over a data table.
+ *
+ * Cells are `tabIndex={-1}`, so they never enter the tab order — Tab still
+ * moves from the table to whatever follows it. Once a cell *is* focused (by
+ * clicking it or by arrowing in from another cell) the arrows walk the grid,
+ * which is what a spreadsheet-shaped surface is expected to do.
+ *
+ * Only the cell itself is intercepted. A press inside a button, link, input or
+ * select keeps its native meaning, so this can never swallow typing.
+ */
+const GRID_KEYS = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "Home",
+  "End",
+])
+
+function cellFrom(target: EventTarget | null): HTMLElement | null {
+  if (!(target instanceof HTMLElement)) return null
+  const cell = target.closest<HTMLElement>("td,th")
+  // Intercept only when the cell itself holds focus.
+  return cell && cell === target ? cell : null
+}
+
+function moveFocus(
+  table: HTMLTableElement,
+  cell: HTMLElement,
+  key: string
+): void {
+  const row = cell.parentElement
+  if (!row) return
+
+  const cells = Array.from(row.querySelectorAll<HTMLElement>(":scope > td,:scope > th"))
+  const column = cells.indexOf(cell)
+
+  if (key === "Home" || key === "End") {
+    const target = key === "Home" ? cells[0] : cells[cells.length - 1]
+    target?.focus()
+    return
+  }
+
+  if (key === "ArrowLeft" || key === "ArrowRight") {
+    const next = cells[column + (key === "ArrowLeft" ? -1 : 1)]
+    next?.focus()
+    return
+  }
+
+  // Vertical movement stays inside the body rows and keeps the column.
+  const rows = Array.from(
+    table.querySelectorAll<HTMLTableRowElement>("tbody > tr")
+  ).filter((entry) => entry.getClientRects().length > 0)
+  const index = rows.indexOf(row as HTMLTableRowElement)
+  if (index === -1) return
+  const targetRow = rows[index + (key === "ArrowUp" ? -1 : 1)]
+  if (!targetRow) return
+  const targetCells = Array.from(
+    targetRow.querySelectorAll<HTMLElement>(":scope > td,:scope > th")
+  )
+  targetCells[column]?.focus()
+}
+
+function Table({
+  className,
+  onKeyDown,
+  ...props
+}: React.ComponentProps<"table">) {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTableElement>) => {
+    onKeyDown?.(event)
+    if (event.defaultPrevented || !GRID_KEYS.has(event.key)) return
+    if (event.altKey || event.ctrlKey || event.metaKey) return
+    const cell = cellFrom(event.target)
+    if (!cell) return
+    event.preventDefault()
+    moveFocus(event.currentTarget, cell, event.key)
+  }
+
   return (
     <div
       data-slot="table-container"
@@ -11,6 +89,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
     >
       <table
         data-slot="table"
+        onKeyDown={handleKeyDown}
         className={cn("w-full caption-bottom text-sm", className)}
         {...props}
       />
@@ -64,10 +143,17 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   )
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+function TableHead({
+  className,
+  scope = "col",
+  tabIndex = -1,
+  ...props
+}: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
+      scope={scope}
+      tabIndex={tabIndex}
       className={cn(
         "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
         className
@@ -77,10 +163,15 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   )
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+function TableCell({
+  className,
+  tabIndex = -1,
+  ...props
+}: React.ComponentProps<"td">) {
   return (
     <td
       data-slot="table-cell"
+      tabIndex={tabIndex}
       className={cn(
         "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className

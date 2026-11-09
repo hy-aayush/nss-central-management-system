@@ -1,16 +1,25 @@
 import React from "react";
 
 import { PageEyebrow, PageHeader } from "@/components/layout/page-header";
-import { LoadingState } from "@/components/shared/loading-state";
+import { PanelSkeleton } from "@/components/shared/route-skeleton";
 import { getAnalyticsSnapshot } from "@/lib/mock-data/cached";
 import { AnalyticsView } from "@/features/analytics/analytics-view";
 import { requireOfficeAccess } from "@/lib/auth/actor";
 
 export const instant = false;
 
+/**
+ * Charts are the expensive part of this screen and the last thing a reader can
+ * act on. The title block streams first, then the analytics panel fills in, so
+ * the page never looks like it failed to load.
+ */
+async function AnalyticsPanels() {
+  const { summary } = await getAnalyticsSnapshot();
+  return <AnalyticsView summary={summary} />;
+}
+
 export default async function AnalyticsPage() {
   await requireOfficeAccess();
-  const { summary } = await getAnalyticsSnapshot();
 
   return (
     <div className="space-y-6">
@@ -26,9 +35,9 @@ export default async function AnalyticsPage() {
       />
 
       <React.Suspense
-        fallback={<LoadingState message="Aggregating performance analytics…" />}
+        fallback={<PanelSkeleton label="Aggregating performance analytics…" rows={5} />}
       >
-        <AnalyticsView summary={summary} />
+        <AnalyticsPanels />
       </React.Suspense>
     </div>
   );

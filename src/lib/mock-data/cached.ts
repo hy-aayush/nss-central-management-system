@@ -1,6 +1,11 @@
 import { cacheLife, cacheTag } from "next/cache";
 
-import { academicYearStart } from "@/lib/time";
+import {
+  academicYearLabel,
+  academicYearStart,
+  formatDateIST,
+  formatTimeIST,
+} from "@/lib/time";
 
 import {
   MOCK_ATTENDANCE_RECORDS,
@@ -48,6 +53,21 @@ import {
  * Since the underlying fixtures never change at runtime, tags exist only so a
  * future real repository can invalidate a route with `revalidateTag` /
  * `updateTag` (`"events"`, `"meetings"`, `"hours"`, `"roster"`, …).
+ *
+ * The `hours` preset, as documented for this Next version, is:
+ *
+ * | window | value | behaviour                                    |
+ * | ------ | ----- | -------------------------------------------- |
+ * | stale  | 5 min | client reuses its copy without asking         |
+ * | revalidate | 1 h | next request refreshes in the background    |
+ * | expire | 1 day | a day of silence forces a blocking rebuild   |
+ *
+ * One hour is the deliberate choice for every dataset here: an office register
+ * does not change minute to minute, and a coordinator who has just edited a row
+ * should see it after a refresh, not after a day. Anything that starts writing
+ * to a real database must call `revalidateTag` with the tag on the row it
+ * touched rather than relying on the window — the table above is a safety net,
+ * not an invalidation strategy.
  */
 
 export async function getDashboardSnapshot() {
@@ -64,6 +84,60 @@ export async function getDashboardSnapshot() {
     auditLogs: getAuditLogs().items,
     attendanceRecords: MOCK_ATTENDANCE_RECORDS,
     attendanceSummaries: MOCK_ATTENDANCE_SUMMARIES,
+  };
+}
+
+/**
+ * The dashboard's derivations, cached with the data they come from.
+ *
+ * Filtering, date formatting and the "next operation" sort used to run on every
+ * request, even though the fixtures behind them only change once a cache window.
+ * They now run once per window and every navigation reads the result.
+ */
+export async function getDashboardOverview() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("dashboard");
+
+  const snapshot = await getDashboardSnapshot();
+  const { summary, events, meetings } = snapshot;
+
+  const upcomingEvents = events.filter((event) =>
+    ["SCHEDULED", "PUBLISHED", "RESCHEDULED", "ONGOING"].includes(
+      event.status,
+    ),
+  );
+  const upcomingMeetings = meetings.filter((meeting) =>
+    ["SCHEDULED", "RESCHEDULED", "ONGOING"].includes(meeting.status),
+  );
+
+  const nextOperation = [
+    ...upcomingEvents.map((event) => ({
+      title: event.title,
+      when: `${formatDateIST(event.startsAt)} · ${formatTimeIST(event.startsAt)}`,
+      venue: event.venue,
+      href: `/events/${event.id}`,
+      kind: event.type === "CENTRAL" ? "Central event" : "Project event",
+      at: new Date(event.startsAt).getTime(),
+    })),
+    ...upcomingMeetings.map((meeting) => ({
+      title: meeting.agenda,
+      when: `${formatDateIST(`${meeting.date}T${meeting.startTime}:00+05:30`)} · ${formatTimeIST(`${meeting.date}T${meeting.startTime}:00+05:30`)}`,
+      venue: meeting.venue,
+      href: "/meetings",
+      kind: `${meeting.type.toLowerCase()} meeting`,
+      at: new Date(`${meeting.date}T${meeting.startTime}:00+05:30`).getTime(),
+    })),
+  ]
+    .filter((operation) => Number.isFinite(operation.at))
+    .sort((a, b) => a.at - b.at)[0];
+
+  return {
+    snapshot,
+    upcomingEvents,
+    upcomingMeetings,
+    nextOperation,
+    academicYear: academicYearLabel(summary.lastUpdated),
   };
 }
 

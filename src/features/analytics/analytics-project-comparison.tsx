@@ -1,5 +1,6 @@
 "use client";
 
+import { formatPercent } from "@/lib/format";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, ArrowUpDown, Building2, ExternalLink } from "lucide-react";
@@ -219,7 +220,7 @@ export function AnalyticsProjectComparison({
                                 : "text-warning"
                           }
                         >
-                          {turnout.toFixed(1)}%
+                          {formatPercent(turnout)}
                         </span>
                       </div>
                       {/* Visual progress bar */}

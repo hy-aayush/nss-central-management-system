@@ -1,3 +1,4 @@
+import { formatPercent } from "@/lib/format";
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -151,7 +152,7 @@ export function RecentAttendanceCard({
                             tone === "error" && "text-destructive",
                           )}
                         >
-                          {item.turnout.toFixed(1)}%
+                          {formatPercent(item.turnout)}
                         </p>
                         <p className="tnum mt-1 text-[0.625rem] text-muted-foreground">
                           {item.present}/{item.total}

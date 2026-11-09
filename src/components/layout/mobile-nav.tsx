@@ -1,24 +1,31 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  Calendar,
-  UserCheck,
-  Menu,
-} from "lucide-react";
+import { Menu } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
+import { MAIN_NAV_ITEMS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
-const PRIMARY_MOBILE_ITEMS = [
-  { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Volunteers", href: "/volunteers", icon: Users },
-  { title: "Events", href: "/events", icon: Calendar },
-  { title: "Attendance", href: "/attendance", icon: UserCheck },
-];
+/**
+ * Four destinations plus the full navigation sheet.
+ *
+ * The items are looked up in the navigation config rather than duplicated here,
+ * so the dock can never drift from the sidebar or the command palette. Five
+ * targets is the practical ceiling for a thumb bar: adding more shrinks every
+ * hit area below a comfortable tap.
+ */
+const DOCK_HREFS = [
+  "/dashboard",
+  "/volunteers",
+  "/events",
+  "/attendance",
+] as const;
+
+const DOCK_ITEMS = DOCK_HREFS.flatMap((href) => {
+  const item = MAIN_NAV_ITEMS.find((entry) => entry.href === href);
+  return item ? [item] : [];
+});
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -37,17 +44,22 @@ export function MobileNav() {
       )}
     >
       <ul className="flex items-stretch px-1.5 pt-1.5">
-        {PRIMARY_MOBILE_ITEMS.map((item) => {
+        {DOCK_ITEMS.map((item) => {
           const isActive =
             item.href === "/dashboard"
               ? pathname === "/dashboard" || pathname === "/"
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              : pathname === item.href ||
+                pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
 
           return (
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}
+                // The dock is on screen in every mobile session, so a prefetch
+                // here would fire four private RSC fetches (and four access-gate
+                // queries) per visit. The tap is the intent signal.
+                prefetch={false}
                 aria-current={isActive ? "page" : undefined}
                 className="relative flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-[0.625rem] font-medium tracking-[0.01em] transition-transform duration-150 ease-[var(--ease-out-quart)] active:scale-[0.94] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >

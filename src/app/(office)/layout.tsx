@@ -1,11 +1,14 @@
 import * as React from "react";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { SyntheticDataNotice } from "@/components/shared/synthetic-data-notice";
+import { LazyToaster } from "@/components/ui/lazy-toaster";
+import { ShortcutSheet } from "@/components/layout/shortcut-sheet";
 import { requireOfficeAccess } from "@/lib/auth/actor";
 import { initialsFromName, primaryRoleLabel } from "@/lib/auth/display";
 
@@ -40,6 +43,13 @@ export default async function OfficeLayout({
   await connection();
   const access = await requireOfficeAccess();
 
+  // The sidebar already writes this cookie on every toggle; reading it back is
+  // what stops a collapse from un-collapsing on every navigation or reload.
+  // The sidebar already writes this cookie on every toggle; reading it back is
+  // what stops a collapse from un-collapsing on every navigation or reload.
+  const sidebarState = (await cookies()).get("sidebar_state")?.value;
+  const sidebarOpen = sidebarState !== "false";
+
   const actor = {
     name: access.volunteer.name,
     email: access.identity.email,
@@ -51,7 +61,7 @@ export default async function OfficeLayout({
   };
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={sidebarOpen}>
       {/* Keyboard Accessibility Skip Link */}
       <a
         href="#main-content"
@@ -87,6 +97,10 @@ export default async function OfficeLayout({
           <Suspense fallback={null}>
             <MobileNav />
           </Suspense>
+
+          {/* Toast surface and shortcut help are both fetched on first use. */}
+          <LazyToaster />
+          <ShortcutSheet />
         </SidebarInset>
       </div>
     </SidebarProvider>

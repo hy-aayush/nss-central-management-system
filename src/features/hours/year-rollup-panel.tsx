@@ -177,7 +177,7 @@ export function YearRollupPanel({
                   return (
                     <TableRow
                       key={`${row.rollNumber}-${row.academicYear}`}
-                      className="hover:bg-muted/20"
+                      className="row-virtual hover:bg-muted/20"
                     >
                       <TableCell className="py-3">
                         <Link

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Power, Tag } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -65,7 +65,7 @@ export function AdjustmentTagsPanel({ initialTags }: AdjustmentTagsPanelProps) {
         isActive: true,
       },
     ]);
-    toast.success("Tag created", {
+    notify("success", "Tag created", {
       description: `"${values.name}" defaults to ${values.defaultHours}h for everyone.`,
     });
     form.reset({ name: "", defaultHours: 2 });
@@ -78,7 +78,7 @@ export function AdjustmentTagsPanel({ initialTags }: AdjustmentTagsPanelProps) {
         item.id === tag.id ? { ...item, isActive: !item.isActive } : item,
       ),
     );
-    toast.info(tag.isActive ? "Tag deactivated" : "Tag reactivated", {
+    notify("info", tag.isActive ? "Tag deactivated" : "Tag reactivated", {
       description: tag.isActive
         ? "Existing hours keep their label; new adjustments can no longer pick it."
         : "The tag is selectable again for new adjustments.",

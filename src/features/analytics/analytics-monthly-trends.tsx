@@ -1,5 +1,6 @@
 "use client";
 
+import { formatPercent } from "@/lib/format";
 import { TrendingUp, CalendarDays, CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +61,7 @@ export function AnalyticsMonthlyTrends({ trends }: AnalyticsMonthlyTrendsProps) 
                       : "bg-primary/10 text-primary border-primary/20"
                   }`}
                 >
-                  {(point.attendanceRate ?? 0).toFixed(1)}% Turnout
+                  {formatPercent(point.attendanceRate ?? 0)} Turnout
                 </Badge>
               </div>
 
